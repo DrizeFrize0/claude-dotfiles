@@ -19,6 +19,8 @@ local function mode_active(name)
 end
 
 if mode_active("saver") then
+    -- A spinning border redraws all the time: stop it on battery
+    hl.animation({ leaf = "borderangle", enabled = false })
     hl.config({
         decoration = {
             inactive_opacity = 1.0,

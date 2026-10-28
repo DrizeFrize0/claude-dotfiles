@@ -120,6 +120,8 @@ Do these in order. `SUPER` is the Windows key.
 4. **Test the mic:** `SUPER + I` → **Sound** → *Test the microphone*. Speak, then listen back.
 5. **Test the touchpad:** two-finger scroll, tap to click, and swipe left/right with **three fingers** to switch workspaces.
 6. **Pick a bar style:** `SUPER + CTRL + T` → Modern, Glass or Minimal.
+7. **Turn on the weather:** `SUPER + I` → **Widgets** → type your city → ✓. The clock, weather and music now show on your wallpaper.
+8. **Try a look:** `SUPER + I` → **Appearance** → Looks: *Glass*, *Neon* (spinning border), *Minimal*… one click each.
 
 ### 3.3 Sign in to your stuff
 
@@ -152,6 +154,7 @@ Do these in order. `SUPER` is the Windows key.
 | `SUPER + ESC` | Power menu (lock, sleep, restart, shut down) |
 | `SUPER + I` | Lennox Settings |
 | `SUPER + N` | Quick panel |
+| `SUPER + D` | Dashboard |
 | `SUPER + CTRL + K` | **Forgot a key? Search all of them here** |
 
 Full list: [KEYBINDINGS.md](KEYBINDINGS.md).
@@ -174,7 +177,18 @@ Phone-style controls in one place:
 - Sliders: volume, mic and brightness
 - Music controls and your notifications
 
-### 4.4 Lennox Settings (`SUPER + I`)
+### 4.4 The dashboard (`SUPER + D`)
+
+Slides in from the left:
+
+- Your name, how long the laptop has been on, and buttons for Settings, Lock and Power
+- **Quick actions:** screenshot, color picker, wallpaper, shuffle wallpaper, night light, game mode, dark/light, clipboard
+- Volume and brightness sliders, the music that's playing, the weather with 3 days ahead, a calendar, system stats
+- **Notes:** type anything (gym times, server ideas, homework); it saves by itself
+
+Press `Escape`, `SUPER + D` again, or click next to it to close it.
+
+### 4.5 Lennox Settings (`SUPER + I`)
 
 Everything is here. You never need to edit a config file:
 
@@ -183,6 +197,7 @@ Everything is here. You never need to edit a config file:
 | Appearance | Dark/light, gaps, rounded corners, blur, animations, fonts |
 | Wallpaper | Pick, shuffle, or choose your wallpaper folder |
 | Bar & Dock | Bar style, what it shows, dock on/off |
+| Widgets | Desktop widgets (clock, weather, music, system), your city, the dashboard |
 | Sound | Speakers/headphones, microphone, mic test |
 | Display | Brightness, scale, refresh rate, arranging a second monitor |
 | Keyboard & Touchpad | Layout, scroll direction, tap to click, speed |
@@ -195,14 +210,14 @@ Everything is here. You never need to edit a config file:
 | Keybindings | See every shortcut |
 | Health Check | Finds and explains driver or system problems |
 
-### 4.5 Gaming
+### 4.6 Gaming
 
 - **Steam games** use the GTX 1650 automatically.
 - For a native Linux game that runs slowly, open Steam → right-click the game → Properties → Launch options and type `prime-run %command%`.
 - **Game mode:** `SUPER + ALT + G` (or the quick panel tile) turns off animations and blur and switches to performance mode. Turn it off afterwards to save battery.
 - Plug in the charger for gaming. The GTX draws a lot of power.
 
-### 4.6 A second monitor
+### 4.7 A second monitor
 
 1. Plug the monitor in **before** logging in (or log out and in again).
 2. `SUPER + I` → **Display** → *Arrange displays* to place it left/right and set its resolution.
@@ -262,6 +277,10 @@ hl.bind("SUPER + B", hl.dsp.exec_cmd("firefox"), { description = "Open Firefox" 
 ```
 
 Then press `SUPER + SHIFT + R` to reload.
+
+Quick looks from a terminal: `lennox look` lists them, `lennox look neon` applies one.
+
+Your picture in the dashboard: save a square photo as `~/.face`.
 
 Add your own wallpapers by dropping pictures into `~/.config/lennox/wallpapers` (or pick a different folder in Settings → Wallpaper).
 

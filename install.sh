@@ -413,10 +413,10 @@ install_dotfiles() {
     printf '/%s\n' "${KEEP_IF_EXISTS[@]}" | grep -v '^/#' > "$keep_file"
 
     # Everything except the keep-list; replaced files go to the backup folder
-    rsync -a --backup --backup-dir="$BACKUP" --exclude-from="$keep_file" "$DOTFILES/" "$HOME/" \
+    rsync -a --backup --backup-dir="$BACKUP" --exclude="__pycache__/" --exclude-from="$keep_file" "$DOTFILES/" "$HOME/" \
         || die "Copying the Lennox files failed."
     # The keep-list only where nothing exists yet
-    rsync -a --ignore-existing --include='*/' --include-from="$keep_file" --exclude='*' "$DOTFILES/" "$HOME/"
+    rsync -a --ignore-existing --exclude='__pycache__/' --include='*/' --include-from="$keep_file" --exclude='*' "$DOTFILES/" "$HOME/"
     rm -f "$keep_file"
 
     if [[ -n "$(find "$BACKUP" -type f 2>/dev/null | head -n1)" ]]; then

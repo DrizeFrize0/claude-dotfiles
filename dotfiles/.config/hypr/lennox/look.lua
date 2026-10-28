@@ -15,6 +15,9 @@ if a.border_style == "solid" then
     active_border = c.primary
 elseif a.border_style == "none" then
     border_size = 0
+elseif a.border_style == "animated" then
+    -- Spun by lennox/animation.lua
+    active_border = { colors = { c.primary, c.tertiary or c.secondary, c.secondary, c.primary }, angle = 45 }
 end
 
 hl.config({

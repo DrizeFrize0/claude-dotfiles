@@ -8,6 +8,7 @@ case "$cmd" in
     settings)  exec lennox-settings "$@" ;;
     wallpaper) exec lennox-wallpaper "$@" ;;
     theme)     exec lennox-theme "$@" ;;
+    look)      exec lennox-look "$@" ;;
     bar)       exec lennox-bar "$@" ;;
     dock)      exec lennox-dock "$@" ;;
     update)    exec lennox-update "$@" ;;
@@ -26,6 +27,7 @@ Lennox - Hyprland for Arch, in the spirit of ML4W
   lennox settings            open Lennox Settings (also SUPER + I)
   lennox wallpaper IMAGE     set a wallpaper and re-color everything (--random)
   lennox theme toggle        dark / light mode
+  lennox look NAME           one-click look: ml4w | glass | neon | minimal | focus | lightweight
   lennox bar style NAME      modern | glass | minimal
   lennox dock toggle         show / hide the dock
   lennox update              update system, drivers, AUR apps and Flatpaks now

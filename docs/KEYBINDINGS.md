@@ -28,6 +28,9 @@ hl.bind("SUPER + B", hl.dsp.exec_cmd("firefox"), { description = "Open Firefox" 
 | --- | --- |
 | `SUPER + I` | Lennox Settings |
 | `SUPER + N` / `SUPER + CTRL + S` | Quick panel (toggles, sliders, notifications) |
+| `SUPER + D` | Dashboard (actions, music, weather, calendar, notes) |
+| `SUPER + CTRL + W` | Show / hide the desktop widgets |
+| `SUPER + SHIFT + C` | Pick a color on screen (hex code copied) |
 | `SUPER + W` | Wallpaper picker |
 | `SUPER + SHIFT + W` | Random wallpaper |
 | `SUPER + CTRL + T` | Bar style (Modern / Glass / Minimal) |

@@ -48,6 +48,9 @@ start hypridle
 start hyprsunset
 start lennox-battery
 
+# Desktop widgets and the dashboard (one process; it refuses to run twice)
+setsid -f lennox-widgets >/dev/null 2>&1 </dev/null
+
 # Clipboard history and auto-mounting USB drives
 setsid -f wl-paste --type text --watch cliphist store >/dev/null 2>&1
 setsid -f wl-paste --type image --watch cliphist store >/dev/null 2>&1

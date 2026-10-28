@@ -169,6 +169,13 @@ for proc in waybar swaync hypridle awww-daemon; do
         esac
     fi
 done
+if ! pkg gtk4-layer-shell; then
+    record warn desktop "Widgets and dashboard need gtk4-layer-shell" "sudo pacman -S gtk4-layer-shell, then log out and back in"
+elif pgrep -f "lennox\.widgets\.main" >/dev/null; then
+    record ok desktop "Widgets and dashboard running"
+else
+    record warn desktop "Widgets and dashboard are not running" "Run: setsid -f lennox-widgets  (or log out and back in)"
+fi
 for font in "Fira Sans" "Symbols Nerd Font" "JetBrainsMono Nerd Font"; do
     fc-list 2>/dev/null | grep -qi "$font" && record ok desktop "Font: $font" \
         || record warn desktop "Font missing: $font" "Re-run the Lennox installer"

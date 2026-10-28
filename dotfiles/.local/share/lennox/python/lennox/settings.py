@@ -23,6 +23,7 @@ DEFAULTS = {
         "color_scheme": "scheme-tonal-spot",
         "animations": "default",
         "border_style": "gradient",
+        "workspace_anim": "preset",
         "gaps_in": 10,
         "gaps_out": 16,
         "border_size": 2,
@@ -56,6 +57,18 @@ DEFAULTS = {
         "show_updates": True,
         "show_media": False,
         "clock_24h": True,
+    },
+    "widgets": {
+        "desktop": True,
+        "position": "top-left",
+        "show_clock": True,
+        "show_greeting": True,
+        "show_weather": True,
+        "show_media": True,
+        "show_system": False,
+        "name": "",
+        "weather_city": "",
+        "temperature_unit": "celsius",
     },
     "dock": {
         "enabled": True,
@@ -138,11 +151,14 @@ CHOICES = {
         "scheme-fruit-salad", "scheme-monochrome", "scheme-neutral", "scheme-rainbow",
         "scheme-vibrant",
     ],
-    ("appearance", "animations"): ["default", "fast", "smooth", "bouncy", "off"],
-    ("appearance", "border_style"): ["gradient", "solid", "none"],
+    ("appearance", "animations"): ["default", "dynamic", "moving", "classic", "fast", "smooth", "bouncy", "off"],
+    ("appearance", "border_style"): ["gradient", "animated", "solid", "none"],
+    ("appearance", "workspace_anim"): ["preset", "slide", "slidevert", "fade", "slidefade"],
     ("appearance", "layout"): ["dwindle", "master"],
     ("wallpaper", "transition"): ["grow", "fade", "wipe", "wave", "outer", "center", "any", "simple", "none"],
     ("bar", "style"): ["modern", "glass", "minimal"],
+    ("widgets", "position"): ["top-left", "top-center", "top-right", "center", "bottom-left", "bottom-right"],
+    ("widgets", "temperature_unit"): ["celsius", "fahrenheit"],
     ("input", "accel_profile"): ["", "adaptive", "flat"],
     ("keybinds", "main_mod"): ["SUPER", "ALT"],
     ("gpu", "mode"): ["auto", "integrated", "hybrid"],
@@ -177,6 +193,41 @@ RANGES = {
     ("power", "critical_battery"): (2, 20),
 }
 
+# One-click looks (Lennox Settings > Appearance, or `lennox look NAME`).
+# Each sets several values at once; everything else stays as it is.
+_BASE_LOOK = {
+    "appearance.border_style": "gradient", "appearance.border_size": 2, "appearance.rounding": 10,
+    "appearance.gaps_in": 10, "appearance.gaps_out": 16, "appearance.blur": True,
+    "appearance.blur_size": 4, "appearance.shadow": True, "appearance.inactive_opacity": 0.9,
+    "appearance.dim_inactive": False, "appearance.animations": "default",
+    "appearance.workspace_anim": "preset", "appearance.terminal_opacity": 0.8,
+}
+LOOKS = {
+    "ml4w": ("ML4W Default", "The classic Lennox look", dict(_BASE_LOOK, **{
+        "appearance.color_scheme": "scheme-tonal-spot", "bar.style": "modern"})),
+    "glass": ("Glass", "See-through and frosted", dict(_BASE_LOOK, **{
+        "appearance.border_size": 1, "appearance.rounding": 14, "appearance.blur_size": 6,
+        "appearance.inactive_opacity": 0.85, "appearance.terminal_opacity": 0.7,
+        "appearance.animations": "smooth", "bar.style": "glass"})),
+    "neon": ("Neon", "Vibrant colors and a spinning border", dict(_BASE_LOOK, **{
+        "appearance.color_scheme": "scheme-vibrant", "appearance.border_style": "animated",
+        "appearance.border_size": 3, "appearance.rounding": 12, "appearance.animations": "dynamic",
+        "bar.style": "modern"})),
+    "minimal": ("Minimal", "Small gaps, no effects", dict(_BASE_LOOK, **{
+        "appearance.border_style": "solid", "appearance.border_size": 1, "appearance.rounding": 6,
+        "appearance.gaps_in": 4, "appearance.gaps_out": 8, "appearance.blur": False,
+        "appearance.shadow": False, "appearance.inactive_opacity": 1.0, "appearance.animations": "fast",
+        "appearance.terminal_opacity": 0.95, "bar.style": "minimal"})),
+    "focus": ("Focus", "Dims everything except the window you work in", dict(_BASE_LOOK, **{
+        "appearance.color_scheme": "scheme-neutral", "appearance.border_style": "solid",
+        "appearance.gaps_in": 6, "appearance.gaps_out": 10, "appearance.dim_inactive": True,
+        "appearance.inactive_opacity": 0.8, "appearance.animations": "fast", "bar.style": "minimal"})),
+    "lightweight": ("Lightweight", "No blur, shadows or animations: smoothest on battery", dict(_BASE_LOOK, **{
+        "appearance.border_style": "solid", "appearance.blur": False, "appearance.shadow": False,
+        "appearance.inactive_opacity": 1.0, "appearance.animations": "off",
+        "appearance.terminal_opacity": 1.0})),
+}
+
 TIME_KEYS = {("night", "start"), ("night", "end"), ("night", "winddown_time")}
 
 # Which `lennox-apply` part(s) must run after a setting in a section changes
@@ -191,6 +242,7 @@ APPLY_PARTS = {
     "wallpaper": ["wallpaper"],
     "bar": ["bar"],
     "dock": ["dock"],
+    "widgets": ["widgets"],
 }
 THEME_KEYS = {"appearance.color_mode", "appearance.color_scheme"}
 
@@ -326,3 +378,19 @@ def set_value(path, value):
 def expand(path):
     """Expand ~ and $HOME in a path setting."""
     return os.path.expanduser(os.path.expandvars(path))
+
+
+def apply_look(name):
+    """Apply a look from LOOKS. Returns the lennox-apply parts to run."""
+    _title, _desc, values = LOOKS[name]
+    settings = load()
+    for path, value in values.items():
+        section, _, key = path.partition(".")
+        settings[section][key] = value
+    save(settings)
+    parts = []
+    for path in values:
+        for part in parts_for(path):
+            if part not in parts:
+                parts.append(part)
+    return parts

@@ -46,6 +46,12 @@ On many GTX 1650 laptops the HDMI port is wired to the NVIDIA GPU. Lennox Settin
 
 `SUPER + SHIFT + B` restarts it. Clicking workspace numbers in the bar uses Lennox's own workspace buttons (the built-in Waybar module can't switch workspaces with Hyprland's new Lua config yet). If they show only 1 to 5 and never update, check that `lennox-workspaces` is running: `pgrep -af lennox-workspaces`.
 
+## Widgets or dashboard missing
+
+- `SUPER + D` does nothing: run `lennox doctor`. It checks that `gtk4-layer-shell` is installed and the widgets are running. Start them by hand with `setsid -f lennox-widgets`.
+- Desktop widgets hidden: `SUPER + CTRL + W`, or Lennox Settings → Widgets.
+- Weather says it can't find your city: try the nearest bigger city, or add the country ("Springfield, US"). "Daily API request limit" means the free weather service is busy; it retries by itself.
+
 ## Reset things
 
 | Reset | How |

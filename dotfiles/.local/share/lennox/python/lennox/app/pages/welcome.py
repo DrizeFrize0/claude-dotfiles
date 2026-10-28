@@ -57,6 +57,8 @@ class Page:
                                 lambda: ctx.navigate("appearance"), "applications-graphics-symbolic"))
         start.add(rows.link_row("Bar style", "Modern, Glass or Minimal, just like ML4W",
                                 lambda: ctx.navigate("bar"), "view-grid-symbolic"))
+        start.add(rows.link_row("Widgets and dashboard", "Clock, weather and music on your desktop; SUPER + D for the dashboard",
+                                lambda: ctx.navigate("widgets"), "view-app-grid-symbolic"))
         start.add(rows.link_row("Check drivers, sound and mic", "One click health check",
                                 lambda: ctx.navigate("health"), "emblem-ok-symbolic"))
         page.add(start)

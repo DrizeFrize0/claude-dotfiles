@@ -83,4 +83,7 @@ hl.layer_rule({ name = "blur-rofi",    match = { namespace = "^(rofi)$" },      
 hl.layer_rule({ name = "blur-swaync",  match = { namespace = "^(swaync-control-center|swaync-notification-window)$" }, blur = true, ignore_alpha = 0.3 })
 hl.layer_rule({ name = "blur-waybar",  match = { namespace = "^(waybar)$" },                      blur = true, ignore_alpha = 0.3 })
 hl.layer_rule({ name = "blur-dock",    match = { namespace = "^(nwg-dock)$" },                    blur = true, ignore_alpha = 0.3 })
+hl.layer_rule({ name = "blur-widgets",   match = { namespace = "^(lennox-widgets|lennox-dashboard)$" }, blur = true, ignore_alpha = 0.3 })
+hl.layer_rule({ name = "anim-dashboard", match = { namespace = "^(lennox-dashboard)$" },             animation = "slide left" })
+hl.layer_rule({ name = "anim-widgets",   match = { namespace = "^(lennox-widgets)$" },               animation = "fade" })
 hl.layer_rule({ name = "no-anim-picker", match = { namespace = "^(selection|hyprpicker)$" },       no_anim = true })

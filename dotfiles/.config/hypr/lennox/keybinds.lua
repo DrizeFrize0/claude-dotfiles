@@ -36,6 +36,9 @@ hl.bind(key("CTRL + K"),       run("lennox-menu keybinds"),    { description = "
 -- Lennox ----------------------------------------------
 hl.bind(key("I"),              run("lennox-settings"),          { description = "Open Lennox Settings" })
 hl.bind(key("N"),              run("lennox-panel toggle"),      { description = "Open the quick panel" })
+hl.bind(key("D"),              run("lennox-widgets dashboard"), { description = "Open the dashboard" })
+hl.bind(key("CTRL + W"),       run("lennox-widgets desktop"),   { description = "Show / hide the desktop widgets" })
+hl.bind(key("SHIFT + C"),      run("lennox-colorpicker"),       { description = "Pick a color on screen (copied)" })
 hl.bind(key("CTRL + S"),       run("lennox-panel toggle"),      { description = "Open the quick panel" })
 hl.bind(key("W"),              run("lennox-menu wallpaper"),    { description = "Pick a wallpaper" })
 hl.bind(key("SHIFT + W"),      run("lennox-wallpaper --random"), { description = "Random wallpaper" })

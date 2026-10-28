@@ -24,6 +24,7 @@ PAGES = [
     ("appearance", "Appearance", "applications-graphics-symbolic", "appearance"),
     ("wallpaper", "Wallpaper", "preferences-desktop-wallpaper-symbolic", "wallpaper"),
     ("bar", "Bar & Dock", "view-grid-symbolic", "bar"),
+    ("widgets", "Widgets", "view-app-grid-symbolic", "widgets"),
     ("sound", "Sound", "audio-volume-high-symbolic", "sound"),
     ("display", "Display", "video-display-symbolic", "display"),
     ("input", "Keyboard & Touchpad", "input-keyboard-symbolic", "input"),

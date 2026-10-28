@@ -2,23 +2,8 @@
 
 from gi.repository import Adw, Gtk
 
+from ... import settings as S
 from .. import rows
-
-# One-click looks: they set several values at once
-PRESETS = {
-    "ML4W Default": {"border_style": "gradient", "gaps_in": 10, "gaps_out": 16, "border_size": 2,
-                     "rounding": 10, "blur": True, "shadow": True, "inactive_opacity": 0.9,
-                     "animations": "default"},
-    "Glass": {"border_style": "gradient", "gaps_in": 10, "gaps_out": 16, "border_size": 1,
-              "rounding": 14, "blur": True, "shadow": True, "inactive_opacity": 0.85,
-              "animations": "smooth"},
-    "Minimal": {"border_style": "solid", "gaps_in": 4, "gaps_out": 8, "border_size": 1,
-                "rounding": 6, "blur": False, "shadow": False, "inactive_opacity": 1.0,
-                "animations": "fast"},
-    "No gaps": {"border_style": "none", "gaps_in": 0, "gaps_out": 0, "border_size": 0,
-                "rounding": 0, "blur": False, "shadow": False, "inactive_opacity": 1.0,
-                "animations": "fast"},
-}
 
 SCHEMES = [
     ("scheme-tonal-spot", "Calm (ML4W default)"),
@@ -34,10 +19,28 @@ SCHEMES = [
 
 ANIMATIONS = [
     ("default", "Default (ML4W)"),
+    ("dynamic", "Dynamic (spinning border)"),
+    ("moving", "Moving"),
+    ("classic", "Classic"),
     ("fast", "Fast"),
     ("smooth", "Smooth"),
     ("bouncy", "Bouncy"),
     ("off", "Off"),
+]
+
+BORDERS = [
+    ("gradient", "Gradient (ML4W)"),
+    ("animated", "Animated gradient"),
+    ("solid", "Solid"),
+    ("none", "None"),
+]
+
+WORKSPACE_ANIMS = [
+    ("preset", "Same as Animations"),
+    ("slide", "Slide sideways"),
+    ("slidevert", "Slide up and down"),
+    ("fade", "Fade"),
+    ("slidefade", "Slide and fade"),
 ]
 
 
@@ -55,10 +58,10 @@ class Page:
         page.add(colors)
 
         presets = Adw.PreferencesGroup(title="Looks", description="Start from a look, then fine-tune below.")
-        box = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, max_children_per_line=4,
+        box = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, max_children_per_line=3,
                           column_spacing=8, row_spacing=8, homogeneous=True)
-        for name in PRESETS:
-            button = Gtk.Button(label=name)
+        for name, (title, description, _values) in S.LOOKS.items():
+            button = Gtk.Button(label=title, tooltip_text=description)
             button.add_css_class("pill")
             button.connect("clicked", self._apply_preset, name)
             box.append(button)
@@ -67,8 +70,9 @@ class Page:
 
         windows = Adw.PreferencesGroup(title="Windows")
         windows.add(rows.combo_row(store, "appearance.animations", "Animations", ANIMATIONS))
-        windows.add(rows.combo_row(store, "appearance.border_style", "Border",
-                                   [("gradient", "Gradient (ML4W)"), ("solid", "Solid"), ("none", "None")]))
+        windows.add(rows.combo_row(store, "appearance.workspace_anim", "Workspace switch", WORKSPACE_ANIMS))
+        windows.add(rows.combo_row(store, "appearance.border_style", "Border", BORDERS,
+                                   "Animated slowly spins the colors (turns off on battery)"))
         windows.add(rows.spin_row(store, "appearance.border_size", "Border width", lower=0, upper=8))
         windows.add(rows.spin_row(store, "appearance.rounding", "Rounded corners", lower=0, upper=30))
         windows.add(rows.spin_row(store, "appearance.gaps_in", "Gap between windows", lower=0, upper=40))
@@ -100,6 +104,7 @@ class Page:
         self.widget = page
 
     def _apply_preset(self, _button, name):
-        for key, value in PRESETS[name].items():
-            self.ctx.store.set(f"appearance.{key}", value)
-        self.ctx.toast(f"{name} look applied")
+        title, _description, values = S.LOOKS[name]
+        for path, value in values.items():
+            self.ctx.store.set(path, value)
+        self.ctx.toast(f"{title} look applied")

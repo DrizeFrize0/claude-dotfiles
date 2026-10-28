@@ -4,6 +4,7 @@
     "color_scheme": "scheme-tonal-spot",
     "animations": "default",
     "border_style": "gradient",
+    "workspace_anim": "preset",
     "gaps_in": 10,
     "gaps_out": 16,
     "border_size": 2,
@@ -37,6 +38,18 @@
     "show_updates": true,
     "show_media": false,
     "clock_24h": true
+  },
+  "widgets": {
+    "desktop": true,
+    "position": "top-left",
+    "show_clock": true,
+    "show_greeting": true,
+    "show_weather": true,
+    "show_media": true,
+    "show_system": false,
+    "name": "",
+    "weather_city": "",
+    "temperature_unit": "celsius"
   },
   "dock": {
     "enabled": true,

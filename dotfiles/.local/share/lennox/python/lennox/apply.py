@@ -375,6 +375,12 @@ def apply_dock(s, reload=True):
         spawn([os.path.join(BIN, "lennox-dock"), "reload"])
 
 
+def apply_widgets(s, reload=True):
+    # The running widgets re-read settings.json (and start if not running)
+    if reload and in_session():
+        spawn([os.path.join(BIN, "lennox-widgets"), "reload"])
+
+
 def apply_theme(s, reload=True):
     """Color mode or scheme changed: re-run the wallpaper theming."""
     apply_gtk(s, reload)
@@ -390,6 +396,7 @@ PARTS = {
     "gtk": apply_gtk,
     "bar": apply_bar,
     "dock": apply_dock,
+    "widgets": apply_widgets,
     "theme": apply_theme,
 }
 
@@ -401,7 +408,7 @@ def main(argv=None):
         argv.remove("--no-reload")
         reload = False
     if not argv or argv == ["all"]:
-        parts = ["hypr", "idle", "night", "wallpaper", "gtk", "bar", "dock"]
+        parts = ["hypr", "idle", "night", "wallpaper", "gtk", "bar", "dock", "widgets"]
     else:
         parts = argv
     unknown = [p for p in parts if p not in PARTS]
