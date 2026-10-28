@@ -215,6 +215,27 @@ install_packages() {
     fi
 }
 
+install_new_packages() {
+    # After `lennox upgrade`: install packages that newer Lennox versions
+    # added to the lists (already installed ones are skipped)
+    step "Checking for new Lennox packages"
+    local files=("$SETUP/packages/core.txt" "$SETUP/packages/desktop.txt" "$SETUP/packages/fonts.txt"
+                 "$SETUP/packages/hardware.txt" "$SETUP/packages/shell.txt") missing=() p
+    installed steam && files+=("$SETUP/packages/gaming.txt")
+    installed maven && files+=("$SETUP/packages/dev.txt")
+    while read -r p; do
+        installed "$p" || missing+=("$p")
+    done < <(pkg_list "${files[@]}")
+    if (( ${#missing[@]} == 0 )); then
+        ok "Nothing new"
+    # No --ask 4 here: never swap out a package you replaced on purpose
+    elif sudo pacman -S --needed --noconfirm "${missing[@]}"; then
+        ok "Installed: ${missing[*]}"
+    else
+        warn "Could not install: ${missing[*]}. Run 'lennox update', then 'lennox upgrade' again."
+    fi
+}
+
 install_aur() {
     $WANT_AUR || return 0
     step "AUR extras"
@@ -535,6 +556,7 @@ preflight
 detect_hardware
 
 if [[ "$MODE" == "update" ]]; then
+    install_new_packages
     install_system_files
     $HAS_NVIDIA && setup_nvidia
     install_dotfiles

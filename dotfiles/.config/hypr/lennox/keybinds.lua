@@ -13,8 +13,12 @@ local function run(cmd)
     return hl.dsp.exec_cmd(bin .. cmd)
 end
 
+-- The second modifier in a combo is ALT. If ALT is the main key, the two
+-- swap (ALT + G becomes ALT + SUPER + G) so no shortcut is bound twice.
+local alt = mod == "ALT" and "SUPER" or "ALT"
+
 local function key(combo)
-    return mod .. " + " .. combo
+    return mod .. " + " .. (combo:gsub("ALT", alt))
 end
 
 -- Applications ----------------------------------------
@@ -92,7 +96,7 @@ end
 hl.bind(key("mouse:272"), hl.dsp.window.drag(),   { mouse = true, description = "Move a window with the mouse" })
 hl.bind(key("mouse:273"), hl.dsp.window.resize(), { mouse = true, description = "Resize a window with the mouse" })
 
-hl.bind("ALT + TAB", function()
+hl.bind(alt .. " + TAB", function()
     hl.dispatch(hl.dsp.window.cycle_next())
     hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top" }))
 end, { description = "Cycle windows on this workspace" })

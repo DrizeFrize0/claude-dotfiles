@@ -79,6 +79,8 @@ Every screenshot is copied to the clipboard and saved in `~/Pictures/Screenshots
 | `SUPER + right mouse` | Resize with the mouse |
 | `ALT + TAB` | Cycle windows on this workspace |
 
+If you set the main key to `ALT` (Lennox Settings → Keyboard), `SUPER` takes ALT's place inside shortcuts: `SUPER + ALT + G` becomes `ALT + SUPER + G`, and `ALT + TAB` becomes `SUPER + TAB`.
+
 ## Workspaces
 
 | Keys | Action |
