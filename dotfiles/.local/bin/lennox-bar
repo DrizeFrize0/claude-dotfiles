@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# The top bar (Waybar).
+#   lennox-bar start|stop|reload|toggle
+#   lennox-bar style modern|glass|minimal
+# Style and visible modules are set in Lennox Settings > Bar.
+export PATH="$HOME/.local/bin:$PATH"
+
+WAYBAR="$HOME/.config/waybar"
+RUN="${XDG_RUNTIME_DIR:-/tmp}/lennox"
+mkdir -p "$RUN"
+
+build_config() {
+    local style="$1" off=() clock="{:%H:%M  %a}" media=false
+    [[ "$(lennox-get bar.show_window_title)" == "true" ]] || off+=("hyprland/window")
+    [[ "$(lennox-get bar.show_hardware)" == "true" ]] || off+=("group/hardware")
+    [[ "$(lennox-get bar.show_tray)" == "true" ]] || off+=("tray")
+    [[ "$(lennox-get bar.show_updates)" == "true" ]] || off+=("custom/updates")
+    [[ "$(lennox-get bar.show_media)" == "true" ]] && media=true
+    [[ "$(lennox-get bar.clock_24h)" == "true" ]] || clock="{:%I:%M %p  %a}"
+    # No battery on desktops: hide the module instead of showing "0%"
+    ls /sys/class/power_supply/BAT* >/dev/null 2>&1 || off+=("battery")
+
+    local off_json
+    off_json="$(printf '%s\n' "${off[@]}" | jq -R . | jq -s 'map(select(length > 0))')"
+
+    jq -s \
+        --argjson off "$off_json" \
+        --argjson media "$media" \
+        --arg clock "$clock" '
+        def drop: map(select(. as $m | ($off | index($m)) | not));
+        (.[1] + .[0])
+        | .["modules-left"] |= drop
+        | .["modules-center"] |= drop
+        | .["modules-right"] |= drop
+        | if $media then .["modules-left"] += ["mpris"] else . end
+        | .clock.format = $clock
+        ' "$WAYBAR/themes/$style/config.json" "$WAYBAR/modules.json" > "$RUN/waybar.json.tmp" \
+        && mv -f "$RUN/waybar.json.tmp" "$RUN/waybar.json"
+}
+
+start() {
+    # "start force" shows the bar even if it is turned off in the settings
+    if [[ "${1:-}" != "force" && "$(lennox-get bar.enabled)" != "true" ]]; then
+        echo "bar is turned off in Lennox Settings"
+        return 0
+    fi
+    pgrep -x waybar >/dev/null && return 0
+    local style
+    style="$(lennox-get bar.style)"
+    [[ -f "$WAYBAR/themes/$style/config.json" ]] || style="modern"
+    build_config "$style" || { notify-send -a Lennox -i dialog-error "Bar" "Could not build the bar config (is jq installed?)"; return 1; }
+    # 9>&- : waybar must not inherit (and keep holding) our lock
+    setsid -f waybar -c "$RUN/waybar.json" -s "$WAYBAR/themes/$style/style.css" >"$RUN/waybar.log" 2>&1 </dev/null 9>&-
+}
+
+stop() {
+    pkill -x waybar
+    for _ in $(seq 20); do
+        pgrep -x waybar >/dev/null || return 0
+        sleep 0.1
+    done
+    pkill -9 -x waybar
+}
+
+# Several reloads in a row (e.g. a wallpaper change) only run once at a time
+exec 9>"$RUN/bar.lock"
+flock -w 10 9 || exit 0
+
+case "${1:-reload}" in
+    start) start ;;
+    stop) stop ;;
+    reload|restart) stop; start ;;
+    toggle) if pgrep -x waybar >/dev/null; then stop; else start force; fi ;;
+    style)
+        [[ -n "${2:-}" ]] || { echo "usage: lennox-bar style modern|glass|minimal" >&2; exit 2; }
+        flock -u 9
+        exec 9>&-
+        lennox-set bar.style "$2"
+        ;;
+    *) echo "usage: lennox-bar start|stop|reload|toggle|style NAME" >&2; exit 2 ;;
+esac

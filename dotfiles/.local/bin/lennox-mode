@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Performance modes.
+#   lennox-mode game  on|off|toggle|status|waybar  no effects, max performance, do-not-disturb
+#   lennox-mode saver on|off|toggle|status   no blur/shadows (switched automatically on battery)
+export PATH="$HOME/.local/bin:$PATH"
+
+MODES="${XDG_RUNTIME_DIR:-/tmp}/lennox/modes"
+mkdir -p "$MODES"
+
+name="${1:-}"
+action="${2:-toggle}"
+[[ "$name" == "game" || "$name" == "saver" ]] || { echo "usage: lennox-mode game|saver on|off|toggle|status" >&2; exit 2; }
+
+active() { [[ -f "$MODES/$name" ]]; }
+
+if [[ "$action" == "status" ]]; then
+    active && echo on || echo off
+    exit 0
+fi
+if [[ "$action" == "waybar" ]]; then
+    if active; then
+        printf '{"text":"󰊗","class":"on","tooltip":"Game mode on\\nClick to turn off"}\n'
+    else
+        printf '{"text":"󰺷","class":"off","tooltip":"Game mode off\\nClick to turn on"}\n'
+    fi
+    exit 0
+fi
+if [[ "$action" == "toggle" ]]; then
+    active && action="off" || action="on"
+fi
+
+have_ppd() { command -v powerprofilesctl >/dev/null && powerprofilesctl get >/dev/null 2>&1; }
+
+case "$action" in
+    on)
+        active && exit 0
+        if [[ "$name" == "game" ]]; then
+            have_ppd && powerprofilesctl get > "$MODES/game" && powerprofilesctl set performance
+            touch "$MODES/game"
+            notify-send -a Lennox -i input-gaming -t 2500 "Game mode on" \
+                "Effects off, performance profile, notifications paused. SUPER + ALT + G to turn off."
+            sleep 0.3
+            swaync-client --dnd-on --skip-wait >/dev/null 2>&1
+        else
+            touch "$MODES/saver"
+        fi
+        ;;
+    off)
+        active || exit 0
+        if [[ "$name" == "game" ]]; then
+            previous="$(cat "$MODES/game" 2>/dev/null)"
+            have_ppd && powerprofilesctl set "${previous:-balanced}" 2>/dev/null
+            swaync-client --dnd-off --skip-wait >/dev/null 2>&1
+            notify-send -a Lennox -i input-gaming -t 2000 "Game mode off" "Effects are back."
+        fi
+        rm -f "$MODES/$name"
+        ;;
+    *) echo "usage: lennox-mode game|saver on|off|toggle|status" >&2; exit 2 ;;
+esac
+
+hyprctl reload >/dev/null 2>&1
+pkill -RTMIN+10 -x waybar 2>/dev/null
+exit 0

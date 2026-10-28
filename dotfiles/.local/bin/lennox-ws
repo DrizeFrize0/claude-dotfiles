@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Workspace buttons in the bar (see lennox-workspaces).
+#   lennox-ws N        print the button for workspace N (Waybar calls this)
+#   lennox-ws go N     switch to workspace N
+#   lennox-ws next|prev
+STATE="${XDG_RUNTIME_DIR:-/tmp}/lennox/ws"
+case "${1:-}" in
+    go)
+        [[ "${2:-}" =~ ^[0-9]+$ ]] || exit 2
+        hyprctl dispatch "hl.dsp.focus({ workspace = $2 })" >/dev/null
+        ;;
+    next) hyprctl dispatch 'hl.dsp.focus({ workspace = "e+1" })' >/dev/null ;;
+    prev) hyprctl dispatch 'hl.dsp.focus({ workspace = "e-1" })' >/dev/null ;;
+    [0-9]|10)
+        if [[ -f "$STATE/$1.json" ]]; then
+            cat "$STATE/$1.json"
+        elif (( $1 <= 5 )); then
+            # Daemon not ready yet: show the always-visible workspaces plainly
+            printf '{"text":"%s","class":["ws","empty"],"tooltip":"Workspace %s"}\n' "$1" "$1"
+        fi
+        ;;
+    *) echo "usage: lennox-ws N | go N | next | prev" >&2; exit 2 ;;
+esac
+exit 0

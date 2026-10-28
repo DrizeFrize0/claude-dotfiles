@@ -1,0 +1,165 @@
+{
+  "$schema": "/etc/xdg/swaync/configSchema.json",
+  "positionX": "right",
+  "positionY": "top",
+  "layer": "overlay",
+  "control-center-layer": "top",
+  "layer-shell": true,
+  "cssPriority": "user",
+  "control-center-width": 400,
+  "control-center-margin-top": 10,
+  "control-center-margin-bottom": 10,
+  "control-center-margin-right": 10,
+  "control-center-margin-left": 0,
+  "notification-window-width": 380,
+  "notification-icon-size": 48,
+  "notification-body-image-height": 100,
+  "notification-body-image-width": 200,
+  "timeout": 5,
+  "timeout-low": 3,
+  "timeout-critical": 0,
+  "fit-to-screen": true,
+  "keyboard-shortcuts": true,
+  "image-visibility": "when-available",
+  "transition-time": 200,
+  "hide-on-clear": false,
+  "hide-on-action": true,
+  "script-fail-notify": true,
+  "relative-timestamps": true,
+  "notification-grouping": true,
+  "text-empty": "No notifications",
+  "widgets": [
+    "label#greeting",
+    "buttons-grid#toggles",
+    "volume",
+    "slider#mic",
+    "slider#brightness",
+    "mpris",
+    "buttons-grid#actions",
+    "dnd",
+    "title",
+    "notifications"
+  ],
+  "widget-config": {
+    "label#greeting": {
+      "text": "Lennox",
+      "max-lines": 1
+    },
+    "buttons-grid#toggles": {
+      "buttons-per-row": 2,
+      "actions": [
+        {
+          "label": "󰖩  Wi-Fi",
+          "type": "toggle",
+          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then nmcli radio wifi on; else nmcli radio wifi off; fi'",
+          "update-command": "sh -c 'if [ \"$(nmcli radio wifi)\" = enabled ]; then echo true; else echo false; fi'"
+        },
+        {
+          "label": "󰂯  Bluetooth",
+          "type": "toggle",
+          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then rfkill unblock bluetooth; sleep 1; bluetoothctl power on; else bluetoothctl power off; rfkill block bluetooth; fi'",
+          "update-command": "sh -c 'if bluetoothctl show 2>/dev/null | grep -q \"Powered: yes\"; then echo true; else echo false; fi'"
+        },
+        {
+          "label": "󰍬  Microphone",
+          "type": "toggle",
+          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 0; else wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 1; fi'",
+          "update-command": "sh -c 'if ! wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED; then echo true; else echo false; fi'"
+        },
+        {
+          "label": "󰖔  Night light",
+          "type": "toggle",
+          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then ~/.local/bin/lennox-nightlight on; else ~/.local/bin/lennox-nightlight off; fi'",
+          "update-command": "sh -c 'if [ \"$(~/.local/bin/lennox-nightlight status)\" = on ]; then echo true; else echo false; fi'"
+        },
+        {
+          "label": "󰊗  Game mode",
+          "type": "toggle",
+          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then ~/.local/bin/lennox-mode game on; else ~/.local/bin/lennox-mode game off; fi'",
+          "update-command": "sh -c 'if [ \"$(~/.local/bin/lennox-mode game status)\" = on ]; then echo true; else echo false; fi'"
+        },
+        {
+          "label": "󰅶  Stay awake",
+          "type": "toggle",
+          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then ~/.local/bin/lennox-idle off; else ~/.local/bin/lennox-idle on; fi'",
+          "update-command": "sh -c 'if [ \"$(~/.local/bin/lennox-idle status)\" = off ]; then echo true; else echo false; fi'"
+        },
+        {
+          "label": "󰌪  Battery saver",
+          "type": "toggle",
+          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then powerprofilesctl set power-saver; else powerprofilesctl set balanced; fi'",
+          "update-command": "sh -c 'if [ \"$(powerprofilesctl get)\" = power-saver ]; then echo true; else echo false; fi'"
+        },
+        {
+          "label": "󰔎  Dark mode",
+          "type": "toggle",
+          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then ~/.local/bin/lennox-theme dark; else ~/.local/bin/lennox-theme light; fi'",
+          "update-command": "sh -c 'if [ \"$(~/.local/bin/lennox-get appearance.color_mode)\" = dark ]; then echo true; else echo false; fi'"
+        }
+      ]
+    },
+    "buttons-grid#actions": {
+      "buttons-per-row": 5,
+      "actions": [
+        {
+          "label": "󰹑",
+          "command": "sh -c 'sleep 0.5; ~/.local/bin/lennox-screenshot area'"
+        },
+        {
+          "label": "󰋩",
+          "command": "sh -c 'sleep 0.3; ~/.local/bin/lennox-menu wallpaper'"
+        },
+        {
+          "label": "󰒓",
+          "command": "~/.local/bin/lennox-settings"
+        },
+        {
+          "label": "󰌾",
+          "command": "sh -c 'sleep 0.3; ~/.local/bin/lennox-power lock'"
+        },
+        {
+          "label": "󰐥",
+          "command": "sh -c 'sleep 0.3; ~/.local/bin/lennox-menu power'"
+        }
+      ]
+    },
+    "volume": {
+      "label": "󰕾",
+      "show-per-app": true,
+      "show-per-app-icon": true,
+      "show-per-app-label": false,
+      "empty-list-label": "Nothing is playing"
+    },
+    "slider#mic": {
+      "label": "󰍬",
+      "cmd_getter": "sh -c \"wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | awk '{print int($2 * 100 + 0.5)}'\"",
+      "cmd_setter": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ $value%",
+      "min": 0,
+      "max": 100,
+      "min_limit": 0,
+      "max_limit": 100
+    },
+    "slider#brightness": {
+      "label": "󰃟",
+      "cmd_getter": "sh -c \"brightnessctl -m | head -n1 | cut -d, -f4 | tr -d %\"",
+      "cmd_setter": "brightnessctl -q set $value%",
+      "min": 0,
+      "max": 100,
+      "min_limit": 5,
+      "max_limit": 100
+    },
+    "mpris": {
+      "show-album-art": "when-available",
+      "autohide": true,
+      "loop-carousel": true
+    },
+    "dnd": {
+      "text": "Do not disturb"
+    },
+    "title": {
+      "text": "Notifications",
+      "clear-all-button": true,
+      "button-text": "Clear all"
+    }
+  }
+}

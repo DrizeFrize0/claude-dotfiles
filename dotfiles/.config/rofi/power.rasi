@@ -1,0 +1,67 @@
+/* Lennox power menu (SUPER + ESC): one row of big buttons, like ML4W's. */
+
+@import "~/.config/rofi/shared.rasi"
+
+configuration {
+    show-icons: false;
+    font: "Fira Sans Semibold 12";
+}
+
+window {
+    width:             46em;
+    transparency:      "real";
+    border:            @border-width;
+    border-color:      @primary;
+    border-radius:     @border-radius;
+    background-color:  @background;
+}
+
+mainbox {
+    padding:           1.4em;
+    spacing:           1em;
+    children:          [ "message", "listview" ];
+    background-color:  transparent;
+}
+
+message {
+    background-color:  transparent;
+}
+
+textbox {
+    horizontal-align:  0.5;
+    text-color:        @on-surface;
+    background-color:  transparent;
+}
+
+listview {
+    columns:           5;
+    lines:             1;
+    spacing:           1em;
+    cycle:             true;
+    dynamic:           true;
+    scrollbar:         false;
+    layout:            vertical;
+    fixed-columns:     true;
+    background-color:  transparent;
+}
+
+element {
+    padding:           1.6em 0.5em;
+    border-radius:     1.2em;
+    cursor:            pointer;
+    background-color:  @surface;
+    text-color:        @on-surface;
+}
+
+element selected.normal {
+    background-color:  @primary;
+    text-color:        @on-primary;
+}
+
+element-text {
+    horizontal-align:  0.5;
+    vertical-align:    0.5;
+    cursor:            inherit;
+    background-color:  transparent;
+    text-color:        inherit;
+}

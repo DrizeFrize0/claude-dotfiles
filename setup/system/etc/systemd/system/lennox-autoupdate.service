@@ -1,0 +1,16 @@
+[Unit]
+Description=Lennox automatic system and driver updates
+Documentation=file:///usr/local/bin/lennox-autoupdate
+After=network-online.target
+Wants=network-online.target
+# Never start on battery
+ConditionACPower=true
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/lennox-autoupdate
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=2h
+# If the service is stopped, never kill pacman in the middle of a transaction
+KillMode=process

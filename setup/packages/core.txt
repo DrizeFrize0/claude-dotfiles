@@ -1,0 +1,20 @@
+# Base tools Lennox's scripts rely on
+base-devel
+git
+curl
+wget
+rsync
+unzip
+file
+lsof
+jq
+socat
+pacman-contrib
+python
+python-gobject
+gtk4
+libadwaita
+xdg-utils
+xdg-user-dirs
+man-db
+figlet

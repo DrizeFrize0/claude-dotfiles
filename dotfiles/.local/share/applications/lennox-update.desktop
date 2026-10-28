@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lennox Update
+Comment=Update the system, drivers, AUR apps and Flatpaks now
+Exec=lennox-update
+Icon=system-software-update
+Terminal=false
+Categories=System;

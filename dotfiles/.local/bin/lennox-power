@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# lennox-power lock|suspend|logout|reboot|poweroff|idle-suspend
+export PATH="$HOME/.local/bin:$PATH"
+
+on_ac() {
+    local supply
+    for supply in /sys/class/power_supply/*; do
+        [[ "$(cat "$supply/type" 2>/dev/null)" == "Mains" ]] || continue
+        [[ "$(cat "$supply/online" 2>/dev/null)" == "1" ]] && return 0
+    done
+    return 1
+}
+
+case "${1:-}" in
+    lock)
+        pidof hyprlock >/dev/null || setsid -f hyprlock >/dev/null 2>&1
+        ;;
+    suspend)
+        systemctl suspend
+        ;;
+    idle-suspend)
+        # Called by hypridle. On the charger, only suspend if you allowed it.
+        if on_ac && [[ "$(lennox-get idle.suspend_on_ac)" != "true" ]]; then
+            exit 0
+        fi
+        systemctl suspend
+        ;;
+    logout)
+        if command -v hyprshutdown >/dev/null; then hyprshutdown
+        else hyprctl dispatch 'hl.dsp.exit()'; fi
+        ;;
+    reboot)
+        if command -v hyprshutdown >/dev/null; then hyprshutdown -t 'Restarting...' --post-cmd 'systemctl reboot'
+        else systemctl reboot; fi
+        ;;
+    poweroff)
+        if command -v hyprshutdown >/dev/null; then hyprshutdown -t 'Shutting down...' --post-cmd 'systemctl poweroff'
+        else systemctl poweroff; fi
+        ;;
+    *)
+        echo "usage: lennox-power lock|suspend|logout|reboot|poweroff|idle-suspend" >&2
+        exit 2
+        ;;
+esac

@@ -1,0 +1,6 @@
+# -----------------------------------------------------
+# A little system info when a terminal opens (not inside VS Code etc.)
+# -----------------------------------------------------
+if [[ -o interactive && -z "$VSCODE_PID" && "$TERM" == "xterm-kitty" ]] && command -v fastfetch >/dev/null; then
+    fastfetch
+fi

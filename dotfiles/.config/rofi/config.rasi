@@ -1,0 +1,179 @@
+/*
+ *  ____        __ _
+ * |  _ \ ___  / _(_)
+ * | |_) / _ \| |_| |
+ * |  _ < (_) |  _| |
+ * |_| \_\___/|_| |_|
+ *
+ * Lennox app launcher (SUPER + SPACE), after the ML4W launcher:
+ * wallpaper on the left, results on the right.
+ */
+
+@import "~/.config/rofi/shared.rasi"
+
+configuration {
+    modi:                 "drun,window,run";
+    display-drun:         "󰀻";
+    display-window:       "󰖯";
+    display-run:          "󰆍";
+    drun-display-format:  "{name}";
+    window-format:        "{w} · {c} · {t}";
+}
+
+window {
+    height:            32em;
+    width:             54em;
+    transparency:      "real";
+    fullscreen:        false;
+    enabled:           true;
+    cursor:            "default";
+    spacing:           0em;
+    padding:           0em;
+    border:            @border-width;
+    border-color:      @primary;
+    border-radius:     @border-radius;
+    background-color:  @background;
+}
+
+mainbox {
+    enabled:           true;
+    spacing:           0em;
+    padding:           0em;
+    orientation:       horizontal;
+    children:          [ "imagebox", "listbox" ];
+    background-color:  transparent;
+    background-image:  @current-image;
+}
+
+imagebox {
+    padding:           20px;
+    background-color:  transparent;
+    orientation:       vertical;
+    children:          [ "inputbar", "dummy", "mode-switcher" ];
+}
+
+dummy {
+    background-color:  transparent;
+}
+
+mode-switcher {
+    orientation:       horizontal;
+    enabled:           true;
+    padding:           1.2em;
+    spacing:           1.2em;
+    background-color:  transparent;
+}
+
+button {
+    padding:           12px;
+    border-radius:     2em;
+    cursor:            pointer;
+    background-color:  @background;
+    text-color:        @on-surface;
+}
+
+button selected {
+    background-color:  @primary;
+    text-color:        @on-primary;
+}
+
+inputbar {
+    enabled:           true;
+    margin:            1em;
+    children:          [ "textbox-prompt-colon", "entry" ];
+    border-radius:     2em;
+    background-color:  @surface;
+}
+
+textbox-prompt-colon {
+    enabled:           true;
+    expand:            false;
+    str:               "  󰍉";
+    padding:           1em 0.3em 0em 0.5em;
+    text-color:        @on-surface;
+    background-color:  transparent;
+}
+
+entry {
+    enabled:           true;
+    padding:           1em;
+    text-color:        @on-surface;
+    cursor:            text;
+    placeholder:       "Search";
+    placeholder-color: inherit;
+    background-color:  transparent;
+}
+
+listbox {
+    padding:           0em;
+    spacing:           0em;
+    orientation:       horizontal;
+    children:          [ "listview" ];
+    background-color:  @background;
+}
+
+listview {
+    padding:           1.5em;
+    spacing:           0.4em;
+    enabled:           true;
+    columns:           1;
+    lines:             8;
+    cycle:             true;
+    dynamic:           true;
+    scrollbar:         false;
+    layout:            vertical;
+    fixed-height:      true;
+    fixed-columns:     true;
+    cursor:            "default";
+    background-color:  transparent;
+    text-color:        @on-surface;
+}
+
+element {
+    enabled:           true;
+    spacing:           10px;
+    padding:           0.5em;
+    cursor:            pointer;
+    background-color:  transparent;
+    text-color:        @on-surface;
+}
+
+element selected.normal {
+    background-color:  @primary;
+    text-color:        @on-primary;
+    border-radius:     1.5em;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color:  transparent;
+    text-color:        @on-surface;
+}
+
+element-icon {
+    size:              2.6em;
+    cursor:            inherit;
+    background-color:  transparent;
+    text-color:        inherit;
+}
+
+element-text {
+    vertical-align:    0.5;
+    horizontal-align:  0.0;
+    cursor:            inherit;
+    background-color:  transparent;
+    text-color:        inherit;
+}
+
+error-message {
+    padding:           1em;
+    text-color:        @on-surface;
+    background-color:  @background;
+}
+
+textbox {
+    text-color:        inherit;
+    background-color:  inherit;
+    vertical-align:    0.5;
+    horizontal-align:  0.5;
+}

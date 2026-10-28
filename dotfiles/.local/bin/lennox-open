@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Open one of your default apps: lennox-open terminal|browser|filemanager|editor|calculator|system_monitor|audio_mixer
+# The apps are chosen in Lennox Settings > Apps.
+export PATH="$HOME/.local/bin:$PATH"
+
+role="${1:-}"
+shift || true
+case "$role" in
+    terminal) fallback="kitty" ;;
+    browser) fallback="flatpak run app.zen_browser.zen" ;;
+    filemanager) fallback="nautilus" ;;
+    editor) fallback="code" ;;
+    calculator) fallback="gnome-calculator" ;;
+    system_monitor) fallback="missioncenter" ;;
+    audio_mixer) fallback="pavucontrol" ;;
+    *) echo "usage: lennox-open terminal|browser|filemanager|editor|calculator|system_monitor|audio_mixer" >&2; exit 2 ;;
+esac
+
+app="$(lennox-get "apps.$role" 2>/dev/null)"
+[[ -n "$app" ]] || app="$fallback"
+
+# The setting may contain arguments (e.g. "kitty --single-instance")
+read -r -a cmd <<<"$app"
+if ! command -v "${cmd[0]}" >/dev/null; then
+    notify-send -a Lennox -i dialog-warning "Can't open $role" \
+        "'${cmd[0]}' is not installed. Pick another app in Lennox Settings > Apps."
+    read -r -a cmd <<<"$fallback"
+    command -v "${cmd[0]}" >/dev/null || exit 1
+fi
+exec setsid -f "${cmd[@]}" "$@" >/dev/null 2>&1

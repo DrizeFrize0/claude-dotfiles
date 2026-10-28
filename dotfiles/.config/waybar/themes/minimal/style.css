@@ -1,0 +1,122 @@
+/*
+ * Lennox bar: Minimal
+ * One thin, flat, dark strip, after ML4W Minimal.
+ * Colors come from the wallpaper (../../colors.css, written by matugen).
+ */
+
+@import "../../colors.css";
+
+* {
+    font-family: "Fira Sans Semibold", "Symbols Nerd Font", "Font Awesome 7 Free", sans-serif;
+    font-size: 13px;
+    border: none;
+    border-radius: 0px;
+    min-height: 0;
+}
+
+window#waybar {
+    background-color: alpha(@surface, 0.55);
+    color: @on_surface;
+}
+
+.modules-left  { padding-left: 10px; }
+.modules-right { padding-right: 6px; }
+
+label.module {
+    color: @on_surface;
+    margin: 0px 9px;
+}
+
+tooltip {
+    border-radius: 12px;
+    background-color: @surface_container;
+    padding: 12px;
+}
+
+tooltip label {
+    color: @on_surface;
+}
+
+/* ---------------------------------------------------- Workspaces */
+
+#workspaces {
+    margin: 3px 7px 3px 3px;
+}
+
+#workspaces label.module.ws {
+    margin: 4px 3px;
+    padding: 0px 5px;
+    min-width: 10px;
+    border-radius: 10px;
+    color: @on_surface;
+    transition: all 0.4s ease-in-out;
+}
+
+#workspaces .ws.empty {
+    color: alpha(@on_surface, 0.5);
+}
+
+#workspaces .ws:hover {
+    color: @on_primary;
+    background: alpha(@primary, 0.7);
+}
+
+#workspaces .ws.visible {
+    background: alpha(@secondary, 0.3);
+}
+
+#workspaces .ws.active {
+    color: @on_primary;
+    background: @primary;
+    min-width: 24px;
+}
+
+#workspaces .ws.urgent {
+    color: @on_error;
+    background: @error;
+}
+
+/* ---------------------------------------------------- Modules */
+
+#custom-appmenuicon {
+    font-size: 16px;
+    margin-left: 0px;
+}
+
+#window {
+    font-weight: normal;
+}
+
+#custom-updates.pending { color: @tertiary; }
+#custom-updates.many { color: @error; }
+
+#pulseaudio.muted,
+#network.disconnected {
+    color: @outline;
+}
+
+#custom-idle.off,
+#custom-gamemode.on,
+#custom-nightlight.on {
+    color: @primary;
+}
+
+#battery.critical:not(.charging) {
+    color: @error;
+}
+
+#custom-lennox {
+    padding-right: 18px;
+    background-image: url("../../assets/lennox.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+}

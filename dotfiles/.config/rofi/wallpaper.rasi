@@ -1,0 +1,89 @@
+/* Lennox wallpaper picker (SUPER + W): a grid of your wallpapers. */
+
+@import "~/.config/rofi/shared.rasi"
+
+window {
+    width:             70em;
+    transparency:      "real";
+    border:            @border-width;
+    border-color:      @primary;
+    border-radius:     @border-radius;
+    background-color:  @background;
+}
+
+mainbox {
+    padding:           1em;
+    spacing:           1em;
+    children:          [ "inputbar", "listview" ];
+    background-color:  transparent;
+}
+
+inputbar {
+    padding:           0.6em;
+    border-radius:     2em;
+    children:          [ "prompt", "entry" ];
+    background-color:  @surface;
+}
+
+prompt {
+    padding:           0.5em 0.6em 0.5em 0.8em;
+    text-color:        @primary;
+    background-color:  transparent;
+}
+
+entry {
+    padding:           0.5em;
+    text-color:        @on-surface;
+    placeholder:       "Search wallpapers";
+    placeholder-color: inherit;
+    background-color:  transparent;
+}
+
+listview {
+    columns:           4;
+    lines:             3;
+    spacing:           0.8em;
+    cycle:             true;
+    dynamic:           false;
+    scrollbar:         false;
+    layout:            vertical;
+    fixed-height:      true;
+    fixed-columns:     true;
+    flow:              horizontal;
+    background-color:  transparent;
+}
+
+element {
+    orientation:       vertical;
+    padding:           0.4em;
+    spacing:           0.4em;
+    border-radius:     1em;
+    cursor:            pointer;
+    background-color:  transparent;
+    text-color:        @on-surface;
+}
+
+element selected.normal {
+    background-color:  @primary;
+    text-color:        @on-primary;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color:  transparent;
+    text-color:        @on-surface;
+}
+
+element-icon {
+    size:              10em;
+    border-radius:     0.8em;
+    cursor:            inherit;
+    background-color:  transparent;
+}
+
+element-text {
+    horizontal-align:  0.5;
+    cursor:            inherit;
+    background-color:  transparent;
+    text-color:        inherit;
+}

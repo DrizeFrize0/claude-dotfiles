@@ -1,0 +1,7 @@
+steam
+prismlauncher
+jdk21-openjdk
+gamemode
+lib32-gamemode
+mangohud
+lib32-mangohud

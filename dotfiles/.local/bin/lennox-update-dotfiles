@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Update Lennox itself: pull the latest version of the repository you
+# installed from, then refresh the files (your settings are kept).
+export PATH="$HOME/.local/bin:$PATH"
+
+repo="$(cat "$HOME/.config/lennox/repo" 2>/dev/null)"
+if [[ -z "$repo" || ! -d "$repo/.git" ]]; then
+    echo "Can't find the Lennox repository (expected its path in ~/.config/lennox/repo)."
+    echo "Clone it again and run ./install.sh --update from inside it."
+    exit 1
+fi
+
+echo ":: Updating Lennox from $repo"
+if ! git -C "$repo" pull --ff-only; then
+    echo "git pull failed (local changes in $repo?). Nothing was changed."
+    exit 1
+fi
+exec "$repo/install.sh" --update

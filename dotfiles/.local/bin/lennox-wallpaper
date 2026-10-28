@@ -1,0 +1,186 @@
+#!/usr/bin/env bash
+#  _                                  _ _
+# | | ___ _ __  _ __   _____  __ __ _(_) |_ __   __ _ _ __   ___ _ __
+# | |/ _ \ '_ \| '_ \ / _ \ \/ / \ \ /\ / / _` | | '_ \ / _` | '_ \ / _ \ '__|
+# | |  __/ | | | | | | (_) >  <   \ V  V / (_| | | |_) | (_| | |_) |  __/ |
+# |_|\___|_| |_|_| |_|\___/_/\_\   \_/\_/ \__,_|_| .__/ \__,_| .__/ \___|_|
+#                                               |_|         |_|
+# Set the wallpaper and re-color the whole desktop to match it.
+#
+# Usage:
+#   lennox-wallpaper IMAGE        set IMAGE
+#   lennox-wallpaper --random     pick a random image from the wallpaper folder
+#   lennox-wallpaper --restore    re-apply the current wallpaper (used at login)
+# Options:
+#   --theme-only    only regenerate colors, keep the wallpaper on screen
+#   --no-theme      only change the picture, keep the current colors
+#   --quiet         no notification
+#   --no-reload     write the files but do not restart the bar, dock, ...
+
+set -uo pipefail
+export PATH="$HOME/.local/bin:$PATH"
+
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/lennox/wallpaper"
+CURRENT_FILE="$CACHE/current"
+DEFAULT_WALLPAPER="$HOME/.config/lennox/wallpapers/default.jpg"
+FALLBACK_WALLPAPER="$HOME/.config/lennox/assets/fallback.png"
+
+image=""
+mode="set"
+theme=true
+wallpaper=true
+notify=true
+reload=true
+
+info() { echo ":: $*" >&2; }
+fail() { echo "lennox-wallpaper: $*" >&2; exit 1; }
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --random) mode="random" ;;
+        --restore) mode="restore" ;;
+        --theme-only) wallpaper=false ;;
+        --no-theme) theme=false ;;
+        --quiet) notify=false ;;
+        --no-reload) reload=false ;;
+        -h|--help) grep '^#   ' "$0" | sed 's/^# //'; exit 0 ;;
+        -*) fail "unknown option $1" ;;
+        *) image="$1"; mode="set" ;;
+    esac
+    shift
+done
+
+# One run at a time; a second click while theming just waits its turn
+mkdir -p "$CACHE"
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/lennox-wallpaper.lock"
+flock -w 60 9 || fail "another wallpaper change is still running"
+
+is_image() {
+    [[ -f "$1" ]] || return 1
+    case "$(file --brief --mime-type -- "$1" 2>/dev/null)" in
+        image/*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+wallpaper_folder() {
+    local folder
+    folder="$(lennox-get wallpaper.folder 2>/dev/null || echo "$HOME/.config/lennox/wallpapers")"
+    folder="${folder/#\~/$HOME}"
+    echo "${folder//\$HOME/$HOME}"
+}
+
+# ---------------------------------------------------------------- pick image
+case "$mode" in
+    random)
+        folder="$(wallpaper_folder)"
+        [[ -d "$folder" ]] || fail "wallpaper folder not found: $folder"
+        current="$(cat "$CURRENT_FILE" 2>/dev/null || true)"
+        mapfile -t images < <(find -L "$folder" -maxdepth 2 -type f \
+            \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \) \
+            ! -path "$current" 2>/dev/null)
+        [[ ${#images[@]} -gt 0 ]] || fail "no images in $folder"
+        image="${images[RANDOM % ${#images[@]}]}"
+        ;;
+    restore)
+        image="$(cat "$CURRENT_FILE" 2>/dev/null || true)"
+        ;;
+esac
+
+# A picture you asked for by name must exist; random/restore fall back quietly
+if [[ "$mode" == "set" && -n "$image" ]] && ! is_image "$image"; then
+    fail "not an image file: $image"
+fi
+
+for candidate in "$image" "$DEFAULT_WALLPAPER" "$FALLBACK_WALLPAPER"; do
+    if [[ -n "$candidate" ]] && is_image "$candidate"; then
+        image="$(realpath -- "$candidate")"
+        break
+    fi
+    image=""
+done
+[[ -n "$image" ]] || fail "no usable wallpaper image found"
+info "Wallpaper: $image"
+
+# ---------------------------------------------------------------- show it
+in_session() { [[ -n "${WAYLAND_DISPLAY:-}" && -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; }
+
+if $wallpaper && in_session && command -v awww >/dev/null; then
+    if ! awww query >/dev/null 2>&1; then
+        (awww-daemon >/dev/null 2>&1 9>&- &)
+        for _ in $(seq 50); do
+            awww query >/dev/null 2>&1 && break
+            sleep 0.1
+        done
+    fi
+    transition="$(lennox-get wallpaper.transition 2>/dev/null || echo grow)"
+    [[ "$mode" == "restore" ]] && transition="none"
+    for _ in 1 2 3; do
+        awww img --transition-type "$transition" -- "$image" && break
+        sleep 1
+    done
+fi
+
+echo "$image" > "$CURRENT_FILE"
+
+$theme || { info "Colors unchanged"; exit 0; }
+
+# ---------------------------------------------------------------- colors
+color_mode="$(lennox-get appearance.color_mode 2>/dev/null || echo dark)"
+scheme="$(lennox-get appearance.color_scheme 2>/dev/null || echo scheme-tonal-spot)"
+
+if command -v matugen >/dev/null; then
+    info "Generating $color_mode colors ($scheme)"
+    # --source-color-index stops matugen 4 from asking which color to use
+    if ! matugen image "$image" --mode "$color_mode" --type "$scheme" --source-color-index 0 --quiet; then
+        info "matugen failed, keeping the previous colors"
+    fi
+else
+    info "matugen is not installed, colors unchanged"
+fi
+
+# ---------------------------------------------------------------- lock screen images
+if command -v magick >/dev/null; then
+    blur="$(lennox-get wallpaper.lockscreen_blur 2>/dev/null || echo 50x30)"
+    [[ "$blur" =~ ^[0-9]+x[0-9]+$ ]] || blur="50x30"
+    # [0] = first frame, so animated GIFs work too
+    magick "${image}[0]" -resize '1920x1920>' -blur "$blur" "$CACHE/blurred.png.tmp.png" \
+        && mv -f "$CACHE/blurred.png.tmp.png" "$CACHE/blurred.png"
+    magick "${image}[0]" -gravity center -extent 1:1 -resize 600x600 "$CACHE/square.png.tmp.png" \
+        && mv -f "$CACHE/square.png.tmp.png" "$CACHE/square.png"
+    printf '* { current-image: url("%s", height); }\n' "$CACHE/blurred.png" > "$CACHE/rofi.rasi"
+fi
+
+# Login screen background, if the SDDM theme folder was handed to this user
+SDDM_BG="/usr/share/sddm/themes/lennox/backgrounds"
+if [[ -w "$SDDM_BG" ]] && command -v magick >/dev/null; then
+    magick "${image}[0]" -resize '2560x2560>' -quality 92 "$SDDM_BG/lennox.jpg.tmp.jpg" \
+        && mv -f "$SDDM_BG/lennox.jpg.tmp.jpg" "$SDDM_BG/lennox.jpg"
+fi
+
+# ---------------------------------------------------------------- reload
+if $reload && in_session; then
+    hyprctl reload >/dev/null 2>&1
+    pgrep -x kitty >/dev/null && pkill -USR1 -x kitty
+    pgrep -x swaync >/dev/null && swaync-client --reload-css >/dev/null 2>&1
+    lennox-bar reload >/dev/null 2>&1 9>&- &
+    lennox-dock reload >/dev/null 2>&1 9>&- &
+    # Nudge GTK4/libadwaita apps into re-reading colors.css
+    if command -v gsettings >/dev/null; then
+        scheme_now="$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)"
+        if [[ "$scheme_now" == "'prefer-dark'" ]]; then
+            gsettings set org.gnome.desktop.interface color-scheme prefer-light
+            gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+        elif [[ -n "$scheme_now" ]]; then
+            gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+            gsettings set org.gnome.desktop.interface color-scheme prefer-light
+        fi
+    fi
+    wait
+fi
+
+if $notify && in_session && command -v notify-send >/dev/null; then
+    notify-send -a "Lennox" -i preferences-desktop-wallpaper -t 2500 \
+        "Wallpaper changed" "$(basename -- "$image")"
+fi
+info "Done"

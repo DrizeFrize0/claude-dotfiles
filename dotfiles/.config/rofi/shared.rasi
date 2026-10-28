@@ -1,0 +1,20 @@
+/* Lennox rofi: shared look. Colors from the wallpaper, picture behind the
+ * search box from the current wallpaper (both refreshed by lennox-wallpaper). */
+configuration {
+    font:                 "Fira Sans Semibold 11";
+    show-icons:           true;
+    hover-select:         false;
+    scroll-method:        1;
+    me-select-entry:      "";
+    me-accept-entry:      "MousePrimary";
+    click-to-exit:        true;
+    kb-cancel:            "Escape,MousePrimary";
+}
+
+@theme "~/.config/rofi/colors.rasi"
+@import "~/.cache/lennox/wallpaper/rofi.rasi"
+
+* {
+    border-width:   2px;
+    border-radius:  1.5em;
+}

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Lennox mark: a rounded tile with an L and a small four-point star -->
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="none" stroke="#ffffff" stroke-width="5"/>
+  <path d="M22 17 V45 H42" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M42 15 L44.2 21.8 L51 24 L44.2 26.2 L42 33 L39.8 26.2 L33 24 L39.8 21.8 Z" fill="#ffffff"/>
+</svg>

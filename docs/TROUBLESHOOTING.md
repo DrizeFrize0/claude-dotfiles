@@ -1,0 +1,64 @@
+# Troubleshooting
+
+**Start here:** run `lennox doctor` in a terminal (or Lennox Settings → Health Check). It checks graphics, sound and microphone, touchpad, network, updates and the desktop, and prints the fix for each problem.
+
+Logs:
+
+| What | Where |
+| --- | --- |
+| Desktop start-up | `~/.local/state/lennox/autostart.log` |
+| Installer | `~/.local/state/lennox/install.log` |
+| Automatic updates | `/var/log/lennox-autoupdate.log` and `/var/lib/lennox/autoupdate-status.json` |
+| Bar / dock | `$XDG_RUNTIME_DIR/lennox/waybar.log`, `dock.log` |
+| Hyprland | `hyprctl configerrors`, or the red error bar at the top of the screen |
+
+## An update broke something
+
+1. **Roll back from the boot menu** (btrfs + GRUB installs): restart, pick **Arch Linux snapshots** in GRUB, then the snapshot from just before the update (`pre` snapshots are made automatically). Once the desktop works, open **Btrfs Assistant** (Lennox Settings → Updates → Manage snapshots) and *Restore* that snapshot to make it permanent.
+2. No desktop at all? Press `CTRL + ALT + F3` for a text console, log in, then run `lennox doctor` or `sudo pacman -Syu` to finish a half-done update.
+
+The automatic updater never restarts your computer and refuses to finish if the NVIDIA driver didn't rebuild, so it can't leave you with a broken graphics driver after a reboot.
+
+## Black screen or no desktop after login
+
+- Press `CTRL + ALT + F3`, log in, run `lennox doctor`.
+- NVIDIA driver not built: `sudo dkms autoinstall`, then reboot.
+- Start Hyprland by hand to see its error: `start-hyprland` (from the console).
+
+## External monitor doesn't work
+
+On many GTX 1650 laptops the HDMI port is wired to the NVIDIA GPU. Lennox Settings → Graphics → **Mode**: *Automatic* turns the NVIDIA GPU on at login when a screen is plugged in, so plug it in **before** logging in (or log out and back in). *Intel + NVIDIA* keeps it on all the time. Then arrange the screens in Lennox Settings → Display → *Arrange displays*.
+
+## No sound or no microphone
+
+- `lennox doctor` shows which part is missing.
+- Most Intel laptop microphones need `sof-firmware` (Lennox installs it). After installing it, restart.
+- Lennox Settings → Sound: pick the right output / microphone and use *Test the microphone*.
+- Is the mic muted? The mic key toggles it, and the quick panel (`SUPER + N`) has a Microphone tile.
+
+## Touchpad not working
+
+- `hyprctl devices` should list a touchpad. If not: `sudo dmesg | grep -i -E "i2c|touchpad|elan|synaptics"`.
+- Some laptops have a touchpad-off key: press it again (or run `lennox-touchpad on`).
+- Settings: Lennox Settings → Keyboard & Touchpad.
+
+## Bar is missing or looks wrong
+
+`SUPER + SHIFT + B` restarts it. Clicking workspace numbers in the bar uses Lennox's own workspace buttons (the built-in Waybar module can't switch workspaces with Hyprland's new Lua config yet). If they show only 1 to 5 and never update, check that `lennox-workspaces` is running: `pgrep -af lennox-workspaces`.
+
+## Reset things
+
+| Reset | How |
+| --- | --- |
+| All Lennox settings | `rm ~/.config/lennox/settings.json && lennox-apply all` |
+| Your Hyprland tweaks | `mv ~/.config/hypr/custom.lua ~/custom.lua.bak` |
+| Get old configs back | they're in `~/.local/share/lennox/backups/<date>/` |
+| Re-install Lennox files | `cd ~/lennox && ./install.sh --update` |
+
+## Games
+
+- Steam (Proton) games pick the GTX 1650 automatically.
+- Native Linux / OpenGL games: add `prime-run %command%` to the game's Steam launch options.
+- Minecraft (Prism Launcher) is already set to use the GTX.
+- Any other app: `prime-run app` or `lennox gpu run app`.
+- `SUPER + ALT + G` (game mode) turns off effects and switches to the performance power mode.

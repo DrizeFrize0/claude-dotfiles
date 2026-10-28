@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# The quick panel is swaync's control center: Wi-Fi, Bluetooth, sliders, media, notifications.
+# Usage: lennox-panel toggle|open|close
+export PATH="$HOME/.local/bin:$PATH"
+pgrep -x swaync >/dev/null || { setsid -f swaync >/dev/null 2>&1; sleep 0.5; }
+case "${1:-toggle}" in
+    toggle) swaync-client --toggle-panel --skip-wait ;;
+    open) swaync-client --open-panel --skip-wait ;;
+    close) swaync-client --close-panel --skip-wait ;;
+    *) echo "usage: lennox-panel toggle|open|close" >&2; exit 2 ;;
+esac

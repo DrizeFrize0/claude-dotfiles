@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# The nightly wind-down reminder (a systemd user timer runs this).
+# Time and message: Lennox Settings > Night.
+export PATH="$HOME/.local/bin:$PATH"
+message="$(lennox-get night.winddown_message)"
+notify-send -a "Lennox" -i weather-clear-night -t 15000 "🌙 Wind-down time" "$message"

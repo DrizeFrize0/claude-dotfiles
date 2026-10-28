@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Screenshots. Every shot is copied to the clipboard and saved to
+# ~/Pictures/Screenshots; click "Edit" on the notification to annotate it.
+#   lennox-screenshot area | window | screen | menu
+export PATH="$HOME/.local/bin:$PATH"
+
+pictures="$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")"
+[[ "$pictures" == "$HOME" ]] && pictures="$HOME/Pictures"
+DIR="$pictures/Screenshots"
+mkdir -p "$DIR"
+file="$DIR/Screenshot_$(date +%Y-%m-%d_%H-%M-%S).png"
+
+capture_area() {
+    # Freeze the screen while selecting, so menus and videos hold still
+    local picker="" region
+    if command -v hyprpicker >/dev/null; then
+        hyprpicker -r -z >/dev/null 2>&1 &
+        picker=$!
+        sleep 0.15
+    fi
+    region="$(slurp -d -b '#00000066' -c '#ffffffcc' -w 2)"
+    [[ -n "$picker" ]] && kill "$picker" 2>/dev/null
+    [[ -n "$region" ]] || exit 0   # cancelled with Esc
+    grim -g "$region" "$file"
+}
+
+capture_window() {
+    local geometry
+    geometry="$(hyprctl -j activewindow | jq -r 'if .at then "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])" else empty end')"
+    [[ -n "$geometry" ]] || { notify-send -a Lennox -i dialog-information "No window to capture"; exit 0; }
+    grim -g "$geometry" "$file"
+}
+
+capture_screen() {
+    local output
+    output="$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')"
+    if [[ -n "$output" ]]; then grim -o "$output" "$file"; else grim "$file"; fi
+}
+
+finish() {
+    [[ -s "$file" ]] || { notify-send -a Lennox -i dialog-error "Screenshot failed"; exit 1; }
+    wl-copy --type image/png < "$file"
+    (
+        action="$(notify-send -a "Screenshot" -i "$file" -t 6000 \
+            -A edit=Edit -A open=Folder \
+            "Screenshot saved" "Copied to the clipboard"$'\n'"$(basename "$file")")"
+        case "$action" in
+            edit) command -v satty >/dev/null && satty --filename "$file" --output-filename "$file" ;;
+            open) xdg-open "$DIR" ;;
+        esac
+    ) >/dev/null 2>&1 &
+    disown
+}
+
+case "${1:-area}" in
+    area) capture_area ;;
+    window) capture_window ;;
+    screen) capture_screen ;;
+    menu)
+        choice="$(printf '󰆞  Area\n󰖯  Window\n󰍹  Whole screen\n󰔛  Area in 5 seconds\n󰔛  Whole screen in 5 seconds\n' \
+            | rofi -dmenu -i -no-custom -config "$HOME/.config/rofi/compact.rasi" -p "󰹑 Screenshot")" || exit 0
+        sleep 0.4   # let the menu disappear first
+        case "$choice" in
+            *"Area in 5"*) notify-send -a Lennox -t 4000 "Screenshot in 5 seconds"; sleep 5; capture_area ;;
+            *"screen in 5"*) notify-send -a Lennox -t 4000 "Screenshot in 5 seconds"; sleep 5; capture_screen ;;
+            *Area) capture_area ;;
+            *Window) capture_window ;;
+            *"Whole screen") capture_screen ;;
+            *) exit 0 ;;
+        esac
+        ;;
+    *) echo "usage: lennox-screenshot area|window|screen|menu" >&2; exit 2 ;;
+esac
+finish

@@ -1,0 +1,1 @@
+-- Written by nwg-displays (Lennox Settings > Display > Arrange displays).

@@ -1,0 +1,112 @@
+{
+  "appearance": {
+    "color_mode": "dark",
+    "color_scheme": "scheme-tonal-spot",
+    "animations": "default",
+    "border_style": "gradient",
+    "gaps_in": 10,
+    "gaps_out": 16,
+    "border_size": 2,
+    "rounding": 10,
+    "active_opacity": 1.0,
+    "inactive_opacity": 0.9,
+    "blur": true,
+    "blur_size": 4,
+    "blur_passes": 4,
+    "shadow": true,
+    "dim_inactive": false,
+    "layout": "dwindle",
+    "font": "Fira Sans Semibold 11",
+    "icon_theme": "Papirus-Dark",
+    "cursor_theme": "Bibata-Modern-Ice",
+    "cursor_size": 24,
+    "terminal_opacity": 0.8
+  },
+  "wallpaper": {
+    "folder": "~/.config/lennox/wallpapers",
+    "transition": "grow",
+    "lockscreen_blur": "50x30",
+    "auto_change_minutes": 0
+  },
+  "bar": {
+    "enabled": true,
+    "style": "modern",
+    "show_window_title": true,
+    "show_hardware": true,
+    "show_tray": true,
+    "show_updates": true,
+    "show_media": false,
+    "clock_24h": true
+  },
+  "dock": {
+    "enabled": true,
+    "autohide": true,
+    "icon_size": 40
+  },
+  "display": {
+    "scale": 1.0
+  },
+  "input": {
+    "kb_layout": "us",
+    "kb_variant": "",
+    "kb_model": "",
+    "kb_options": "grp:alt_shift_toggle",
+    "repeat_rate": 35,
+    "repeat_delay": 300,
+    "numlock": true,
+    "sensitivity": 0.0,
+    "accel_profile": "",
+    "natural_scroll": false,
+    "follow_mouse": 1
+  },
+  "touchpad": {
+    "natural_scroll": true,
+    "tap_to_click": true,
+    "tap_and_drag": true,
+    "disable_while_typing": true,
+    "clickfinger": false,
+    "middle_button_emulation": false,
+    "scroll_factor": 1.0,
+    "gestures": true
+  },
+  "keybinds": {
+    "main_mod": "SUPER"
+  },
+  "idle": {
+    "dim_minutes": 8,
+    "lock_minutes": 10,
+    "screen_off_minutes": 11,
+    "suspend_minutes": 30,
+    "suspend_on_ac": false,
+    "lock_before_sleep": true
+  },
+  "night": {
+    "nightlight": true,
+    "start": "20:00",
+    "end": "07:00",
+    "temperature": 4500,
+    "winddown": true,
+    "winddown_time": "23:30",
+    "winddown_message": "Wind-down time. Sleep is free gains, so wrap up when you're ready."
+  },
+  "power": {
+    "saver_on_battery": true,
+    "low_battery_warning": 20,
+    "critical_battery": 8
+  },
+  "apps": {
+    "terminal": "kitty",
+    "browser": "flatpak run app.zen_browser.zen",
+    "filemanager": "nautilus",
+    "editor": "code",
+    "calculator": "gnome-calculator",
+    "system_monitor": "missioncenter",
+    "audio_mixer": "pavucontrol"
+  },
+  "gpu": {
+    "mode": "auto"
+  },
+  "welcome": {
+    "show_on_login": true
+  }
+}

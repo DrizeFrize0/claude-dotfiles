@@ -1,0 +1,53 @@
+# Hyprland and the Lennox desktop
+hyprland
+hyprlock
+hypridle
+hyprsunset
+hyprpicker
+hyprpolkitagent
+hyprshutdown
+hyprland-guiutils
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+qt5-wayland
+qt6-wayland
+awww
+matugen
+imagemagick
+waybar
+swaync
+libnotify
+rofi
+rofi-emoji
+nwg-dock-hyprland
+nwg-displays
+nwg-look
+cliphist
+wl-clipboard
+grim
+slurp
+satty
+udiskie
+gvfs
+gvfs-mtp
+polkit
+# Login screen (ML4W theme needs the three qt6 packages)
+sddm
+qt6-svg
+qt6-virtualkeyboard
+qt6-multimedia-ffmpeg
+# Look
+adw-gtk-theme
+papirus-icon-theme
+qt6ct
+# Apps
+kitty
+nautilus
+loupe
+mpv
+gnome-calculator
+gnome-text-editor
+mission-center
+btop
+fastfetch
+flatpak

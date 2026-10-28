@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Switch between dark and light mode: lennox-theme toggle|dark|light
+export PATH="$HOME/.local/bin:$PATH"
+current="$(lennox-get appearance.color_mode)"
+case "${1:-toggle}" in
+    toggle) [[ "$current" == "dark" ]] && new="light" || new="dark" ;;
+    dark|light) new="$1" ;;
+    *) echo "usage: lennox-theme toggle|dark|light" >&2; exit 2 ;;
+esac
+lennox-set appearance.color_mode "$new"
+notify-send -a Lennox -i weather-clear-night -t 2000 "${new^} mode" "Colors updated from your wallpaper."

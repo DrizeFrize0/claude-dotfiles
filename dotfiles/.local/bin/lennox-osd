@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Volume, microphone and brightness keys, with a small on-screen popup.
+#   lennox-osd volume up|down|mute
+#   lennox-osd mic mute|up|down
+#   lennox-osd brightness up|down
+#   lennox-osd keyboard up|down
+export PATH="$HOME/.local/bin:$PATH"
+
+popup() {
+    # popup ICON TITLE PERCENT
+    notify-send -a "Lennox OSD" -u low -t 1200 -i "$1" \
+        -h string:x-canonical-private-synchronous:lennox-osd \
+        -h "int:value:$3" "$2" "$3%"
+}
+
+volume_of() {
+    # "Volume: 0.45 [MUTED]" -> "45 muted"
+    wpctl get-volume "$1" 2>/dev/null | awk '{ printf "%d %s\n", $2 * 100 + 0.5, ($3 == "[MUTED]" ? "muted" : "on") }'
+}
+
+case "${1:-} ${2:-}" in
+    "volume up")   wpctl set-mute @DEFAULT_AUDIO_SINK@ 0; wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+ ;;
+    "volume down") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+    "volume mute") wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+    "mic mute")    wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle ;;
+    "mic up")      wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SOURCE@ 5%+ ;;
+    "mic down")    wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%- ;;
+    "brightness up")   brightnessctl -q -e4 -n2 set 5%+ ;;
+    "brightness down") brightnessctl -q -e4 -n2 set 5%- ;;
+    "keyboard up")   brightnessctl -q -d '*::kbd_backlight' set +1 ;;
+    "keyboard down") brightnessctl -q -d '*::kbd_backlight' set 1- ;;
+    *) echo "usage: lennox-osd volume|mic|brightness|keyboard up|down|mute" >&2; exit 2 ;;
+esac
+
+case "$1" in
+    volume)
+        read -r level state < <(volume_of @DEFAULT_AUDIO_SINK@)
+        if [[ "$state" == "muted" ]]; then
+            popup audio-volume-muted "Muted" 0
+        else
+            icon=audio-volume-high
+            (( level < 66 )) && icon=audio-volume-medium
+            (( level < 33 )) && icon=audio-volume-low
+            popup "$icon" "Volume" "$level"
+        fi
+        ;;
+    mic)
+        read -r level state < <(volume_of @DEFAULT_AUDIO_SOURCE@)
+        if [[ "$state" == "muted" ]]; then
+            popup microphone-sensitivity-muted "Microphone off" 0
+        else
+            popup audio-input-microphone "Microphone" "$level"
+        fi
+        ;;
+    brightness)
+        level="$(brightnessctl -m 2>/dev/null | head -n1 | cut -d, -f4 | tr -d '%')"
+        popup display-brightness "Brightness" "${level:-0}"
+        ;;
+    keyboard)
+        level="$(brightnessctl -m -d '*::kbd_backlight' 2>/dev/null | head -n1 | cut -d, -f4 | tr -d '%')"
+        popup keyboard-brightness "Keyboard light" "${level:-0}"
+        ;;
+esac

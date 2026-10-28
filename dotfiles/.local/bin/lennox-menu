@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+# Lennox menus (rofi). Pressing the same shortcut again closes the menu.
+#   lennox-menu apps | windows | clipboard | clipboard-clear | keybinds | emoji
+#   lennox-menu wallpaper | bar-style | power | wifi
+export PATH="$HOME/.local/bin:$PATH"
+
+ROFI="$HOME/.config/rofi"
+WP_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/lennox/wallpaper"
+THUMBS="${XDG_CACHE_HOME:-$HOME/.cache}/lennox/thumbnails"
+
+# A menu is already open: close it instead of opening a second one
+if pgrep -x rofi >/dev/null; then
+    pkill -x rofi
+    exit 0
+fi
+
+# rofi refuses to start if an imported theme file is missing
+if [[ ! -f "$WP_CACHE/rofi.rasi" ]]; then
+    mkdir -p "$WP_CACHE"
+    printf '* { current-image: url("%s", height); }\n' "$HOME/.config/lennox/assets/fallback.png" > "$WP_CACHE/rofi.rasi"
+fi
+
+menu() {
+    # menu PROMPT [extra rofi args...]  (reads entries on stdin)
+    local prompt="$1"
+    shift
+    rofi -dmenu -i -config "$ROFI/compact.rasi" -p "$prompt" "$@"
+}
+
+notify() { notify-send -a Lennox -i "$1" -t 2500 "$2" "${3:-}"; }
+
+case "${1:-apps}" in
+    apps)
+        rofi -show drun -config "$ROFI/config.rasi"
+        ;;
+
+    windows)
+        rofi -show window -config "$ROFI/config.rasi"
+        ;;
+
+    clipboard)
+        choice="$(cliphist list | menu "󰨸" -display-columns 2)" || exit 0
+        [[ -n "$choice" ]] && cliphist decode <<<"$choice" | wl-copy
+        ;;
+
+    clipboard-clear)
+        cliphist wipe && notify edit-clear "Clipboard history cleared"
+        ;;
+
+    emoji)
+        if rofi -h 2>/dev/null | grep -q emoji || [[ -f /usr/lib/rofi/emoji.so ]]; then
+            rofi -modi emoji -show emoji -config "$ROFI/compact.rasi"
+        else
+            notify dialog-warning "Emoji picker missing" "Install the rofi-emoji package."
+        fi
+        ;;
+
+    keybinds)
+        hyprctl binds -j 2>/dev/null | jq -r '
+            def mods: [
+                (if (.modmask / 64 | floor) % 2 == 1 then "SUPER" else empty end),
+                (if (.modmask / 4  | floor) % 2 == 1 then "CTRL"  else empty end),
+                (if (.modmask / 8  | floor) % 2 == 1 then "ALT"   else empty end),
+                (if .modmask % 2 == 1 then "SHIFT" else empty end)
+            ];
+            def pretty: {
+                "mouse:272": "Left mouse", "mouse:273": "Right mouse",
+                "mouse_down": "Scroll down", "mouse_up": "Scroll up",
+                "Return": "Enter", "RETURN": "Enter", "Print": "Print", "PRINT": "Print",
+                "SPACE": "Space", "ESCAPE": "Esc", "TAB": "Tab"
+            }[.] // .;
+            .[] | select((.description // "") != "")
+                | ((mods + [(.key | pretty)]) | join(" + ")) as $keys
+                | "\($keys)\t\(.description)"' \
+            | awk -F '\t' '!seen[$0]++ { printf "%-30s  %s\n", $1, $2 }' \
+            | menu "󰌌 Keybinds" -no-custom -theme-str 'window { width: 48em; } element-text { font: "JetBrainsMono Nerd Font 10"; }' >/dev/null
+        ;;
+
+    wallpaper)
+        folder="$(lennox-get wallpaper.folder)"
+        folder="${folder/#\~/$HOME}"
+        mkdir -p "$THUMBS"
+        mapfile -t images < <(find -L "$folder" -maxdepth 2 -type f \
+            \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \) 2>/dev/null | sort)
+        if [[ ${#images[@]} -eq 0 ]]; then
+            notify dialog-warning "No wallpapers found" "Add pictures to $folder or pick another folder in Lennox Settings."
+            exit 0
+        fi
+        missing=0
+        for img in "${images[@]}"; do
+            thumb="$THUMBS/$(printf '%s' "$img" | md5sum | cut -d' ' -f1).png"
+            [[ -f "$thumb" ]] || missing=$((missing + 1))
+        done
+        (( missing > 4 )) && notify preferences-desktop-wallpaper "Preparing previews" "$missing new wallpapers, one moment..."
+        choice="$(
+            for img in "${images[@]}"; do
+                thumb="$THUMBS/$(printf '%s' "$img" | md5sum | cut -d' ' -f1).png"
+                if [[ ! -f "$thumb" ]]; then
+                    magick "${img}[0]" -thumbnail '400x250^' -gravity center -extent 400x250 "$thumb" 2>/dev/null || thumb="$img"
+                fi
+                printf '%s\0icon\x1f%s\n' "$(basename -- "$img")" "$thumb"
+            done | rofi -dmenu -i -config "$ROFI/wallpaper.rasi" -p "󰋩" -format i
+        )" || exit 0
+        [[ "$choice" =~ ^[0-9]+$ ]] && lennox-wallpaper "${images[$choice]}"
+        ;;
+
+    bar-style)
+        current="$(lennox-get bar.style)"
+        choice="$(printf 'Modern\nGlass\nMinimal\n' | menu "󰕰 Bar style" -no-custom -mesg "Current: ${current^}")" || exit 0
+        [[ -n "$choice" ]] && lennox-bar style "${choice,,}"
+        ;;
+
+    power)
+        choice="$(printf '󰌾\nLock|󰤄\nSuspend|󰍃\nLog out|󰜉\nRestart|󰐥\nShut down' \
+            | rofi -dmenu -config "$ROFI/power.rasi" -sep '|' -eh 2 -no-custom -selected-row 0 \
+                -mesg "Up $(uptime -p | sed 's/^up //')")" || exit 0
+        case "$choice" in
+            *Lock) lennox-power lock ;;
+            *Suspend) lennox-power suspend ;;
+            *"Log out") lennox-power logout ;;
+            *Restart) lennox-power reboot ;;
+            *"Shut down") lennox-power poweroff ;;
+        esac
+        ;;
+
+    wifi)
+        if [[ "$(nmcli radio wifi)" != "enabled" ]]; then
+            choice="$(printf '󰖩  Turn Wi-Fi on\n󰒓  Network settings\n' | menu "󰖪 Wi-Fi is off" -no-custom)" || exit 0
+            case "$choice" in
+                *"Turn Wi-Fi on") nmcli radio wifi on && notify network-wireless "Wi-Fi on" "Looking for networks..." ;;
+                *settings) setsid -f nm-connection-editor >/dev/null 2>&1 ;;
+            esac
+            exit 0
+        fi
+        # -e yes escapes ':' inside names as '\:'; split on the real separators only
+        list="$(nmcli -t -e yes -f IN-USE,SIGNAL,SECURITY,SSID device wifi list --rescan auto 2>/dev/null \
+            | sed 's/\\:/\x1f/g' \
+            | awk -F: '$4 != "" && !seen[$4]++ {
+                  gsub(/\x1f/, ":", $4)
+                  icon = ($2 >= 67 ? "󰤨" : ($2 >= 34 ? "󰤢" : "󰤟"))
+                  lock = ($3 == "" || $3 == "--") ? " " : "󰌾"
+                  mark = ($1 == "*") ? "  (connected)" : ""
+                  printf "%s %s  %s%s\n", icon, lock, $4, mark
+              }')"
+        choice="$(printf '%s\n󰖪  Turn Wi-Fi off\n󰒓  Network settings\n' "$list" | menu "󰖩 Wi-Fi" -no-custom)" || exit 0
+        case "$choice" in
+            "") exit 0 ;;
+            *"Turn Wi-Fi off") nmcli radio wifi off && notify network-wireless-offline "Wi-Fi off" ;;
+            *"Network settings") setsid -f nm-connection-editor >/dev/null 2>&1 ;;
+            *)
+                ssid="${choice#* * }"
+                ssid="${ssid#"${ssid%%[![:space:]]*}"}"
+                ssid="${ssid%  (connected)}"
+                [[ "$choice" == *"(connected)" ]] && { notify network-wireless "Already connected" "$ssid"; exit 0; }
+                if nmcli -t -f NAME connection show | grep -Fxq -- "$ssid"; then
+                    connect=(nmcli connection up id "$ssid")
+                    failed="$ssid"
+                elif [[ "$choice" == *"󰌾"* ]]; then
+                    password="$(rofi -dmenu -password -config "$ROFI/compact.rasi" -p "󰌾 Password for $ssid" -theme-str 'listview { enabled: false; }' </dev/null)" || exit 0
+                    [[ -n "$password" ]] || exit 0
+                    connect=(nmcli device wifi connect "$ssid" password "$password")
+                    failed="Wrong password? School or work Wi-Fi: use Network settings."
+                else
+                    connect=(nmcli device wifi connect "$ssid")
+                    failed="$ssid"
+                fi
+                if "${connect[@]}" >/dev/null 2>&1; then
+                    notify network-wireless "Connected" "$ssid"
+                else
+                    notify dialog-error "Could not connect" "$failed"
+                fi
+                ;;
+        esac
+        ;;
+
+    *)
+        echo "usage: lennox-menu apps|windows|clipboard|clipboard-clear|keybinds|emoji|wallpaper|bar-style|power|wifi" >&2
+        exit 2
+        ;;
+esac
