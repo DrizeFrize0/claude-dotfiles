@@ -20,6 +20,7 @@ RUNTIME_DIR = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "lennox")
 DEFAULTS = {
     "appearance": {
         "color_mode": "dark",
+        "theme": "wallpaper",
         "color_scheme": "scheme-tonal-spot",
         "animations": "default",
         "border_style": "gradient",
@@ -146,6 +147,7 @@ DEFAULTS = {
 # Allowed values for settings with a fixed set of choices
 CHOICES = {
     ("appearance", "color_mode"): ["dark", "light"],
+    ("appearance", "theme"): None,  # filled from THEMES below
     ("appearance", "color_scheme"): [
         "scheme-tonal-spot", "scheme-content", "scheme-expressive", "scheme-fidelity",
         "scheme-fruit-salad", "scheme-monochrome", "scheme-neutral", "scheme-rainbow",
@@ -192,6 +194,25 @@ RANGES = {
     ("power", "low_battery_warning"): (5, 50),
     ("power", "critical_battery"): (2, 20),
 }
+
+# Color themes: every color on the desktop is built from one base color
+# (matugen), instead of from the wallpaper. id: (name, base color, scheme
+# override or None to use your Color style)
+THEMES = {
+    "wallpaper": ("From your wallpaper", None, None),
+    "ocean": ("Ocean", "#2f7fd6", None),
+    "aqua": ("Aqua", "#1fb5a8", None),
+    "forest": ("Forest", "#4f9a5e", None),
+    "lime": ("Lime", "#8bc34a", None),
+    "gold": ("Gold", "#d9a441", None),
+    "sunset": ("Sunset", "#f0803c", None),
+    "crimson": ("Crimson", "#d1495b", None),
+    "sakura": ("Sakura", "#e889b0", None),
+    "lavender": ("Lavender", "#9d7cd8", None),
+    "midnight": ("Midnight", "#3d4f9c", None),
+    "graphite": ("Graphite", "#7a7a7a", "scheme-monochrome"),
+}
+CHOICES[("appearance", "theme")] = list(THEMES)
 
 # One-click looks (Lennox Settings > Appearance, or `lennox look NAME`).
 # Each sets several values at once; everything else stays as it is.
@@ -247,7 +268,7 @@ APPLY_PARTS = {
     "dock": ["dock"],
     "widgets": ["widgets"],
 }
-THEME_KEYS = {"appearance.color_mode", "appearance.color_scheme"}
+THEME_KEYS = {"appearance.color_mode", "appearance.color_scheme", "appearance.theme"}
 
 
 def parts_for(path):

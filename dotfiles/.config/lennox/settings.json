@@ -1,6 +1,7 @@
 {
   "appearance": {
     "color_mode": "dark",
+    "theme": "wallpaper",
     "color_scheme": "scheme-tonal-spot",
     "animations": "default",
     "border_style": "gradient",

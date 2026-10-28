@@ -29,6 +29,25 @@ menu() {
 
 notify() { notify-send -a Lennox -i "$1" -t 2500 "$2" "${3:-}"; }
 
+power_icons() {
+    # Power menu icons, drawn in the current theme's text color (redrawn
+    # when the colors change). Prints the folder they are in.
+    local color dir
+    color="$(jq -r '.on_surface // "#dde4e2"' "$HOME/.config/lennox/colors.json" 2>/dev/null)"
+    [[ "$color" =~ ^#[0-9a-fA-F]{6}$ ]] || color="#dde4e2"
+    dir="${XDG_CACHE_HOME:-$HOME/.cache}/lennox/power-icons/${color#\#}"
+    if [[ ! -f "$dir/shutdown.svg" ]]; then
+        mkdir -p "$dir"
+        local head="<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"96\" height=\"96\" fill=\"none\" stroke=\"$color\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
+        printf '%s<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/><circle cx="12" cy="16" r="1.2"/></svg>\n' "$head" > "$dir/lock.svg"
+        printf '%s<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>\n' "$head" > "$dir/suspend.svg"
+        printf '%s<path d="M10 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20H10"/><path d="M15 16l4-4-4-4"/><path d="M19 12H9.5"/></svg>\n' "$head" > "$dir/logout.svg"
+        printf '%s<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/></svg>\n' "$head" > "$dir/restart.svg"
+        printf '%s<path d="M12 3.5v8"/><path d="M6.6 6.8a7.5 7.5 0 1 0 10.8 0"/></svg>\n' "$head" > "$dir/shutdown.svg"
+    fi
+    printf '%s' "$dir"
+}
+
 launcher_header() {
     # The launcher's greeting and date, as rofi arguments in header_args
     local hour name greeting date
@@ -146,17 +165,18 @@ case "${1:-apps}" in
         ;;
 
     power)
-        big() { printf '<span font="Symbols Nerd Font 24">%s</span>\n%s' "$1" "$2"; }
-        choice="$(printf '%s|%s|%s|%s|%s' "$(big 󰌾 Lock)" "$(big 󰤄 Suspend)" "$(big 󰍃 'Log out')" \
-                "$(big 󰜉 Restart)" "$(big 󰐥 'Shut down')" \
-            | rofi -dmenu -config "$ROFI/power.rasi" -sep '|' -eh 2 -markup-rows -no-custom -selected-row 0 \
+        icons="$(power_icons)"
+        entry() { printf '%s\0icon\x1f%s/%s.svg\n' "$1" "$icons" "$2"; }
+        choice="$( { entry Lock lock; entry Suspend suspend; entry "Log out" logout
+                    entry Restart restart; entry "Shut down" shutdown; } \
+            | rofi -dmenu -config "$ROFI/power.rasi" -no-custom -selected-row 0 \
                 -mesg "Up $(uptime -p | sed 's/^up //')")" || exit 0
         case "$choice" in
-            *Lock) lennox-power lock ;;
-            *Suspend) lennox-power suspend ;;
-            *"Log out") lennox-power logout ;;
-            *Restart) lennox-power reboot ;;
-            *"Shut down") lennox-power poweroff ;;
+            Lock) lennox-power lock ;;
+            Suspend) lennox-power suspend ;;
+            "Log out") lennox-power logout ;;
+            Restart) lennox-power reboot ;;
+            "Shut down") lennox-power poweroff ;;
         esac
         ;;
 

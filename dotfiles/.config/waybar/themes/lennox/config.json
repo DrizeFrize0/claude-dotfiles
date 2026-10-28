@@ -37,7 +37,8 @@
     "orientation": "inherit",
     "modules": [
       "custom/lennox-launcher",
-      "group/workspaces"
+      "group/workspaces",
+      "custom/minimized"
     ]
   },
   "custom/lennox-launcher": {

@@ -92,7 +92,14 @@ class Page:
                                   "Minutes, 0 = never", lower=0, upper=1440, step=5))
         options.add(rows.combo_row(store, "wallpaper.lockscreen_blur", "Lock screen blur", BLURS,
                                    on_change=lambda _v: self._set(self._current(), quiet=True)))
-        options.add(rows.button_row("More ML4W wallpapers", "Download the full ML4W wallpaper collection into your folder",
+        paint = Adw.ActionRow(title="Lennox wallpaper pack",
+                              subtitle="12 wallpapers painted on your laptop: aurora, sunset beach, night sky, dunes, clouds…")
+        paint.add_prefix(Gtk.Image.new_from_icon_name("applications-graphics-symbolic"))
+        paint_button = Gtk.Button(label="Paint", valign=Gtk.Align.CENTER)
+        paint_button.connect("clicked", self._paint_pack)
+        paint.add_suffix(paint_button)
+        options.add(paint)
+        options.add(rows.button_row("ML4W wallpaper collection", "Download 200+ more wallpapers (a big download)",
                                     "Download", self._download_more, "folder-download-symbolic"))
         page.add(options)
 
@@ -221,13 +228,22 @@ class Page:
         dialog.select_folder(self.ctx.window, None, chosen)
 
     def _download_more(self):
-        folder = self._folder()
-        script = (
-            'set -e; tmp="$(mktemp -d)"; echo "Downloading the ML4W wallpaper collection..."; '
-            'git clone --depth 1 https://github.com/mylinuxforwork/wallpaper.git "$tmp/w"; '
-            f'mkdir -p "{folder}"; '
-            f'find "$tmp/w" -maxdepth 2 -type f \\( -iname "*.jpg" -o -iname "*.png" \\) -exec cp -n {{}} "{folder}/" \\; ; '
-            'rm -rf "$tmp"; echo; echo "Done. Close this window and reopen the Wallpaper page."'
-        )
-        launch(["kitty", "--class", "lennox-floating", "--title", "Downloading wallpapers", "--hold", "bash", "-c", script])
+        launch(["kitty", "--class", "lennox-floating", "--title", "Downloading wallpapers", "--hold",
+                lennox_bin("lennox-wallpapers"), "ml4w"])
         self.loaded_folder = None
+
+    def _paint_pack(self, button):
+        button.set_sensitive(False)
+        button.set_label("Painting…")
+        self.ctx.toast("Painting the Lennox wallpapers (about half a minute)")
+
+        def done(ok, _out, err):
+            button.set_sensitive(True)
+            button.set_label("Paint")
+            if ok:
+                self.loaded_folder = None
+                self.refresh()
+                self.ctx.toast("The Lennox wallpapers are ready")
+            else:
+                self.ctx.toast("Could not paint the wallpapers: " + (err.strip().splitlines() or ["unknown error"])[-1])
+        run_async([lennox_bin("lennox-wallpapers"), "make"], done)

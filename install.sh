@@ -436,6 +436,7 @@ download_wallpapers() {
     mkdir -p "$dir"
     if [[ -f "$dir/default.jpg" ]]; then
         ok "Already there"
+        [[ -d "$dir/lennox" ]] || paint_wallpapers
         return 0
     fi
     tmp="$(mktemp -d)"
@@ -451,6 +452,16 @@ download_wallpapers() {
         warn "Could not download the ML4W wallpapers. Using a plain gradient; add your own to $dir."
     fi
     rm -rf "$tmp"
+    paint_wallpapers
+}
+
+paint_wallpapers() {
+    # The Lennox pack: painted locally, so it works offline too
+    if "$HOME/.local/bin/lennox-wallpapers" make >/dev/null 2>&1; then
+        ok "Lennox wallpaper pack painted ($dir/lennox)"
+    else
+        warn "Could not paint the Lennox wallpapers (Lennox Settings > Wallpaper > Paint to retry)"
+    fi
 }
 
 setup_shell() {
@@ -568,6 +579,8 @@ if [[ "$MODE" == "update" ]]; then
     install_system_files
     $HAS_NVIDIA && setup_nvidia
     install_dotfiles
+    dir="$HOME/.config/lennox/wallpapers"
+    [[ -d "$dir/lennox" ]] || { step "Painting the Lennox wallpaper pack"; paint_wallpapers; }
     personalize
     first_theme
     summary

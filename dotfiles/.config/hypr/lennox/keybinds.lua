@@ -129,6 +129,8 @@ for i = 1, 10 do
     hl.bind(key("CTRL + SHIFT + " .. k), hl.dsp.window.move({ workspace = i, follow = false }), { description = "Send the window to workspace " .. i .. " quietly" })
 end
 
+hl.bind(key("H"),         hl.dsp.window.move({ workspace = "special:minimized", follow = false }), { description = "Minimize the window" })
+hl.bind(key("ALT + H"),   run("lennox-minimize menu"),                          { description = "Bring back a minimized window" })
 hl.bind(key("S"),         hl.dsp.workspace.toggle_special("scratchpad"),       { description = "Show / hide the scratchpad" })
 hl.bind(key("SHIFT + S"), hl.dsp.window.move({ workspace = "special:scratchpad" }), { description = "Move the window to the scratchpad" })
 

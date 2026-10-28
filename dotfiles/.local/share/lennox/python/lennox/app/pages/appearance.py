@@ -1,12 +1,12 @@
 """Appearance: dark/light, colors, animations, windows."""
 
-from gi.repository import Adw, Gtk
+from gi.repository import Adw, Gdk, Gtk
 
 from ... import settings as S
 from .. import rows
 
 SCHEMES = [
-    ("scheme-tonal-spot", "Calm (ML4W default)"),
+    ("scheme-tonal-spot", "Calm (default)"),
     ("scheme-content", "True to the wallpaper"),
     ("scheme-vibrant", "Vibrant"),
     ("scheme-expressive", "Expressive"),
@@ -50,7 +50,9 @@ class Page:
         store = ctx.store
         page = Adw.PreferencesPage()
 
-        colors = Adw.PreferencesGroup(title="Colors", description="All colors are picked from your wallpaper.")
+        colors = Adw.PreferencesGroup(title="Colors",
+                                      description="Pick a color theme, or let your wallpaper choose the colors.")
+        colors.add(self._theme_picker(store))
         colors.add(rows.combo_row(store, "appearance.color_mode", "Mode",
                                   [("dark", "Dark"), ("light", "Light")],
                                   "Shortcut: SUPER + SHIFT + M"))
@@ -102,6 +104,59 @@ class Page:
         page.add(style)
 
         self.widget = page
+
+    def _theme_picker(self, store):
+        """A row of round color swatches, one per color theme."""
+        css = ["button.lennox-swatch { min-width: 38px; min-height: 38px; padding: 0; border-radius: 99px;"
+               " border: 2px solid alpha(currentColor, 0.15); box-shadow: none; }",
+               "button.lennox-swatch.selected { border: 3px solid @accent_color; }"]
+        for tid, (_name, color, _scheme) in S.THEMES.items():
+            if color:
+                css.append(f"button.lennox-swatch-{tid} {{ background: {color}; }}")
+                css.append(f"button.lennox-swatch-{tid}:hover {{ background: mix({color}, white, 0.15); }}")
+        provider = Gtk.CssProvider()
+        text = "\n".join(css)
+        try:
+            provider.load_from_string(text)
+        except AttributeError:  # GTK < 4.12
+            provider.load_from_data(text, -1)
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider,
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        header = Gtk.Box(spacing=12)
+        header.append(Gtk.Label(label="Theme", xalign=0, hexpand=True))
+        self.theme_name = Gtk.Label(valign=Gtk.Align.CENTER)
+        self.theme_name.add_css_class("dim-label")
+        header.append(self.theme_name)
+        box = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, max_children_per_line=12, min_children_per_line=6,
+                          column_spacing=6, row_spacing=6, valign=Gtk.Align.CENTER, margin_top=8, margin_bottom=8)
+        self.swatches = {}
+        for tid, (name, color, _scheme) in S.THEMES.items():
+            button = Gtk.Button(tooltip_text=name, valign=Gtk.Align.CENTER, halign=Gtk.Align.CENTER)
+            button.add_css_class("lennox-swatch")
+            button.add_css_class(f"lennox-swatch-{tid}")
+            if not color:
+                button.set_icon_name("image-x-generic-symbolic")
+            button.connect("clicked", lambda _b, t=tid: store.set("appearance.theme", t))
+            self.swatches[tid] = button
+            box.append(button)
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6,
+                          margin_top=12, margin_bottom=6, margin_start=12, margin_end=12)
+        content.append(header)
+        content.append(box)
+        row = Adw.PreferencesRow(activatable=False, focusable=False)
+        row.set_child(content)
+
+        def show(_store=None, path="appearance.theme"):
+            if path != "appearance.theme":
+                return
+            current = store.get("appearance.theme")
+            for tid, button in self.swatches.items():
+                (button.add_css_class if tid == current else button.remove_css_class)("selected")
+            self.theme_name.set_label(S.THEMES.get(current, ("",))[0])
+        store.connect("changed", lambda st, path: show(st, path))
+        show()
+        return row
 
     def _apply_preset(self, _button, name):
         title, _description, values = S.LOOKS[name]

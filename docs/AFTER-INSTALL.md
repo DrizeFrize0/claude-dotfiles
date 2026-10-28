@@ -121,7 +121,9 @@ Do these in order. `SUPER` is the Windows key.
 5. **Test the touchpad:** two-finger scroll, tap to click, and swipe left/right with **three fingers** to switch workspaces.
 6. **Meet the bar:** click the ✦ star for your apps (right-click it for the dashboard), click the clock for the dashboard. `SUPER + CTRL + T` switches between Lennox Islands and Lennox Line (the classic ML4W bars are there too).
 7. **Turn on the weather:** `SUPER + I` → **Widgets** → type your city → ✓. The clock, weather and music now show on your wallpaper.
-8. **Try a look:** `SUPER + I` → **Appearance** → Looks: *Lennox*, *Glass*, *Neon* (spinning border), *Minimal*… one click each.
+8. **Pick a color theme:** `SUPER + I` → **Appearance** → click a color under *Theme* (or the picture icon to take colors from your wallpaper).
+9. **More wallpapers:** `SUPER + W` shows the Lennox pack (12 painted wallpapers) next to the ML4W ones. Settings → **Wallpaper** → *ML4W wallpaper collection* downloads 200+ more.
+10. **Try a look:** `SUPER + I` → **Appearance** → Looks: *Lennox*, *Glass*, *Neon* (spinning border), *Minimal*… one click each.
 
 ### 3.3 Sign in to your stuff
 
@@ -144,6 +146,7 @@ Do these in order. `SUPER` is the Windows key.
 | `SUPER + E` | Files |
 | `SUPER + Q` | Close a window |
 | `SUPER + F` | Fullscreen |
+| `SUPER + H` | Minimize (`SUPER + ALT + H` or the 󰖰 button in the bar brings it back) |
 | `SUPER + T` | Make a window float (or tile it again) |
 | `SUPER + arrows` | Move between windows |
 | `SUPER + 1 … 0` | Go to workspace 1 to 10 |

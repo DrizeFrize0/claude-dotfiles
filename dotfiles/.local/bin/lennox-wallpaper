@@ -129,11 +129,23 @@ $theme || { info "Colors unchanged"; exit 0; }
 color_mode="$(lennox-get appearance.color_mode 2>/dev/null || echo dark)"
 scheme="$(lennox-get appearance.color_scheme 2>/dev/null || echo scheme-tonal-spot)"
 
+# A color theme (Lennox Settings > Appearance) replaces the wallpaper as
+# the source of the colors
+read -r theme_color theme_scheme <<<"$(lennox-theme base 2>/dev/null)"
+[[ "$theme_color" =~ ^#[0-9a-fA-F]{6}$ ]] || theme_color=""
+[[ -n "$theme_scheme" ]] && scheme="$theme_scheme"
+
 if command -v matugen >/dev/null; then
-    info "Generating $color_mode colors ($scheme)"
-    # --source-color-index stops matugen 4 from asking which color to use
-    if ! matugen image "$image" --mode "$color_mode" --type "$scheme" --source-color-index 0 --quiet; then
-        info "matugen failed, keeping the previous colors"
+    if [[ -n "$theme_color" ]]; then
+        info "Generating $color_mode colors ($scheme) from the theme color $theme_color"
+        matugen color hex "$theme_color" --mode "$color_mode" --type "$scheme" --quiet \
+            || info "matugen failed, keeping the previous colors"
+    else
+        info "Generating $color_mode colors ($scheme)"
+        # --source-color-index stops matugen 4 from asking which color to use
+        if ! matugen image "$image" --mode "$color_mode" --type "$scheme" --source-color-index 0 --quiet; then
+            info "matugen failed, keeping the previous colors"
+        fi
     fi
 else
     info "matugen is not installed, colors unchanged"

@@ -5,8 +5,9 @@ Waybar's built-in Hyprland workspaces module (0.15) still sends the old
 pre-Lua dispatch commands, which Hyprland 0.55+ rejects, so clicking a
 workspace would do nothing. Lennox shows workspaces as ten small custom
 modules instead (custom/ws1 ... custom/ws10), and this daemon writes their
-state to $XDG_RUNTIME_DIR/lennox/ws/N.json and pokes Waybar (SIGRTMIN+8)
-whenever Hyprland reports a workspace or window change.
+state to $XDG_RUNTIME_DIR/lennox/ws/N.json (and the number of minimized
+windows to minimized.json) and pokes Waybar (SIGRTMIN+8) whenever
+Hyprland reports a workspace or window change.
 
 Started at login by lennox-autostart; only one copy runs at a time.
 """
@@ -165,6 +166,19 @@ class State:
                 write_atomic(os.path.join(OUT_DIR, f"{n}.json"), line)
                 self.last[n] = line
                 changed = True
+        # Minimized windows live on the hidden special:minimized workspace
+        hidden = sum(ws.get("windows", 0) for ws in workspaces if ws.get("name") == "special:minimized")
+        if hidden:
+            plural = "window" if hidden == 1 else "windows"
+            data = {"text": str(hidden), "alt": "minimized", "class": "minimized",
+                    "tooltip": f"{hidden} minimized {plural}\nLeft: bring one back   Right: bring all back"}
+        else:
+            data = {"text": ""}
+        line = json.dumps(data) + "\n"
+        if self.last.get("minimized") != line:
+            write_atomic(os.path.join(OUT_DIR, "minimized.json"), line)
+            self.last["minimized"] = line
+            changed = True
         if changed:
             signal_waybar()
 

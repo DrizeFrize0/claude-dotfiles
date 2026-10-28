@@ -68,6 +68,8 @@ Every screenshot is copied to the clipboard and saved in `~/Pictures/Screenshots
 | `SUPER + SHIFT + Q` | Force quit |
 | `SUPER + F` | Fullscreen |
 | `SUPER + M` | Maximize |
+| `SUPER + H` | Minimize (the bar shows a 󰖰 button with how many are hidden) |
+| `SUPER + ALT + H` | Bring back a minimized window |
 | `SUPER + T` | Float / tile |
 | `SUPER + ALT + T` | Float and pin on every workspace |
 | `SUPER + P` | Pseudo-tile |

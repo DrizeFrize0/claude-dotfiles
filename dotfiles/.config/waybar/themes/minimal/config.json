@@ -9,7 +9,8 @@
   "reload_style_on_change": false,
   "modules-left": [
     "custom/appmenuicon",
-    "group/workspaces"
+    "group/workspaces",
+    "custom/minimized"
   ],
   "modules-center": [
     "hyprland/window"

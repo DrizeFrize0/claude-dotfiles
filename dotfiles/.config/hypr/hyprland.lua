@@ -41,6 +41,7 @@ load("lennox.layout")
 load("lennox.misc")
 load("lennox.rules")
 load("lennox.keybinds")
+load("lennox.minimize")
 load("lennox.modes")
 load("lennox.autostart")
 

@@ -12,6 +12,9 @@ On top of that it adds:
 
 - **Lennox Settings** (`SUPER + I`): a real settings app for the whole desktop. Appearance, wallpaper, bar and dock, sound and microphone, display, keyboard and touchpad, Wi-Fi and Bluetooth, power and battery, night light, graphics (NVIDIA), default apps, updates, keybindings, and a health check.
 - **Dashboard** (`SUPER + D`) and **desktop widgets**: a sidebar with quick actions, volume and brightness, music, weather, calendar, system stats and notes, plus a big clock, weather and now-playing on your wallpaper. All colored from your wallpaper.
+- **Color themes**: 12 themes (Ocean, Sakura, Sunset, Forest, Lavender, Midnight…) or colors picked from your wallpaper.
+- **More wallpapers**: the Lennox pack, 12 wallpapers painted on your machine (aurora, sunset beach, night sky, dunes, clouds…), plus the 13 ML4W ones and an optional 200+ ML4W collection.
+- **Minimize** (`SUPER + H`): windows wait on a hidden workspace; a bar button shows how many and brings them back. The minimize button inside apps works too.
 - **One-click looks**: Lennox, Glass, Neon (spinning border), Minimal, Focus, Lightweight and ML4W Classic, plus animation styles (Dynamic, Moving, Classic…).
 - **Quick panel** (`SUPER + N`): phone-style toggles (Wi-Fi, Bluetooth, mic, night light, game mode, stay awake, battery saver, dark mode), volume / mic / brightness sliders, media controls and notifications.
 - **Hybrid NVIDIA done right** for laptops like yours (Intel + GTX 1650). The desktop runs on Intel so the GTX can power off, and games and Minecraft use the GTX. External screens on NVIDIA ports are switched on automatically.

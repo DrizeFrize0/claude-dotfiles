@@ -1,9 +1,11 @@
-/* Lennox power menu (SUPER + ESC): a row of big glass buttons. */
+/* Lennox power menu (SUPER + ESC): a row of big glass buttons.
+ * Each button is an icon over a one-line label (lennox-menu draws the
+ * icons in your theme color), so every rofi version sizes them right. */
 
 @import "~/.config/rofi/shared.rasi"
 
 configuration {
-    show-icons: false;
+    show-icons: true;
     font: "Inter SemiBold 11";
 }
 
@@ -34,6 +36,7 @@ listview {
     spacing:           12px;
     cycle:             true;
     dynamic:           true;
+    fixed-height:      true;
     scrollbar:         false;
     layout:            vertical;
     fixed-columns:     true;
@@ -41,7 +44,10 @@ listview {
 }
 
 element {
-    padding:           20px 6px 16px 6px;
+    orientation:       vertical;
+    children:          [ "element-icon", "element-text" ];
+    spacing:           12px;
+    padding:           22px 6px 18px 6px;
     border:            1px;
     border-color:      @outline-soft;
     border-radius:     22px;
@@ -50,8 +56,13 @@ element {
 
 element selected.normal {
     border-color:      @primary;
-    background-color:  @primary;
-    text-color:        @on-primary;
+    background-color:  @primary-soft;
+    text-color:        @primary;
+}
+
+element-icon {
+    size:              2.2em;
+    horizontal-align:  0.5;
 }
 
 element-text {

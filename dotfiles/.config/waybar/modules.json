@@ -7,7 +7,8 @@
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-ws go 1",
     "on-scroll-up": "~/.local/bin/lennox-ws prev",
-    "on-scroll-down": "~/.local/bin/lennox-ws next"
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
   },
   "custom/ws2": {
     "exec": "~/.local/bin/lennox-ws 2",
@@ -17,7 +18,8 @@
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-ws go 2",
     "on-scroll-up": "~/.local/bin/lennox-ws prev",
-    "on-scroll-down": "~/.local/bin/lennox-ws next"
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
   },
   "custom/ws3": {
     "exec": "~/.local/bin/lennox-ws 3",
@@ -27,7 +29,8 @@
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-ws go 3",
     "on-scroll-up": "~/.local/bin/lennox-ws prev",
-    "on-scroll-down": "~/.local/bin/lennox-ws next"
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
   },
   "custom/ws4": {
     "exec": "~/.local/bin/lennox-ws 4",
@@ -37,7 +40,8 @@
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-ws go 4",
     "on-scroll-up": "~/.local/bin/lennox-ws prev",
-    "on-scroll-down": "~/.local/bin/lennox-ws next"
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
   },
   "custom/ws5": {
     "exec": "~/.local/bin/lennox-ws 5",
@@ -47,7 +51,8 @@
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-ws go 5",
     "on-scroll-up": "~/.local/bin/lennox-ws prev",
-    "on-scroll-down": "~/.local/bin/lennox-ws next"
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
   },
   "custom/ws6": {
     "exec": "~/.local/bin/lennox-ws 6",
@@ -57,7 +62,8 @@
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-ws go 6",
     "on-scroll-up": "~/.local/bin/lennox-ws prev",
-    "on-scroll-down": "~/.local/bin/lennox-ws next"
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
   },
   "custom/ws7": {
     "exec": "~/.local/bin/lennox-ws 7",
@@ -67,7 +73,8 @@
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-ws go 7",
     "on-scroll-up": "~/.local/bin/lennox-ws prev",
-    "on-scroll-down": "~/.local/bin/lennox-ws next"
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
   },
   "custom/ws8": {
     "exec": "~/.local/bin/lennox-ws 8",
@@ -77,7 +84,8 @@
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-ws go 8",
     "on-scroll-up": "~/.local/bin/lennox-ws prev",
-    "on-scroll-down": "~/.local/bin/lennox-ws next"
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
   },
   "custom/ws9": {
     "exec": "~/.local/bin/lennox-ws 9",
@@ -87,7 +95,8 @@
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-ws go 9",
     "on-scroll-up": "~/.local/bin/lennox-ws prev",
-    "on-scroll-down": "~/.local/bin/lennox-ws next"
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
   },
   "custom/ws10": {
     "exec": "~/.local/bin/lennox-ws 10",
@@ -97,7 +106,8 @@
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-ws go 10",
     "on-scroll-up": "~/.local/bin/lennox-ws prev",
-    "on-scroll-down": "~/.local/bin/lennox-ws next"
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
   },
   "group/workspaces": {
     "orientation": "inherit",
@@ -144,7 +154,8 @@
     "interval": 1800,
     "signal": 12,
     "on-click": "~/.local/bin/lennox-update",
-    "on-click-right": "~/.local/bin/lennox-updates refresh"
+    "on-click-right": "~/.local/bin/lennox-updates refresh",
+    "hide-empty-text": true
   },
   "pulseaudio": {
     "format": "{icon}  {volume}%",
@@ -250,7 +261,8 @@
     "return-type": "json",
     "interval": 15,
     "format": "{text}",
-    "on-click": "~/.local/bin/lennox-settings --page graphics"
+    "on-click": "~/.local/bin/lennox-settings --page graphics",
+    "hide-empty-text": true
   },
   "hyprland/language": {
     "format": "󰌌 {short}"
@@ -287,7 +299,8 @@
     "interval": 60,
     "signal": 11,
     "format": "{text}",
-    "on-click": "~/.local/bin/lennox-idle toggle"
+    "on-click": "~/.local/bin/lennox-idle toggle",
+    "hide-empty-text": true
   },
   "custom/nightlight": {
     "exec": "~/.local/bin/lennox-nightlight waybar",
@@ -295,7 +308,8 @@
     "interval": 60,
     "signal": 9,
     "format": "{text}",
-    "on-click": "~/.local/bin/lennox-nightlight toggle"
+    "on-click": "~/.local/bin/lennox-nightlight toggle",
+    "hide-empty-text": true
   },
   "custom/gamemode": {
     "exec": "~/.local/bin/lennox-mode game waybar",
@@ -303,7 +317,8 @@
     "interval": "once",
     "signal": 10,
     "format": "{text}",
-    "on-click": "~/.local/bin/lennox-mode game toggle"
+    "on-click": "~/.local/bin/lennox-mode game toggle",
+    "hide-empty-text": true
   },
   "group/tools": {
     "orientation": "inherit",
@@ -384,5 +399,16 @@
       "on-scroll-up": "shift_up",
       "on-scroll-down": "shift_down"
     }
+  },
+  "custom/minimized": {
+    "exec": "~/.local/bin/lennox-minimize waybar",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "󰖰  {text}",
+    "on-click": "~/.local/bin/lennox-minimize menu",
+    "on-click-right": "~/.local/bin/lennox-minimize all",
+    "on-click-middle": "~/.local/bin/lennox-minimize last",
+    "hide-empty-text": true
   }
 }
