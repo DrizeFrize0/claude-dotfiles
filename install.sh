@@ -198,6 +198,8 @@ install_packages() {
     $WANT_DEV && files+=("$SETUP/packages/dev.txt")
 
     mapfile -t pkgs < <(pkg_list "${files[@]}")
+    note "About 1.5 GB to download. There is no progress bar here, so \"Retrieving packages...\""
+    note "can sit still for 5 to 30 minutes on slower Wi-Fi. That's normal: let it run."
     pacman_install "${pkgs[@]}" || die "Package installation failed. Fix the error above and run the installer again."
     ok "${#pkgs[@]} packages installed"
 
