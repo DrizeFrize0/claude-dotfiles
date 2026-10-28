@@ -16,7 +16,7 @@ case "${1:-}" in
             cat "$STATE/$1.json"
         elif (( $1 <= 5 )); then
             # Daemon not ready yet: show the always-visible workspaces plainly
-            printf '{"text":"%s","class":["ws","empty"],"tooltip":"Workspace %s"}\n' "$1" "$1"
+            printf '{"text":"%s","alt":"empty","class":["ws","empty"],"tooltip":"Workspace %s"}\n' "$1" "$1"
         fi
         ;;
     *) echo "usage: lennox-ws N | go N | next | prev" >&2; exit 2 ;;

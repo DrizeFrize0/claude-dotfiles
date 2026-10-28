@@ -119,9 +119,9 @@ Do these in order. `SUPER` is the Windows key.
 3. **Test sound:** play anything, or use the volume keys. You should hear it and see a volume pop-up.
 4. **Test the mic:** `SUPER + I` → **Sound** → *Test the microphone*. Speak, then listen back.
 5. **Test the touchpad:** two-finger scroll, tap to click, and swipe left/right with **three fingers** to switch workspaces.
-6. **Pick a bar style:** `SUPER + CTRL + T` → Modern, Glass or Minimal.
+6. **Meet the bar:** click the ✦ star for your apps (right-click it for the dashboard), click the clock for the dashboard. `SUPER + CTRL + T` switches between Lennox Islands and Lennox Line (the classic ML4W bars are there too).
 7. **Turn on the weather:** `SUPER + I` → **Widgets** → type your city → ✓. The clock, weather and music now show on your wallpaper.
-8. **Try a look:** `SUPER + I` → **Appearance** → Looks: *Glass*, *Neon* (spinning border), *Minimal*… one click each.
+8. **Try a look:** `SUPER + I` → **Appearance** → Looks: *Lennox*, *Glass*, *Neon* (spinning border), *Minimal*… one click each.
 
 ### 3.3 Sign in to your stuff
 

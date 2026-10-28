@@ -37,7 +37,7 @@ def load_colors(path=COLORS_FILE):
 BASE = """
 /* ---------------------------------------------- shared */
 .lennox-widgets, .lennox-dashboard {
-    font-family: "Fira Sans", sans-serif;
+    font-family: "Inter", "Fira Sans", sans-serif;
     color: @on_surface;
 }
 window.lennox-widgets, window.lennox-dashboard-window { background: transparent; }

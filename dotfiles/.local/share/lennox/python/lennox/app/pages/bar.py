@@ -6,9 +6,11 @@ from .. import rows
 from ..util import launch, lennox_bin
 
 STYLES = [
-    ("modern", "Modern: floating pills (ML4W Modern)"),
-    ("glass", "Glass: frosted islands (ML4W Glass)"),
-    ("minimal", "Minimal: one thin strip (ML4W Minimal)"),
+    ("lennox", "Lennox Islands: three floating glass islands"),
+    ("lennox-line", "Lennox Line: one slim glass strip"),
+    ("modern", "ML4W Modern (classic)"),
+    ("glass", "ML4W Glass (classic)"),
+    ("minimal", "ML4W Minimal (classic)"),
 ]
 
 
@@ -17,7 +19,8 @@ class Page:
         store = ctx.store
         page = Adw.PreferencesPage()
 
-        bar = Adw.PreferencesGroup(title="Top bar", description="Shortcuts: SUPER + CTRL + T style, SUPER + CTRL + B hide, SUPER + SHIFT + B reload.")
+        bar = Adw.PreferencesGroup(title="Top bar", description="Click the star for apps (right-click: dashboard), the clock for the dashboard. "
+                                   "Shortcuts: SUPER + CTRL + T style, SUPER + CTRL + B hide, SUPER + SHIFT + B reload.")
         bar.add(rows.switch_row(store, "bar.enabled", "Show the bar"))
         bar.add(rows.combo_row(store, "bar.style", "Style", STYLES))
         bar.add(rows.switch_row(store, "bar.clock_24h", "24-hour clock"))

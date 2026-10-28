@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The top bar (Waybar).
 #   lennox-bar start|stop|reload|toggle
-#   lennox-bar style modern|glass|minimal
+#   lennox-bar style lennox|lennox-line|modern|glass|minimal
 # Style and visible modules are set in Lennox Settings > Bar.
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -10,30 +10,46 @@ RUN="${XDG_RUNTIME_DIR:-/tmp}/lennox"
 mkdir -p "$RUN"
 
 build_config() {
-    local style="$1" off=() clock="{:%H:%M  %a}" media=false
+    local style="$1" off=() h24=true media=false
     [[ "$(lennox-get bar.show_window_title)" == "true" ]] || off+=("hyprland/window")
     [[ "$(lennox-get bar.show_hardware)" == "true" ]] || off+=("group/hardware")
     [[ "$(lennox-get bar.show_tray)" == "true" ]] || off+=("tray")
     [[ "$(lennox-get bar.show_updates)" == "true" ]] || off+=("custom/updates")
     [[ "$(lennox-get bar.show_media)" == "true" ]] && media=true
-    [[ "$(lennox-get bar.clock_24h)" == "true" ]] || clock="{:%I:%M %p  %a}"
+    [[ "$(lennox-get bar.clock_24h)" == "true" ]] || h24=false
     # No battery on desktops: hide the module instead of showing "0%"
     ls /sys/class/power_supply/BAT* >/dev/null 2>&1 || off+=("battery")
 
     local off_json
     off_json="$(printf '%s\n' "${off[@]}" | jq -R . | jq -s 'map(select(length > 0))')"
 
+    # A theme's "x-lennox" block (optional) sets:
+    #   clock-24 / clock-12   clock formats
+    #   media-in              where "now playing" goes (first in that part)
+    #   ws-dots               workspaces as dots; the active one shows its number
     jq -s \
         --argjson off "$off_json" \
         --argjson media "$media" \
-        --arg clock "$clock" '
+        --argjson h24 "$h24" '
         def drop: map(select(. as $m | ($off | index($m)) | not));
-        (.[1] + .[0])
+        (.[1] + .[0]) as $c
+        | ($c["x-lennox"] // {}) as $x
+        | $c | del(.["x-lennox"])
         | .["modules-left"] |= drop
         | .["modules-center"] |= drop
         | .["modules-right"] |= drop
-        | if $media then .["modules-left"] += ["mpris"] else . end
-        | .clock.format = $clock
+        | if $media then
+              (if $x["media-in"] then .[$x["media-in"]] |= (["mpris"] + .) else .["modules-left"] += ["mpris"] end)
+          else . end
+        | .clock.format = (if $h24 then ($x["clock-24"] // "{:%H:%M  %a}")
+                           else ($x["clock-12"] // "{:%I:%M %p  %a}") end)
+        | if $x["ws-dots"] then
+              reduce range(1; 11) as $n (.;
+                  .["custom/ws\($n)"] += {
+                      "format": "{icon}",
+                      "format-icons": { "active": "\($n)", "urgent": "\($n)", "default": " " }
+                  })
+          else . end
         ' "$WAYBAR/themes/$style/config.json" "$WAYBAR/modules.json" > "$RUN/waybar.json.tmp" \
         && mv -f "$RUN/waybar.json.tmp" "$RUN/waybar.json"
 }
@@ -47,7 +63,7 @@ start() {
     pgrep -x waybar >/dev/null && return 0
     local style
     style="$(lennox-get bar.style)"
-    [[ -f "$WAYBAR/themes/$style/config.json" ]] || style="modern"
+    [[ -f "$WAYBAR/themes/$style/config.json" ]] || style="lennox"
     build_config "$style" || { notify-send -a Lennox -i dialog-error "Bar" "Could not build the bar config (is jq installed?)"; return 1; }
     # 9>&- : waybar must not inherit (and keep holding) our lock
     setsid -f waybar -c "$RUN/waybar.json" -s "$WAYBAR/themes/$style/style.css" >"$RUN/waybar.log" 2>&1 </dev/null 9>&-
@@ -72,7 +88,7 @@ case "${1:-reload}" in
     reload|restart) stop; start ;;
     toggle) if pgrep -x waybar >/dev/null; then stop; else start force; fi ;;
     style)
-        [[ -n "${2:-}" ]] || { echo "usage: lennox-bar style modern|glass|minimal" >&2; exit 2; }
+        [[ -n "${2:-}" ]] || { echo "usage: lennox-bar style lennox|lennox-line|modern|glass|minimal" >&2; exit 2; }
         flock -u 9
         exec 9>&-
         lennox-set bar.style "$2"

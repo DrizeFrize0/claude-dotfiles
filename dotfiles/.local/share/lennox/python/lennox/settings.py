@@ -24,14 +24,14 @@ DEFAULTS = {
         "animations": "default",
         "border_style": "gradient",
         "workspace_anim": "preset",
-        "gaps_in": 10,
-        "gaps_out": 16,
+        "gaps_in": 8,
+        "gaps_out": 14,
         "border_size": 2,
-        "rounding": 10,
+        "rounding": 14,
         "active_opacity": 1.0,
         "inactive_opacity": 0.9,
         "blur": True,
-        "blur_size": 4,
+        "blur_size": 5,
         "blur_passes": 4,
         "shadow": True,
         "dim_inactive": False,
@@ -50,7 +50,7 @@ DEFAULTS = {
     },
     "bar": {
         "enabled": True,
-        "style": "modern",
+        "style": "lennox",
         "show_window_title": True,
         "show_hardware": True,
         "show_tray": True,
@@ -156,7 +156,7 @@ CHOICES = {
     ("appearance", "workspace_anim"): ["preset", "slide", "slidevert", "fade", "slidefade"],
     ("appearance", "layout"): ["dwindle", "master"],
     ("wallpaper", "transition"): ["grow", "fade", "wipe", "wave", "outer", "center", "any", "simple", "none"],
-    ("bar", "style"): ["modern", "glass", "minimal"],
+    ("bar", "style"): ["lennox", "lennox-line", "modern", "glass", "minimal"],
     ("widgets", "position"): ["top-left", "top-center", "top-right", "center", "bottom-left", "bottom-right"],
     ("widgets", "temperature_unit"): ["celsius", "fahrenheit"],
     ("input", "accel_profile"): ["", "adaptive", "flat"],
@@ -196,36 +196,39 @@ RANGES = {
 # One-click looks (Lennox Settings > Appearance, or `lennox look NAME`).
 # Each sets several values at once; everything else stays as it is.
 _BASE_LOOK = {
-    "appearance.border_style": "gradient", "appearance.border_size": 2, "appearance.rounding": 10,
-    "appearance.gaps_in": 10, "appearance.gaps_out": 16, "appearance.blur": True,
-    "appearance.blur_size": 4, "appearance.shadow": True, "appearance.inactive_opacity": 0.9,
+    "appearance.border_style": "gradient", "appearance.border_size": 2, "appearance.rounding": 14,
+    "appearance.gaps_in": 8, "appearance.gaps_out": 14, "appearance.blur": True,
+    "appearance.blur_size": 5, "appearance.shadow": True, "appearance.inactive_opacity": 0.9,
     "appearance.dim_inactive": False, "appearance.animations": "default",
     "appearance.workspace_anim": "preset", "appearance.terminal_opacity": 0.8,
+    "bar.style": "lennox",
 }
 LOOKS = {
-    "ml4w": ("ML4W Default", "The classic Lennox look", dict(_BASE_LOOK, **{
-        "appearance.color_scheme": "scheme-tonal-spot", "bar.style": "modern"})),
-    "glass": ("Glass", "See-through and frosted", dict(_BASE_LOOK, **{
-        "appearance.border_size": 1, "appearance.rounding": 14, "appearance.blur_size": 6,
-        "appearance.inactive_opacity": 0.85, "appearance.terminal_opacity": 0.7,
-        "appearance.animations": "smooth", "bar.style": "glass"})),
+    "lennox": ("Lennox", "Glass islands, soft corners and smooth motion", dict(_BASE_LOOK, **{
+        "appearance.color_scheme": "scheme-tonal-spot"})),
+    "glass": ("Glass", "Extra see-through and frosted", dict(_BASE_LOOK, **{
+        "appearance.border_size": 1, "appearance.rounding": 18, "appearance.blur_size": 7,
+        "appearance.inactive_opacity": 0.82, "appearance.terminal_opacity": 0.7,
+        "appearance.animations": "smooth"})),
     "neon": ("Neon", "Vibrant colors and a spinning border", dict(_BASE_LOOK, **{
         "appearance.color_scheme": "scheme-vibrant", "appearance.border_style": "animated",
-        "appearance.border_size": 3, "appearance.rounding": 12, "appearance.animations": "dynamic",
-        "bar.style": "modern"})),
-    "minimal": ("Minimal", "Small gaps, no effects", dict(_BASE_LOOK, **{
-        "appearance.border_style": "solid", "appearance.border_size": 1, "appearance.rounding": 6,
+        "appearance.border_size": 3, "appearance.animations": "dynamic"})),
+    "minimal": ("Minimal", "One slim bar, small gaps, quick motion", dict(_BASE_LOOK, **{
+        "appearance.border_style": "solid", "appearance.border_size": 1, "appearance.rounding": 10,
         "appearance.gaps_in": 4, "appearance.gaps_out": 8, "appearance.blur": False,
         "appearance.shadow": False, "appearance.inactive_opacity": 1.0, "appearance.animations": "fast",
-        "appearance.terminal_opacity": 0.95, "bar.style": "minimal"})),
+        "appearance.terminal_opacity": 0.95, "bar.style": "lennox-line"})),
     "focus": ("Focus", "Dims everything except the window you work in", dict(_BASE_LOOK, **{
         "appearance.color_scheme": "scheme-neutral", "appearance.border_style": "solid",
         "appearance.gaps_in": 6, "appearance.gaps_out": 10, "appearance.dim_inactive": True,
-        "appearance.inactive_opacity": 0.8, "appearance.animations": "fast", "bar.style": "minimal"})),
-    "lightweight": ("Lightweight", "No blur, shadows or animations: smoothest on battery", dict(_BASE_LOOK, **{
+        "appearance.inactive_opacity": 0.8, "appearance.animations": "smooth", "bar.style": "lennox-line"})),
+    "lightweight": ("Lightweight", "No blur or shadows, quick animations: smoothest on battery", dict(_BASE_LOOK, **{
         "appearance.border_style": "solid", "appearance.blur": False, "appearance.shadow": False,
-        "appearance.inactive_opacity": 1.0, "appearance.animations": "off",
-        "appearance.terminal_opacity": 1.0})),
+        "appearance.inactive_opacity": 1.0, "appearance.animations": "fast",
+        "appearance.terminal_opacity": 1.0, "bar.style": "lennox-line"})),
+    "ml4w": ("ML4W Classic", "The original ML4W style, if you miss it", dict(_BASE_LOOK, **{
+        "appearance.rounding": 10, "appearance.gaps_in": 10, "appearance.gaps_out": 16,
+        "appearance.blur_size": 4, "bar.style": "modern"})),
 }
 
 TIME_KEYS = {("night", "start"), ("night", "end"), ("night", "winddown_time")}

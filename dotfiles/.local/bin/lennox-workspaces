@@ -148,8 +148,15 @@ class State:
                 if n in self.urgent:
                     classes.append("urgent")
                 plural = "window" if count == 1 else "windows"
+                if "urgent" in classes:
+                    alt = "urgent"
+                elif n == focused:
+                    alt = "active"
+                else:
+                    alt = "occupied" if count else "empty"
                 data = {
                     "text": str(n),
+                    "alt": alt,
                     "class": classes,
                     "tooltip": f"Workspace {n} · {count} {plural}" if count else f"Workspace {n}",
                 }

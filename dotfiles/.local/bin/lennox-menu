@@ -29,13 +29,38 @@ menu() {
 
 notify() { notify-send -a Lennox -i "$1" -t 2500 "$2" "${3:-}"; }
 
+launcher_header() {
+    # The launcher's greeting and date, as rofi arguments in header_args
+    local hour name greeting date
+    hour=$((10#$(date +%H)))
+    if (( hour >= 5 && hour < 12 )); then greeting="Good morning"
+    elif (( hour >= 12 && hour < 17 )); then greeting="Good afternoon"
+    elif (( hour >= 17 && hour < 22 )); then greeting="Good evening"
+    else greeting="Late night"
+    fi
+    name="$(lennox-get widgets.name 2>/dev/null)"
+    [[ -n "$name" ]] || name="$(getent passwd "$USER" | cut -d: -f5 | cut -d, -f1 | awk '{print $1}')"
+    [[ -n "$name" ]] || name="${USER^}"
+    name="$(tr -d '"\\' <<<"$name")"
+    if [[ "$(lennox-get bar.clock_24h 2>/dev/null)" == "false" ]]; then
+        date="$(date '+%A %-d %B  ·  %-I:%M %p')"
+    else
+        date="$(date '+%A %-d %B  ·  %H:%M')"
+    fi
+    # Two separate rofi arguments: one theme block each
+    header_args=(-theme-str "textbox-greeting { str: \"$greeting, $name\"; }"
+                 -theme-str "textbox-date { str: \"$date\"; }")
+}
+
 case "${1:-apps}" in
     apps)
-        rofi -show drun -config "$ROFI/config.rasi"
+        launcher_header
+        rofi -show drun -config "$ROFI/config.rasi" "${header_args[@]}"
         ;;
 
     windows)
-        rofi -show window -config "$ROFI/config.rasi"
+        launcher_header
+        rofi -show window -config "$ROFI/config.rasi" "${header_args[@]}"
         ;;
 
     clipboard)
@@ -105,14 +130,26 @@ case "${1:-apps}" in
         ;;
 
     bar-style)
-        current="$(lennox-get bar.style)"
-        choice="$(printf 'Modern\nGlass\nMinimal\n' | menu "󰕰 Bar style" -no-custom -mesg "Current: ${current^}")" || exit 0
-        [[ -n "$choice" ]] && lennox-bar style "${choice,,}"
+        style="$(lennox-get bar.style)"
+        case "$style" in
+            lennox) current="Lennox Islands" ;;
+            lennox-line) current="Lennox Line" ;;
+            *) current="ML4W ${style^}" ;;
+        esac
+        choice="$(printf 'Lennox Islands\nLennox Line\nML4W Modern\nML4W Glass\nML4W Minimal\n' \
+            | menu "󰕰 Bar style" -no-custom -mesg "Current: $current")" || exit 0
+        case "$choice" in
+            "Lennox Islands") lennox-bar style lennox ;;
+            "Lennox Line") lennox-bar style lennox-line ;;
+            "ML4W "*) lennox-bar style "$(tr '[:upper:]' '[:lower:]' <<<"${choice#ML4W }")" ;;
+        esac
         ;;
 
     power)
-        choice="$(printf '󰌾\nLock|󰤄\nSuspend|󰍃\nLog out|󰜉\nRestart|󰐥\nShut down' \
-            | rofi -dmenu -config "$ROFI/power.rasi" -sep '|' -eh 2 -no-custom -selected-row 0 \
+        big() { printf '<span font="Symbols Nerd Font 24">%s</span>\n%s' "$1" "$2"; }
+        choice="$(printf '%s|%s|%s|%s|%s' "$(big 󰌾 Lock)" "$(big 󰤄 Suspend)" "$(big 󰍃 'Log out')" \
+                "$(big 󰜉 Restart)" "$(big 󰐥 'Shut down')" \
+            | rofi -dmenu -config "$ROFI/power.rasi" -sep '|' -eh 2 -markup-rows -no-custom -selected-row 0 \
                 -mesg "Up $(uptime -p | sed 's/^up //')")" || exit 0
         case "$choice" in
             *Lock) lennox-power lock ;;

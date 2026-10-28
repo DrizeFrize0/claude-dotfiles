@@ -1,179 +1,174 @@
 /*
- *  ____        __ _
- * |  _ \ ___  / _(_)
- * | |_) / _ \| |_| |
- * |  _ < (_) |  _| |
- * |_| \_\___/|_| |_|
+ * Lennox launcher (SUPER + SPACE)
  *
- * Lennox app launcher (SUPER + SPACE), after the ML4W launcher:
- * wallpaper on the left, results on the right.
+ *   [wallpaper]  Good evening, Alex
+ *                Wednesday 28 October · 21:47
+ *   [ 󰍉  Search apps                       ]
+ *   [app] [app] [app] [app] [app] [app]
+ *   [app] [app] [app] [app] [app] [app]
+ *   [app] [app] [app] [app] [app] [app]
+ *   (Apps) (Windows) (Run)        ↵ open  ·  esc close
+ *
+ * lennox-menu fills in the greeting and the date when it opens.
  */
 
 @import "~/.config/rofi/shared.rasi"
 
 configuration {
     modi:                 "drun,window,run";
-    display-drun:         "󰀻";
-    display-window:       "󰖯";
-    display-run:          "󰆍";
+    display-drun:         "󰀻  Apps";
+    display-window:       "󰖯  Windows";
+    display-run:          "󰆍  Run";
     drun-display-format:  "{name}";
-    window-format:        "{w} · {c} · {t}";
+    window-format:        "{t}";
+    kb-mode-next:         "Control+Tab,Shift+Right";
+    kb-mode-previous:     "Control+ISO_Left_Tab,Shift+Left";
 }
 
 window {
-    height:            32em;
-    width:             54em;
-    transparency:      "real";
-    fullscreen:        false;
-    enabled:           true;
-    cursor:            "default";
-    spacing:           0em;
-    padding:           0em;
-    border:            @border-width;
-    border-color:      @primary;
-    border-radius:     @border-radius;
-    background-color:  @background;
+    width:             52em;
 }
 
 mainbox {
-    enabled:           true;
-    spacing:           0em;
-    padding:           0em;
-    orientation:       horizontal;
-    children:          [ "imagebox", "listbox" ];
+    padding:           22px;
+    spacing:           16px;
+    orientation:       vertical;
+    children:          [ "header", "inputbar", "listview", "footer" ];
     background-color:  transparent;
+}
+
+/* ---------------------------------------------------- header */
+
+header {
+    expand:            false;
+    orientation:       horizontal;
+    spacing:           16px;
+    children:          [ "wallpaper", "greeting" ];
+    background-color:  transparent;
+}
+
+wallpaper {
+    expand:            false;
+    padding:           2.4em;
+    border:            1px;
+    border-color:      @outline-soft;
+    border-radius:     @radius-inner;
+    background-color:  @tile;
     background-image:  @current-image;
 }
 
-imagebox {
-    padding:           20px;
-    background-color:  transparent;
+greeting {
     orientation:       vertical;
-    children:          [ "inputbar", "dummy", "mode-switcher" ];
+    spacing:           2px;
+    children:          [ "dummy-top", "textbox-greeting", "textbox-date", "dummy-bottom" ];
+    background-color:  transparent;
 }
 
-dummy {
+dummy-top, dummy-bottom {
+    expand:            true;
+    background-color:  transparent;
+}
+
+textbox-greeting {
+    expand:            false;
+    str:               "Hello";
+    font:              "Inter Bold 20";
+    text-color:        @on-surface;
+    background-color:  transparent;
+}
+
+textbox-date {
+    expand:            false;
+    str:               "";
+    font:              "Inter Medium 11";
+    text-color:        @primary;
+    background-color:  transparent;
+}
+
+/* ---------------------------------------------------- search */
+
+inputbar {
+    expand:            false;
+    children:          [ "textbox-search", "entry" ];
+}
+
+entry {
+    placeholder:       "Search";
+}
+
+/* ---------------------------------------------------- app grid */
+
+listview {
+    columns:           6;
+    lines:             3;
+    flow:              horizontal;
+    spacing:           10px;
+    cycle:             true;
+    dynamic:           false;
+    fixed-height:      true;
+    fixed-columns:     true;
+    scrollbar:         false;
+    layout:            vertical;
+    background-color:  transparent;
+}
+
+element {
+    orientation:       vertical;
+    padding:           16px 6px 12px 6px;
+    spacing:           10px;
+    children:          [ "element-icon", "element-text" ];
+}
+
+element-icon {
+    size:              2.8em;
+    horizontal-align:  0.5;
+}
+
+element-text {
+    horizontal-align:  0.5;
+    vertical-align:    0.5;
+    font:              "Inter Medium 10";
+}
+
+/* ---------------------------------------------------- footer */
+
+footer {
+    expand:            false;
+    orientation:       horizontal;
+    spacing:           10px;
+    children:          [ "mode-switcher", "textbox-hint" ];
     background-color:  transparent;
 }
 
 mode-switcher {
-    orientation:       horizontal;
-    enabled:           true;
-    padding:           1.2em;
-    spacing:           1.2em;
+    expand:            false;
+    spacing:           8px;
     background-color:  transparent;
 }
 
 button {
-    padding:           12px;
-    border-radius:     2em;
+    padding:           7px 14px;
+    expand:            false;
+    border:            1px;
+    border-color:      @outline-soft;
+    border-radius:     99px;
     cursor:            pointer;
-    background-color:  @background;
-    text-color:        @on-surface;
+    background-color:  @tile;
+    text-color:        @on-surface-variant;
+    font:              "Inter SemiBold 10";
 }
 
 button selected {
+    border-color:      @primary;
     background-color:  @primary;
     text-color:        @on-primary;
 }
 
-inputbar {
-    enabled:           true;
-    margin:            1em;
-    children:          [ "textbox-prompt-colon", "entry" ];
-    border-radius:     2em;
-    background-color:  @surface;
-}
-
-textbox-prompt-colon {
-    enabled:           true;
-    expand:            false;
-    str:               "  󰍉";
-    padding:           1em 0.3em 0em 0.5em;
-    text-color:        @on-surface;
-    background-color:  transparent;
-}
-
-entry {
-    enabled:           true;
-    padding:           1em;
-    text-color:        @on-surface;
-    cursor:            text;
-    placeholder:       "Search";
-    placeholder-color: inherit;
-    background-color:  transparent;
-}
-
-listbox {
-    padding:           0em;
-    spacing:           0em;
-    orientation:       horizontal;
-    children:          [ "listview" ];
-    background-color:  @background;
-}
-
-listview {
-    padding:           1.5em;
-    spacing:           0.4em;
-    enabled:           true;
-    columns:           1;
-    lines:             8;
-    cycle:             true;
-    dynamic:           true;
-    scrollbar:         false;
-    layout:            vertical;
-    fixed-height:      true;
-    fixed-columns:     true;
-    cursor:            "default";
-    background-color:  transparent;
-    text-color:        @on-surface;
-}
-
-element {
-    enabled:           true;
-    spacing:           10px;
-    padding:           0.5em;
-    cursor:            pointer;
-    background-color:  transparent;
-    text-color:        @on-surface;
-}
-
-element selected.normal {
-    background-color:  @primary;
-    text-color:        @on-primary;
-    border-radius:     1.5em;
-}
-
-element normal.normal,
-element alternate.normal {
-    background-color:  transparent;
-    text-color:        @on-surface;
-}
-
-element-icon {
-    size:              2.6em;
-    cursor:            inherit;
-    background-color:  transparent;
-    text-color:        inherit;
-}
-
-element-text {
+textbox-hint {
+    str:               "Enter  open    Ctrl+Tab  switch    Esc  close";
+    horizontal-align:  1.0;
     vertical-align:    0.5;
-    horizontal-align:  0.0;
-    cursor:            inherit;
+    font:              "Inter Medium 9";
+    text-color:        @on-surface-variant;
     background-color:  transparent;
-    text-color:        inherit;
-}
-
-error-message {
-    padding:           1em;
-    text-color:        @on-surface;
-    background-color:  @background;
-}
-
-textbox {
-    text-color:        inherit;
-    background-color:  inherit;
-    vertical-align:    0.5;
-    horizontal-align:  0.5;
 }

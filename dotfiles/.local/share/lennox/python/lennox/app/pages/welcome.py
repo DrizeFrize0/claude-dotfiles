@@ -55,7 +55,7 @@ class Page:
                                 lambda: ctx.navigate("wallpaper"), "preferences-desktop-wallpaper-symbolic"))
         start.add(rows.link_row("Change the look", "Dark or light, animations, gaps, blur, rounded corners",
                                 lambda: ctx.navigate("appearance"), "applications-graphics-symbolic"))
-        start.add(rows.link_row("Bar style", "Modern, Glass or Minimal, just like ML4W",
+        start.add(rows.link_row("Bar style", "Lennox Islands or Line, or the classic ML4W bars",
                                 lambda: ctx.navigate("bar"), "view-grid-symbolic"))
         start.add(rows.link_row("Widgets and dashboard", "Clock, weather and music on your desktop; SUPER + D for the dashboard",
                                 lambda: ctx.navigate("widgets"), "view-app-grid-symbolic"))

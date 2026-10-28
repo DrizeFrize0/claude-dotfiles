@@ -490,6 +490,14 @@ personalize() {
         lennox-set apps.browser "flatpak run app.zen_browser.zen" --no-apply >/dev/null
         ok "Zen Browser is your default browser"
     fi
+    # Once: installs from before the Lennox bar existed move to it (picking
+    # an ML4W bar again later in Lennox Settings sticks)
+    local marker="$HOME/.config/lennox/.new-bar-done"
+    if [[ ! -f "$marker" ]]; then
+        [[ "$(lennox-get bar.style)" == "modern" ]] && lennox-set bar.style lennox --no-apply >/dev/null \
+            && ok "Switched to the new Lennox bar (the ML4W bars are still in Lennox Settings > Bar)"
+        touch "$marker"
+    fi
     xdg-mime default org.gnome.Nautilus.desktop inode/directory 2>/dev/null
     xdg-mime default org.gnome.Loupe.desktop image/png image/jpeg image/webp image/gif 2>/dev/null
     xdg-mime default mpv.desktop video/mp4 video/x-matroska video/webm 2>/dev/null

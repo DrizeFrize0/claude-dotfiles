@@ -58,7 +58,7 @@ class Page:
         page.add(colors)
 
         presets = Adw.PreferencesGroup(title="Looks", description="Start from a look, then fine-tune below.")
-        box = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, max_children_per_line=3,
+        box = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, max_children_per_line=4,
                           column_spacing=8, row_spacing=8, homogeneous=True)
         for name, (title, description, _values) in S.LOOKS.items():
             button = Gtk.Button(label=title, tooltip_text=description)

@@ -1,3 +1,4 @@
+inter-font                 # Lennox bar, launcher and widgets
 ttf-fira-sans
 ttf-firacode-nerd
 ttf-jetbrains-mono-nerd

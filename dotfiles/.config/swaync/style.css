@@ -11,7 +11,7 @@
 @define-color text @on_surface;
 
 * {
-    font-family: "Fira Sans Semibold", "Symbols Nerd Font", sans-serif;
+    font-family: "Inter", "Fira Sans Semibold", "Symbols Nerd Font", sans-serif;
     font-size: 14px;
     transition: 200ms;
 }

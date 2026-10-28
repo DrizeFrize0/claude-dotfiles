@@ -1,5 +1,5 @@
-/* Lennox compact menu: clipboard, Wi-Fi, keybinds, screenshots, bar style.
- * Drops down from the top of the screen, like the ML4W menus. */
+/* Lennox list menu: clipboard, Wi-Fi, keybinds, emoji, bar style.
+ * A glass card that drops in under the bar. */
 
 @import "~/.config/rofi/shared.rasi"
 
@@ -8,69 +8,32 @@ configuration {
 }
 
 window {
-    width:             34em;
-    y-offset:          1.5em;
+    width:             36em;
     location:          north;
     anchor:            north;
-    transparency:      "real";
-    fullscreen:        false;
-    enabled:           true;
-    cursor:            "default";
-    border:            @border-width;
-    border-color:      @primary;
-    border-radius:     @border-radius;
-    background-color:  @background;
+    y-offset:          4.2em;
 }
 
 mainbox {
-    enabled:           true;
-    spacing:           0em;
-    padding:           0em;
+    padding:           16px;
+    spacing:           12px;
     orientation:       vertical;
     children:          [ "inputbar", "message", "listview" ];
     background-color:  transparent;
 }
 
 inputbar {
-    enabled:           true;
-    padding:           0.6em;
-    margin:            0.8em 0.8em 0em 0.8em;
-    border-radius:     2em;
     children:          [ "prompt", "entry" ];
-    background-color:  @surface;
 }
 
 prompt {
-    padding:           0.5em 0.6em 0.5em 0.8em;
-    text-color:        @primary;
-    background-color:  transparent;
-}
-
-entry {
-    padding:           0.5em;
-    text-color:        @on-surface;
-    cursor:            text;
-    placeholder:       "Search";
-    placeholder-color: inherit;
-    background-color:  transparent;
-}
-
-message {
-    margin:            0.6em 1em 0em 1em;
-    background-color:  transparent;
-}
-
-textbox {
-    text-color:        @on-surface;
-    background-color:  transparent;
-    horizontal-align:  0.0;
+    font:              "Inter SemiBold 11";
 }
 
 listview {
-    padding:           0.8em;
-    spacing:           0.2em;
     columns:           1;
-    lines:             10;
+    lines:             9;
+    spacing:           4px;
     cycle:             true;
     dynamic:           true;
     scrollbar:         false;
@@ -80,38 +43,15 @@ listview {
 }
 
 element {
-    padding:           0.55em 0.9em;
-    cursor:            pointer;
-    background-color:  transparent;
-    text-color:        @on-surface;
-}
-
-element selected.normal {
-    background-color:  @primary;
-    text-color:        @on-primary;
-    border-radius:     1.2em;
-}
-
-element normal.normal,
-element alternate.normal {
-    background-color:  transparent;
-    text-color:        @on-surface;
-}
-
-element normal.active,
-element alternate.active {
-    text-color:        @primary;
-    background-color:  transparent;
+    padding:           10px 14px;
+    spacing:           10px;
+    border-radius:     14px;
 }
 
 element-text {
     vertical-align:    0.5;
-    cursor:            inherit;
-    background-color:  transparent;
-    text-color:        inherit;
 }
 
 element-icon {
     size:              1.4em;
-    background-color:  transparent;
 }

@@ -1,9 +1,12 @@
-/* Lennox rofi: shared look. Colors from the wallpaper, picture behind the
- * search box from the current wallpaper (both refreshed by lennox-wallpaper). */
+/* Lennox menus: shared look.
+ * Glass cards with soft corners. Colors come from the wallpaper and the
+ * picture in the launcher header is your current wallpaper (both
+ * refreshed by lennox-wallpaper). Hyprland blurs behind the card and
+ * pops it in (lennox/rules.lua). */
 configuration {
-    font:                 "Fira Sans Semibold 11";
+    font:                 "Inter Medium 11";
     show-icons:           true;
-    hover-select:         false;
+    hover-select:         true;
     scroll-method:        1;
     me-select-entry:      "";
     me-accept-entry:      "MousePrimary";
@@ -15,6 +18,108 @@ configuration {
 @import "~/.cache/lennox/wallpaper/rofi.rasi"
 
 * {
-    border-width:   2px;
-    border-radius:  1.5em;
+    radius:          28px;
+    radius-inner:    18px;
+    border-width:    1px;
+    border-radius:   18px;
+}
+
+window {
+    transparency:      "real";
+    location:          center;
+    anchor:            center;
+    fullscreen:        false;
+    cursor:            "default";
+    border:            @border-width;
+    border-color:      @outline-soft;
+    border-radius:     @radius;
+    background-color:  @glass;
+}
+
+/* The search pill */
+inputbar {
+    padding:           12px 16px;
+    spacing:           10px;
+    border:            @border-width;
+    border-color:      @outline-soft;
+    border-radius:     @radius-inner;
+    background-color:  @tile;
+    text-color:        @on-surface;
+}
+
+textbox-search {
+    expand:            false;
+    str:               "󰍉";
+    font:              "Symbols Nerd Font 14";
+    vertical-align:    0.5;
+    text-color:        @primary;
+    background-color:  transparent;
+}
+
+prompt {
+    vertical-align:    0.5;
+    text-color:        @primary;
+    background-color:  transparent;
+}
+
+entry {
+    vertical-align:    0.5;
+    cursor:            text;
+    placeholder:       "Search";
+    placeholder-color: @on-surface-variant;
+    text-color:        @on-surface;
+    background-color:  transparent;
+}
+
+message {
+    padding:           10px 14px;
+    border-radius:     @radius-inner;
+    background-color:  @primary-soft;
+}
+
+textbox {
+    text-color:        @on-surface;
+    background-color:  transparent;
+    vertical-align:    0.5;
+}
+
+error-message {
+    padding:           16px;
+    text-color:        @on-surface;
+    background-color:  @glass;
+}
+
+element {
+    cursor:            pointer;
+    border:            1px;
+    border-color:      transparent;
+    border-radius:     @radius-inner;
+    background-color:  transparent;
+    text-color:        @on-surface;
+}
+
+element selected.normal,
+element selected.active {
+    border-color:      @primary;
+    background-color:  @primary-soft;
+    text-color:        @primary;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color:  transparent;
+    text-color:        @on-surface;
+}
+
+element normal.active,
+element alternate.active {
+    background-color:  transparent;
+    text-color:        @primary;
+}
+
+element-icon,
+element-text {
+    cursor:            inherit;
+    background-color:  transparent;
+    text-color:        inherit;
 }

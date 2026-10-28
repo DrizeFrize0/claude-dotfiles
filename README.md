@@ -3,11 +3,16 @@
 **Hyprland for Arch Linux, in the spirit of [ML4W](https://ml4w.com/os/).**
 Clean, minimal, and one place to control everything.
 
-Lennox keeps the ML4W look you know: the same wallpapers, the same lock screen and login screen, the Modern / Glass / Minimal bars, colors generated from your wallpaper (matugen), the ML4W rofi launcher and keybindings. On top of that it adds:
+Lennox starts from ML4W's foundations (the wallpapers, lock screen, login screen, keybindings and colors generated from your wallpaper) and gives it its own face:
+
+- **The Lennox bar**: three floating glass islands (or one slim strip). Workspaces are dots; the one you're on stretches into a numbered pill with a springy animation. The clock opens the dashboard, the star opens your apps.
+- **The Lennox launcher** (`SUPER + SPACE`): a glass card with your wallpaper, a greeting, a big search pill and a grid of apps. It pops in; the bar slides down; the quick panel slides in from the side.
+
+On top of that it adds:
 
 - **Lennox Settings** (`SUPER + I`): a real settings app for the whole desktop. Appearance, wallpaper, bar and dock, sound and microphone, display, keyboard and touchpad, Wi-Fi and Bluetooth, power and battery, night light, graphics (NVIDIA), default apps, updates, keybindings, and a health check.
 - **Dashboard** (`SUPER + D`) and **desktop widgets**: a sidebar with quick actions, volume and brightness, music, weather, calendar, system stats and notes, plus a big clock, weather and now-playing on your wallpaper. All colored from your wallpaper.
-- **One-click looks**: ML4W Default, Glass, Neon (spinning border), Minimal, Focus and Lightweight, plus the ML4W animation styles (Dynamic, Moving, Classic…).
+- **One-click looks**: Lennox, Glass, Neon (spinning border), Minimal, Focus, Lightweight and ML4W Classic, plus animation styles (Dynamic, Moving, Classic…).
 - **Quick panel** (`SUPER + N`): phone-style toggles (Wi-Fi, Bluetooth, mic, night light, game mode, stay awake, battery saver, dark mode), volume / mic / brightness sliders, media controls and notifications.
 - **Hybrid NVIDIA done right** for laptops like yours (Intel + GTX 1650). The desktop runs on Intel so the GTX can power off, and games and Minecraft use the GTX. External screens on NVIDIA ports are switched on automatically.
 - **Drivers that keep themselves up to date.** NVIDIA, sound and mic firmware, touchpad, Wi-Fi and the kernel update automatically, with safety checks: only on the charger, never on a phone hotspot, paused when Arch news says an update needs a manual step, a btrfs snapshot first, and the NVIDIA driver verified before you restart.
@@ -55,8 +60,9 @@ All shortcuts: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 | Part | Tool |
 | --- | --- |
 | Compositor | Hyprland (Lua config) with `hypridle`, `hyprlock`, `hyprsunset` |
-| Bar | Waybar, ML4W Modern / Glass / Minimal |
-| Launcher and menus | rofi (apps, clipboard, Wi-Fi, emoji, wallpaper grid, power menu) |
+| Bar | Waybar: Lennox Islands / Lennox Line (plus the classic ML4W bars) |
+| Launcher and menus | rofi, Lennox glass theme (apps grid, clipboard, Wi-Fi, emoji, wallpapers, power) |
+| Font | Inter |
 | Quick panel and notifications | SwayNotificationCenter |
 | Dashboard and desktop widgets | Python + GTK4 + gtk4-layer-shell |
 | Dock | nwg-dock-hyprland |

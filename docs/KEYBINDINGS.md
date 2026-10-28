@@ -33,7 +33,7 @@ hl.bind("SUPER + B", hl.dsp.exec_cmd("firefox"), { description = "Open Firefox" 
 | `SUPER + SHIFT + C` | Pick a color on screen (hex code copied) |
 | `SUPER + W` | Wallpaper picker |
 | `SUPER + SHIFT + W` | Random wallpaper |
-| `SUPER + CTRL + T` | Bar style (Modern / Glass / Minimal) |
+| `SUPER + CTRL + T` | Bar style (Lennox Islands / Lennox Line / classic ML4W) |
 | `SUPER + SHIFT + M` | Dark / light mode |
 | `SUPER + SHIFT + H` | Night light on / off |
 | `SUPER + ALT + G` | Game mode on / off |

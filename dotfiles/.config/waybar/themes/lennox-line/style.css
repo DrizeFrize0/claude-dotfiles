@@ -1,0 +1,44 @@
+/*
+ * Lennox bar: Line
+ *
+ * The Lennox bar as one slim glass strip across the top. Same buttons,
+ * dots and animations as the Islands style (imported below); only the
+ * shape changes.
+ */
+
+@import "../lennox/style.css";
+
+window#waybar {
+    background: alpha(@surface_container, 0.72);
+    border: 1px solid alpha(@outline_variant, 0.55);
+    border-radius: 18px;
+}
+
+#lennox-start,
+.modules-center,
+.modules-right {
+    background: transparent;
+    border-color: transparent;
+}
+
+.modules-left {
+    margin-left: 4px;
+}
+
+.modules-right {
+    margin-right: 2px;
+}
+
+/* 2px less height than Islands: dots and pills keep their size */
+#workspaces .ws {
+    margin: 14px 3px;
+}
+
+#workspaces .ws.active,
+#workspaces .ws.urgent {
+    margin: 8px 3px;
+}
+
+#custom-lennox-launcher {
+    margin: 5px 4px 5px 1px;
+}

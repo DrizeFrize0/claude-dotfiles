@@ -3,46 +3,28 @@
 @import "~/.config/rofi/shared.rasi"
 
 window {
-    width:             70em;
-    transparency:      "real";
-    border:            @border-width;
-    border-color:      @primary;
-    border-radius:     @border-radius;
-    background-color:  @background;
+    width:             66em;
 }
 
 mainbox {
-    padding:           1em;
-    spacing:           1em;
+    padding:           20px;
+    spacing:           16px;
     children:          [ "inputbar", "listview" ];
     background-color:  transparent;
 }
 
 inputbar {
-    padding:           0.6em;
-    border-radius:     2em;
     children:          [ "prompt", "entry" ];
-    background-color:  @surface;
-}
-
-prompt {
-    padding:           0.5em 0.6em 0.5em 0.8em;
-    text-color:        @primary;
-    background-color:  transparent;
 }
 
 entry {
-    padding:           0.5em;
-    text-color:        @on-surface;
     placeholder:       "Search wallpapers";
-    placeholder-color: inherit;
-    background-color:  transparent;
 }
 
 listview {
     columns:           4;
     lines:             3;
-    spacing:           0.8em;
+    spacing:           12px;
     cycle:             true;
     dynamic:           false;
     scrollbar:         false;
@@ -55,35 +37,25 @@ listview {
 
 element {
     orientation:       vertical;
-    padding:           0.4em;
-    spacing:           0.4em;
-    border-radius:     1em;
-    cursor:            pointer;
-    background-color:  transparent;
-    text-color:        @on-surface;
+    padding:           8px;
+    spacing:           8px;
+    border:            2px;
+    border-radius:     22px;
+    children:          [ "element-icon", "element-text" ];
 }
 
 element selected.normal {
-    background-color:  @primary;
-    text-color:        @on-primary;
-}
-
-element normal.normal,
-element alternate.normal {
-    background-color:  transparent;
-    text-color:        @on-surface;
+    border-color:      @primary;
+    background-color:  @primary-soft;
+    text-color:        @primary;
 }
 
 element-icon {
-    size:              10em;
-    border-radius:     0.8em;
-    cursor:            inherit;
-    background-color:  transparent;
+    size:              11.5em;
+    border-radius:     16px;
 }
 
 element-text {
     horizontal-align:  0.5;
-    cursor:            inherit;
-    background-color:  transparent;
-    text-color:        inherit;
+    font:              "Inter Medium 9";
 }
