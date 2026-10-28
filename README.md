@@ -16,6 +16,7 @@ Lennox keeps the ML4W look you know: the same wallpapers, the same lock screen a
 ## Install
 
 New to Arch? Follow **[docs/INSTALL-ARCH.md](docs/INSTALL-ARCH.md)**: it walks through installing Arch with the right options (btrfs + GRUB, so updates can always be undone).
+Already installed Arch? Follow **[docs/AFTER-INSTALL.md](docs/AFTER-INSTALL.md)**: the full tutorial from the first text screen to a finished desktop.
 
 On an installed Arch system, as your normal user:
 

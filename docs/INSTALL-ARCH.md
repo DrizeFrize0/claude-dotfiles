@@ -70,6 +70,8 @@ Remove the USB stick when the screen goes black.
 
 ## 5. Install Lennox
 
+> The step-by-step version of this part, with first-day setup and everyday tips, is in [AFTER-INSTALL.md](AFTER-INSTALL.md).
+
 Log in with your user on the black text screen. Connect to Wi-Fi:
 
 ```sh
