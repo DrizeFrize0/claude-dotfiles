@@ -6,6 +6,8 @@
 #   lennox-sound clean-mic on|off|status
 #                                   noise suppression, echo cancelling and steady volume
 #                                   for the microphone (a "Microphone (clean)" input)
+#   lennox-sound driver auto|sof|hda   pick the Intel sound driver (needs a restart):
+#                                   sof = current one (digital mics), hda = older and simpler
 #   lennox-sound report             save everything about your sound to a text file
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -27,7 +29,8 @@ audio_controllers() {
     local d class driver
     for d in "$SYS"/bus/pci/devices/*; do
         class="$(cat "$d/class" 2>/dev/null)"
-        [[ "$class" == 0x0403* ]] || continue
+        # 0x0403: HD Audio. 0x0401: Intel audio with the DSP on (SOF / SST)
+        [[ "$class" == 0x0403* || "$class" == 0x0401* ]] || continue
         driver=""
         [[ -e "$d/driver" ]] && driver="$(basename "$(readlink -f "$d/driver")")"
         printf '%s\t%s\t%s\n' "${d##*/}" "$(cat "$d/vendor" 2>/dev/null)" "$driver"
@@ -68,6 +71,33 @@ boost_controls() {
     done
 }
 
+# Cards that matter (not the NVIDIA HDMI one, which is off whenever no TV or
+# monitor is plugged in) and are switched off / in Pro Audio, with the modes
+# to try, best first (available ones first, then by priority):
+#   card<TAB>active profile<TAB>mode
+# shellcheck disable=SC2016  # jq variables, not shell ones
+CARDS_JQ='.[]
+    | select(.active_profile == "off" or .active_profile == "pro-audio")
+    | select((.properties["device.vendor.id"] // "") != "0x10de")
+    | [.profiles | to_entries[] | select(.key != "off" and .key != "pro-audio")] as $modes
+    | select($modes | length > 0)
+    | select([$modes[].key | ascii_downcase
+              | select(test("hdmi|displayport|iec958") and (test("speaker|headphone|analog|mic|headset|line|hifi") | not))]
+             | length < ($modes | length))
+    | . as $c
+    | ($modes | sort_by([(if .value.available == false then 1 else 0 end), -(.value.priority // 0)]))[]
+    | [$c.name, $c.active_profile, .key] | @tsv'
+
+cards_off() { pactl -f json list cards 2>/dev/null | jq -r "$CARDS_JQ" 2>/dev/null; }
+
+DRIVER_CONF="${LENNOX_DRIVER_CONF:-/etc/modprobe.d/lennox-sound-driver.conf}"
+driver_choice() {
+    # auto | sof | hda | sst | avs: what Lennox asked the kernel to use
+    case "$(sed -n 's/.*dsp_driver=\([0-9]\).*/\1/p' "$DRIVER_CONF" 2>/dev/null)" in
+        1) echo hda ;; 2) echo sst ;; 3) echo sof ;; 4) echo avs ;; *) echo auto ;;
+    esac
+}
+
 clean_mic_on() { [[ -f "$CLEAN_CONF" ]]; }
 
 restart_sound() {
@@ -83,7 +113,7 @@ results=()
 note() { results+=("$1"$'\t'"$2"$'\t'"${3:-}"); }   # note ok|warn|fail MESSAGE [HINT]
 
 check() {
-    local log path vendor driver name count=0 sof_used=false
+    local log path vendor driver name count=0 intel_driver=""
 
     # Services first: nothing else can be checked without them
     local unit
@@ -111,9 +141,14 @@ check() {
         elif [[ -z "$driver" ]]; then
             note fail "No driver loaded for $name" "sudo pacman -S sof-firmware alsa-ucm-conf linux-firmware, then restart. Still nothing? Run: lennox-sound report"
         elif [[ "$driver" == sof-audio-pci* ]]; then
-            sof_used=true
-            note ok "Driver: $driver (Intel SOF: built-in digital mics work with this) for $name"
+            intel_driver=sof
+            note ok "Driver: $driver (Intel SOF, the current driver: digital mics work with it) for $name"
+        elif [[ "$driver" == snd_soc_skl* ]]; then
+            intel_driver=sst
+            note warn "Driver: $driver (Intel SST, the old DSP driver) for $name" \
+                "The newer SOF driver usually sounds better: Lennox Settings > Sound > Sound driver > SOF, then restart"
         else
+            [[ "$vendor" == 0x8086 && "$driver" == snd_hda_intel ]] && intel_driver=hda
             note ok "Driver: $driver for $name"
         fi
     done < <(audio_controllers)
@@ -130,9 +165,9 @@ check() {
         else
             note ok "No sound driver or firmware errors this boot"
         fi
-        if grep -qiE 'Digital mics? found|DMICs? detected' <<<"$log" && ! $sof_used; then
-            note fail "Your laptop has digital mics but the old HDA driver is running" \
-                "echo 'options snd_intel_dspcfg dsp_driver=3' | sudo tee /etc/modprobe.d/lennox-sof.conf, then restart"
+        if grep -qiE 'Digital mics? found|DMICs? detected' <<<"$log" && [[ "$intel_driver" == hda ]]; then
+            note fail "Your laptop has digital mics but the old HDA driver is running (the built-in mic can't work)" \
+                "Lennox Settings > Sound > Sound driver > SOF, then restart"
         fi
     else
         note warn "Could not read the kernel log, so driver errors were not checked" "Run: sudo lennox-sound check"
@@ -145,7 +180,9 @@ check() {
     if (( ${#missing[@]} )); then
         note fail "Missing sound firmware: ${missing[*]}" "sudo pacman -S ${missing[*]}, then restart"
     else
-        note ok "Sound firmware installed (sof-firmware $(pacman -Q sof-firmware 2>/dev/null | cut -d' ' -f2))"
+        [[ "$(driver_choice)" != auto ]] && note warn "Sound driver chosen by hand: $(driver_choice)" \
+        "Back to automatic: Lennox Settings > Sound > Sound driver > Automatic, then restart"
+    note ok "Sound firmware installed (sof-firmware $(pacman -Q sof-firmware 2>/dev/null | cut -d' ' -f2))"
     fi
 
     # Sound chips (codecs) the driver found
@@ -159,18 +196,23 @@ check() {
     have pactl || { note fail "pactl missing" "sudo pacman -S libpulse"; return; }
     pactl info >/dev/null 2>&1 || return
 
-    # Cards left on a profile with no sound
-    local cards
-    cards="$(pactl -f json list cards 2>/dev/null)"
+    # Sound cards switched off (no speakers, headphones or mic from them)
+    local card profile seen=""
+    while IFS=$'\t' read -r card profile _; do
+        [[ -n "$card" && "$seen" != *"|$card|"* ]] || continue
+        seen+="|$card|"
+        if [[ "$profile" == off ]]; then
+            note fail "Your sound card is switched off, so speakers, headphones and mic on it are silent: $card" \
+                "Press Fix problems (or run: lennox-sound fix)"
+        else
+            note warn "Sound card is in Pro Audio mode (no automatic speaker / headphone switching): $card" "Run: lennox-sound fix"
+        fi
+    done < <(cards_off)
     while IFS=$'\t' read -r card profile; do
-        [[ -n "$card" ]] || continue
-        case "$profile" in
-            off) note warn "Sound card is switched off: $card" "Run: lennox-sound fix" ;;
-            pro-audio) note warn "Sound card is in Pro Audio mode (no mic/speaker switching): $card" "Run: lennox-sound fix" ;;
-            headset-head-unit*) note warn "Bluetooth headset is in call mode, which sounds much worse: $card" \
-                "Its mic only works in this low quality mode. For better sound use the laptop mic, or a wired / USB headset." ;;
-        esac
-    done < <(jq -r '.[] | [.name, (.active_profile // "")] | @tsv' <<<"$cards" 2>/dev/null)
+        [[ "$profile" == headset-head-unit* ]] || continue
+        note warn "Bluetooth headset is in call mode, which sounds much worse: $card" \
+            "Its mic only works in this low quality mode. For better sound use the laptop mic, or a wired / USB headset."
+    done < <(pactl -f json list cards 2>/dev/null | jq -r '.[] | [.name, (.active_profile // "")] | @tsv' 2>/dev/null)
 
     # Output
     local sink
@@ -337,7 +379,7 @@ clean_mic() {
 # ---------------------------------------------------------------- fix
 
 fix() {
-    local did=0 vol card name value max profile best
+    local did=0 vol card name value max
     vol="$(mic_percent)"
     if [[ -n "$vol" ]] && (( vol > 100 )); then
         wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 100% && echo "Mic volume ${vol}% -> 100%" && did=1
@@ -350,18 +392,71 @@ fix() {
         [[ -n "$card" ]] || continue
         amixer -c "$card" -q sset "$name" "$((max - 1))" && echo "$name: $value -> $((max - 1)) of $max" && did=1
     done < <(boost_controls)
-    while IFS=$'\t' read -r card profile best; do
-        [[ -n "$card" && -n "$best" ]] || continue
-        pactl set-card-profile "$card" "$best" && echo "Sound card $card: $profile -> $best" && did=1
-    done < <(pactl -f json list cards 2>/dev/null | jq -r '.[]
-        | select(.active_profile == "off" or .active_profile == "pro-audio")
-        | . as $c
-        | [.name, .active_profile,
-           ([.profiles | to_entries[] | select(.key != "off" and .key != "pro-audio" and .value.available != false)]
-            | sort_by(-.value.priority) | .[0].key // "")] | @tsv' 2>/dev/null)
-    # A fresh start clears stuck devices and reloads the driver settings
-    restart_sound && echo "Restarted the sound system" && did=1
+    turn_cards_on && did=1
+    if [[ -n "$(cards_off)" ]]; then
+        # WirePlumber remembers the last mode of every card; a stuck "off"
+        # lives there. Start it fresh (volumes and default devices reset).
+        local state="${XDG_STATE_HOME:-$HOME/.local/state}/wireplumber"
+        if [[ -d "$state" ]]; then
+            rm -rf "$state.lennox-backup" && mv "$state" "$state.lennox-backup" \
+                && echo "Reset WirePlumber's saved sound settings (backup: $state.lennox-backup)" && did=1
+        fi
+        restart_sound && sleep 1
+        turn_cards_on && did=1
+    else
+        # A fresh start clears stuck devices and reloads the driver settings
+        restart_sound
+    fi
+    echo "Restarted the sound system"
+    local card profile still=""
+    while IFS=$'\t' read -r card profile _; do
+        [[ "$still" == *"|$card|"* ]] && continue
+        still+="|$card|"
+        echo "Could not turn on $card: none of its sound modes start. That is a driver problem: try another driver in Lennox Settings > Sound > Sound driver, or run: lennox-sound report"
+        did=1
+    done < <(cards_off)
     (( did )) || echo "Nothing to fix"
+}
+
+turn_cards_on() {
+    # Try each card's modes, best first, until one sticks
+    local card profile mode done_cards="" changed=1
+    while IFS=$'\t' read -r card profile mode; do
+        [[ "$done_cards" == *"|$card|"* ]] && continue
+        pactl set-card-profile "$card" "$mode" 2>/dev/null || continue
+        sleep 0.3
+        if pactl -f json list cards 2>/dev/null | jq -e --arg c "$card" --arg m "$mode" \
+                '.[] | select(.name == $c) | .active_profile == $m' >/dev/null 2>&1; then
+            echo "Sound card $card: $profile -> $mode"
+            done_cards+="|$card|"
+            changed=0
+        fi
+    done < <(cards_off)
+    return $changed
+}
+
+# ---------------------------------------------------------------- driver
+
+set_driver() {
+    local value
+    case "${1:-}" in
+        auto) value="" ;; hda) value=1 ;; sst) value=2 ;; sof) value=3 ;; avs) value=4 ;;
+        status) driver_choice; return ;;
+        *) echo "usage: lennox-sound driver auto|sof|hda|status" >&2; return 2 ;;
+    esac
+    local cmd
+    if [[ -z "$value" ]]; then
+        cmd="rm -f $DRIVER_CONF"
+    else
+        cmd="printf '%s\n' '# Lennox Settings > Sound > Sound driver (lennox-sound driver auto to undo)' 'options snd_intel_dspcfg dsp_driver=$value' > $DRIVER_CONF"
+    fi
+    # Asks for your password in a small dialog (or in the terminal)
+    if [[ -t 0 ]] || ! have pkexec; then
+        sudo sh -c "$cmd"
+    else
+        pkexec sh -c "$cmd"
+    fi || { echo "Not changed" >&2; return 1; }
+    echo "Sound driver: $1. Restart the laptop to use it."
 }
 
 # ---------------------------------------------------------------- report
@@ -412,13 +507,14 @@ case "${1:-check}" in
         ;;
     fix)        fix ;;
     clean-mic)  clean_mic "${2:-status}" ;;
+    driver)     set_driver "${2:-status}" ;;
     report)
         file="$(report)"
         echo "Saved: $file"
         have wl-copy && wl-copy < "$file" 2>/dev/null && echo "Also copied, so you can paste it anywhere."
         ;;
     *)
-        echo "usage: lennox-sound check [--json] | fix | clean-mic on|off|status | report" >&2
+        echo "usage: lennox-sound check [--json] | fix | clean-mic on|off|status | driver auto|sof|hda|status | report" >&2
         exit 2
         ;;
 esac

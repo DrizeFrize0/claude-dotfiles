@@ -132,6 +132,14 @@ class Page:
             button.connect("clicked", lambda _b, cb=callback: cb())
             actions.append(button)
         self.drivers.set_header_suffix(actions)
+        self.driver_choices = [("auto", "Automatic"), ("sof", "SOF: newer, needed for built-in digital mics"),
+                               ("hda", "HDA: older and simpler (speakers, headphones, headset mic)")]
+        self.driver_row = Adw.ComboRow(title="Sound driver",
+                                       subtitle="If a sound card won't turn on, try the other one. Needs a restart.")
+        self.driver_row.set_model(Gtk.StringList.new([label for _, label in self.driver_choices]))
+        self.driver_busy = False
+        self.driver_row.connect("notify::selected", self._on_driver)
+        self.drivers.add(self.driver_row)
         self.driver_rows = []
         page.add(self.drivers)
 
@@ -154,6 +162,32 @@ class Page:
             self.clean_busy = False
 
         run_async([lennox_bin("lennox-sound"), "clean-mic", "status"], got_clean)
+
+        def got_driver(_ok, out, _err):
+            values = [v for v, _ in self.driver_choices]
+            current = out.strip()
+            self.driver_busy = True
+            self.driver_row.set_selected(values.index(current) if current in values else 0)
+            self.driver_busy = False
+
+        run_async([lennox_bin("lennox-sound"), "driver", "status"], got_driver)
+
+    def _on_driver(self, row, _param):
+        if self.driver_busy:
+            return
+        index = row.get_selected()
+        if not 0 <= index < len(self.driver_choices):
+            return
+        choice = self.driver_choices[index][0]
+
+        def done(ok, _out, _err):
+            if ok:
+                self.ctx.toast("Sound driver changed. Restart the laptop to use it.", 8)
+            else:
+                self.ctx.toast("Sound driver not changed", 4)
+            self.refresh()
+
+        run_async([lennox_bin("lennox-sound"), "driver", choice], done)
 
     def _check(self):
         def got(ok, out, _err):
@@ -201,7 +235,14 @@ class Page:
 
         def done(_ok, out, _err):
             lines = [line for line in out.splitlines() if line and not line.startswith("Restarted")]
-            self.ctx.toast("Fixed: " + "; ".join(lines) if lines else "No problems to fix. Sound was restarted.", 6)
+            failed = [line for line in lines if line.startswith("Could not")]
+            fixed = [line for line in lines if not line.startswith("Could not")]
+            if failed:
+                self.ctx.toast(failed[0], 12)
+            elif fixed:
+                self.ctx.toast("Fixed: " + "; ".join(fixed), 8)
+            else:
+                self.ctx.toast("No problems to fix. Sound was restarted.", 6)
             self.refresh()
 
         run_async([lennox_bin("lennox-sound"), "fix"], done)
