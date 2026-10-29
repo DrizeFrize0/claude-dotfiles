@@ -8,6 +8,11 @@
 #                                   for the microphone (a "Microphone (clean)" input)
 #   lennox-sound driver auto|sof|hda   pick the Intel sound driver (needs a restart):
 #                                   sof = current one (digital mics), hda = older and simpler
+#   lennox-sound bluetooth hifi|headset-mic|status
+#                                   hifi (default): Bluetooth headphones always play in full
+#                                   quality and you talk through the laptop mic; headset-mic:
+#                                   use the headset's mic, which drops it into low quality call mode
+#   lennox-sound outputs            keep the output from jumping to HDMI by itself
 #   lennox-sound report             save everything about your sound to a text file
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -91,6 +96,82 @@ CARDS_JQ='.[]
 cards_off() { pactl -f json list cards 2>/dev/null | jq -r "$CARDS_JQ" 2>/dev/null; }
 
 DRIVER_CONF="${LENNOX_DRIVER_CONF:-/etc/modprobe.d/lennox-sound-driver.conf}"
+WP_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/wireplumber/wireplumber.conf.d"
+BT_CONF="$WP_DIR/61-lennox-bluetooth.conf"
+OUTPUTS_CONF="$WP_DIR/60-lennox-outputs.conf"
+
+bt_hifi() { [[ -f "$BT_CONF" ]]; }
+
+bt_call_mode_cards() {
+    # Bluetooth headsets in call mode, with their best music mode: card<TAB>profile<TAB>best
+    pactl -f json list cards 2>/dev/null | jq -r '.[]
+        | select((.active_profile // "") | startswith("headset-head-unit"))
+        | [.name, .active_profile,
+           ([.profiles | to_entries[] | select((.key | startswith("a2dp")) and .value.available != false)]
+            | sort_by(-(.value.priority // 0)) | .[0].key // "")] | @tsv' 2>/dev/null
+}
+
+bt_to_music_mode() {
+    local card profile best changed=1
+    while IFS=$'\t' read -r card profile best; do
+        [[ -n "$card" && -n "$best" ]] || continue
+        pactl set-card-profile "$card" "$best" && echo "Bluetooth $card: call mode -> $best (full quality)" && changed=0
+    done < <(bt_call_mode_cards)
+    return $changed
+}
+
+write_outputs_conf() {
+    mkdir -p "$WP_DIR"
+    cat > "$OUTPUTS_CONF" <<'CONF'
+# Lennox (lennox-sound outputs): HDMI and DisplayPort outputs never become
+# the output by themselves. The NVIDIA one appears and disappears as the GPU
+# sleeps and wakes, which made the sound jump. Pick one by hand to use it.
+monitor.alsa.rules = [
+  {
+    matches = [
+      { node.name = "~alsa_output.*[Hh][Dd][Mm][Ii].*" }
+      { node.name = "~alsa_output.*[Dd]isplay[Pp]ort.*" }
+    ]
+    actions = {
+      update-props = {
+        priority.session = 500
+      }
+    }
+  }
+]
+CONF
+}
+
+set_bluetooth() {
+    case "${1:-status}" in
+        hifi)
+            mkdir -p "$WP_DIR"
+            cat > "$BT_CONF" <<'CONF'
+# Lennox (lennox-sound bluetooth): Bluetooth headphones stay in full quality
+# music mode. Without this, any app that opens a mic (a call, the clean mic)
+# drops them into call mode, which sounds like an old phone line.
+wireplumber.settings = {
+  bluetooth.autoswitch-to-headset-profile = false
+}
+CONF
+            wpctl settings --save bluetooth.autoswitch-to-headset-profile false >/dev/null 2>&1
+            bt_to_music_mode
+            echo "Bluetooth: full quality sound, the laptop mic is used for calls"
+            ;;
+        headset-mic)
+            rm -f "$BT_CONF"
+            wpctl settings --save bluetooth.autoswitch-to-headset-profile true >/dev/null 2>&1
+            echo "Bluetooth: the headset mic is used for calls (call mode sounds worse)"
+            ;;
+        status)
+            if bt_hifi; then echo hifi; else echo headset-mic; fi
+            ;;
+        *)
+            echo "usage: lennox-sound bluetooth hifi|headset-mic|status" >&2
+            return 2
+            ;;
+    esac
+}
 driver_choice() {
     # auto | sof | hda | sst | avs: what Lennox asked the kernel to use
     case "$(sed -n 's/.*dsp_driver=\([0-9]\).*/\1/p' "$DRIVER_CONF" 2>/dev/null)" in
@@ -210,9 +291,15 @@ check() {
     done < <(cards_off)
     while IFS=$'\t' read -r card profile; do
         [[ "$profile" == headset-head-unit* ]] || continue
-        note warn "Bluetooth headset is in call mode, which sounds much worse: $card" \
-            "Its mic only works in this low quality mode. For better sound use the laptop mic, or a wired / USB headset."
+        if bt_hifi; then
+            note warn "Bluetooth headset is in call mode, which sounds much worse: $card" "Press Fix problems to put it back in full quality"
+        else
+            note warn "Bluetooth headset is in call mode (its mic is in use), which sounds much worse: $card" \
+                "For full quality: Lennox Settings > Sound > turn off Use the Bluetooth headset's mic"
+        fi
     done < <(pactl -f json list cards 2>/dev/null | jq -r '.[] | [.name, (.active_profile // "")] | @tsv' 2>/dev/null)
+
+    [[ -f "$OUTPUTS_CONF" ]] || note warn "The output can jump to HDMI by itself" "Press Fix problems"
 
     # Output
     local sink
@@ -392,6 +479,13 @@ fix() {
         [[ -n "$card" ]] || continue
         amixer -c "$card" -q sset "$name" "$((max - 1))" && echo "$name: $value -> $((max - 1)) of $max" && did=1
     done < <(boost_controls)
+    if [[ ! -f "$OUTPUTS_CONF" ]]; then
+        write_outputs_conf && echo "HDMI no longer takes over the sound by itself" && did=1
+    fi
+    if bt_hifi; then
+        wpctl settings bluetooth.autoswitch-to-headset-profile false >/dev/null 2>&1
+        bt_to_music_mode && did=1
+    fi
     turn_cards_on && did=1
     if [[ -n "$(cards_off)" ]]; then
         # WirePlumber remembers the last mode of every card; a stuck "off"
@@ -508,13 +602,21 @@ case "${1:-check}" in
     fix)        fix ;;
     clean-mic)  clean_mic "${2:-status}" ;;
     driver)     set_driver "${2:-status}" ;;
+    bluetooth)  set_bluetooth "${2:-status}" ;;
+    outputs)    write_outputs_conf && restart_sound && echo "HDMI no longer takes over the sound by itself" ;;
+    defaults)
+        # Installer, once: Bluetooth in full quality, HDMI never takes over
+        # (both are read by WirePlumber when it starts)
+        write_outputs_conf
+        set_bluetooth hifi >/dev/null
+        ;;
     report)
         file="$(report)"
         echo "Saved: $file"
         have wl-copy && wl-copy < "$file" 2>/dev/null && echo "Also copied, so you can paste it anywhere."
         ;;
     *)
-        echo "usage: lennox-sound check [--json] | fix | clean-mic on|off|status | driver auto|sof|hda|status | report" >&2
+        echo "usage: lennox-sound check [--json] | fix | clean-mic on|off|status | bluetooth hifi|headset-mic|status | driver auto|sof|hda|status | outputs | report" >&2
         exit 2
         ;;
 esac

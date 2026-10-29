@@ -518,6 +518,13 @@ personalize() {
         "$HOME/.local/bin/lennox-sound" fix >/dev/null 2>&1
         touch "$marker"
     fi
+    # Once: Bluetooth headphones stay in full quality (the laptop mic is used
+    # for calls), and HDMI never takes over the sound by itself
+    marker="$HOME/.config/lennox/.sound-defaults-done"
+    if [[ ! -f "$marker" ]]; then
+        "$HOME/.local/bin/lennox-sound" defaults && ok "Bluetooth headphones stay in full quality during calls"
+        touch "$marker"
+    fi
     xdg-mime default org.gnome.Nautilus.desktop inode/directory 2>/dev/null
     xdg-mime default org.gnome.Loupe.desktop image/png image/jpeg image/webp image/gif 2>/dev/null
     xdg-mime default mpv.desktop video/mp4 video/x-matroska video/webm 2>/dev/null

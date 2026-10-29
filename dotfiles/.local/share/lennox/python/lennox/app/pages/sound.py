@@ -121,6 +121,14 @@ class Page:
         self.clean_busy = False
         self.clean_row.connect("notify::active", self._on_clean)
         self.input.group.add(self.clean_row)
+        self.bt_row = Adw.SwitchRow(title="Use the Bluetooth headset's mic",
+                                    subtitle="Off (best): Bluetooth headphones keep full quality sound and you talk "
+                                             "through the laptop mic. On: the headset mic works, but calls sound "
+                                             "like an old phone line")
+        self.bt_row.add_prefix(Gtk.Image.new_from_icon_name("bluetooth-symbolic"))
+        self.bt_busy = False
+        self.bt_row.connect("notify::active", self._on_bt)
+        self.input.group.add(self.bt_row)
         page.add(self.input.group)
 
         self.drivers = Adw.PreferencesGroup(title="Drivers and sound quality",
@@ -171,6 +179,26 @@ class Page:
             self.driver_busy = False
 
         run_async([lennox_bin("lennox-sound"), "driver", "status"], got_driver)
+
+        def got_bt(ok, out, _err):
+            self.bt_busy = True
+            self.bt_row.set_active(ok and out.strip() == "headset-mic")
+            self.bt_busy = False
+
+        run_async([lennox_bin("lennox-sound"), "bluetooth", "status"], got_bt)
+
+    def _on_bt(self, row, _param):
+        if self.bt_busy:
+            return
+        mode = "headset-mic" if row.get_active() else "hifi"
+
+        def done(ok, _out, _err):
+            self.ctx.toast(("Headset mic on: calls use call mode" if mode == "headset-mic"
+                            else "Bluetooth stays in full quality; talk through the laptop mic") if ok
+                           else "Could not change the Bluetooth setting", 5)
+            self.refresh()
+
+        run_async([lennox_bin("lennox-sound"), "bluetooth", mode], done)
 
     def _on_driver(self, row, _param):
         if self.driver_busy:
