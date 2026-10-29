@@ -37,7 +37,6 @@ record() {
 section() { $json || printf '\n%s%s%s\n' "$bold" "$1" "$reset"; }
 have() { command -v "$1" >/dev/null 2>&1; }
 pkg() { pacman -Q "$1" >/dev/null 2>&1; }
-user_active() { systemctl --user is-active --quiet "$1" 2>/dev/null; }
 sys_active() { systemctl is-active --quiet "$1" 2>/dev/null; }
 
 # ---------------------------------------------------------------- graphics
@@ -81,34 +80,10 @@ fi
 
 # ---------------------------------------------------------------- audio
 section "Sound & microphone"
-for unit in pipewire pipewire-pulse wireplumber; do
-    if user_active "$unit"; then
-        record ok audio "$unit running"
-    else
-        record fail audio "$unit is not running" "systemctl --user enable --now $unit"
-    fi
-done
-if have wpctl; then
-    if wpctl inspect @DEFAULT_AUDIO_SINK@ >/dev/null 2>&1; then
-        record ok audio "Speakers/headphones found: $(wpctl inspect @DEFAULT_AUDIO_SINK@ | grep -m1 'node.description' | cut -d'"' -f2)"
-    else
-        record fail audio "No speakers found" "Install sof-firmware and alsa-ucm-conf, then restart."
-    fi
-    if wpctl inspect @DEFAULT_AUDIO_SOURCE@ >/dev/null 2>&1; then
-        src="$(wpctl inspect @DEFAULT_AUDIO_SOURCE@ | grep -m1 'node.description' | cut -d'"' -f2)"
-        if wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED; then
-            record warn audio "Microphone found but muted: $src" "Unmute it in the quick panel (SUPER + N) or with the mic key."
-        else
-            record ok audio "Microphone found: $src"
-        fi
-    else
-        record fail audio "No microphone found" "Laptop mics need sof-firmware: sudo pacman -S sof-firmware alsa-ucm-conf, then restart."
-    fi
-fi
-if lsmod 2>/dev/null | grep -q '^snd_sof'; then
-    pkg sof-firmware && record ok audio "Intel SOF audio firmware installed" \
-        || record fail audio "Intel SOF audio firmware missing (needed for the built-in mic)" "sudo pacman -S sof-firmware"
-fi
+# Drivers, firmware, devices and levels: lennox-sound check (details there)
+while IFS=$'\t' read -r level message hint; do
+    [[ -n "$level" ]] && record "$level" audio "$message" "$hint"
+done < <(lennox-sound check --json 2>/dev/null | jq -r '.[] | [.level, .message, .hint] | @tsv' 2>/dev/null)
 
 # ---------------------------------------------------------------- input
 section "Keyboard & touchpad"

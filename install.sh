@@ -509,6 +509,15 @@ personalize() {
             && ok "Switched to the new Lennox bar (the ML4W bars are still in Lennox Settings > Bar)"
         touch "$marker"
     fi
+    # Once: the clean microphone (noise suppression, echo cancelling, steady
+    # volume). Turning it off later in Lennox Settings > Sound sticks.
+    marker="$HOME/.config/lennox/.clean-mic-done"
+    if [[ ! -f "$marker" ]]; then
+        "$HOME/.local/bin/lennox-sound" clean-mic setup && ok "Clean microphone on (noise suppression and echo cancelling)"
+        # A mic left above 100% (older Lennox allowed 150%) only adds hiss
+        "$HOME/.local/bin/lennox-sound" fix >/dev/null 2>&1
+        touch "$marker"
+    fi
     xdg-mime default org.gnome.Nautilus.desktop inode/directory 2>/dev/null
     xdg-mime default org.gnome.Loupe.desktop image/png image/jpeg image/webp image/gif 2>/dev/null
     xdg-mime default mpv.desktop video/mp4 video/x-matroska video/webm 2>/dev/null

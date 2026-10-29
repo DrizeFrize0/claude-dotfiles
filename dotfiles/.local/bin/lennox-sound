@@ -1,0 +1,424 @@
+#!/usr/bin/env bash
+# Sound drivers, microphone quality and a shareable report.
+#   lennox-sound check [--json]     check drivers, firmware, devices and levels
+#   lennox-sound fix                fix the safe things (mic over 100%, maxed mic boost,
+#                                   a sound card left on "off" / "pro audio"), restart sound
+#   lennox-sound clean-mic on|off|status
+#                                   noise suppression, echo cancelling and steady volume
+#                                   for the microphone (a "Microphone (clean)" input)
+#   lennox-sound report             save everything about your sound to a text file
+export PATH="$HOME/.local/bin:$PATH"
+
+CLEAN_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/pipewire/pipewire.conf.d/60-lennox-clean-mic.conf"
+CLEAN_NODE="lennox_clean_mic"
+SYS="${LENNOX_SYS:-/sys}"
+PROC="${LENNOX_PROC:-/proc}"
+
+have() { command -v "$1" >/dev/null 2>&1; }
+pkg() { pacman -Q "$1" >/dev/null 2>&1; }
+
+kernel_log() {
+    # This boot's kernel messages (journal for wheel/adm users, else dmesg)
+    journalctl -k -b 0 --no-pager -q -o cat 2>/dev/null || dmesg 2>/dev/null
+}
+
+audio_controllers() {
+    # PCI sound controllers: path<TAB>vendor<TAB>driver
+    local d class driver
+    for d in "$SYS"/bus/pci/devices/*; do
+        class="$(cat "$d/class" 2>/dev/null)"
+        [[ "$class" == 0x0403* ]] || continue
+        driver=""
+        [[ -e "$d/driver" ]] && driver="$(basename "$(readlink -f "$d/driver")")"
+        printf '%s\t%s\t%s\n' "${d##*/}" "$(cat "$d/vendor" 2>/dev/null)" "$driver"
+    done
+}
+
+default_node() { pactl "get-default-$1" 2>/dev/null; }
+
+mic_percent() {
+    wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null | awk '/^Volume/ { print int($2 * 100 + 0.5) }'
+}
+
+loud_mics() {
+    # Microphones (not the default one, which mic_percent covers) set above 100%: name<TAB>percent
+    local default; default="$(default_node source)"
+    pactl -f json list sources 2>/dev/null | jq -r --arg d "$default" '.[]
+        | select((.name | endswith(".monitor") | not) and .name != $d)
+        | [.name, ([.volume[]?.value_percent | rtrimstr("%") | tonumber] | max // 0)]
+        | select(.[1] > 100) | @tsv' 2>/dev/null
+}
+
+boost_controls() {
+    # ALSA mic boost controls that are turned all the way up: card<TAB>name<TAB>value<TAB>max
+    local card
+    for card in "$PROC"/asound/card[0-9]*; do
+        card="${card##*card}"
+        amixer -c "$card" scontents 2>/dev/null | awk -v card="$card" '
+            /^Simple mixer control/ {
+                name = $0; sub(/^Simple mixer control '\''/, "", name); sub(/'\'',[0-9]+$/, "", name)
+                boost = (name ~ /Mic Boost$/); max = ""; next
+            }
+            boost && /Limits:/ { max = $NF }
+            boost && max != "" && /: [0-9]+ \[/ {
+                for (i = 1; i <= NF; i++) if ($i ~ /^[0-9]+$/ && $(i + 1) ~ /^\[/) { v = $i; break }
+                if (max >= 2 && v == max) { printf "%s\t%s\t%s\t%s\n", card, name, v, max }
+                boost = 0
+            }'
+    done
+}
+
+clean_mic_on() { [[ -f "$CLEAN_CONF" ]]; }
+
+restart_sound() {
+    systemctl --user restart pipewire pipewire-pulse wireplumber >/dev/null 2>&1
+    # Wait for the sound server before anyone asks it something
+    for _ in $(seq 1 30); do pactl info >/dev/null 2>&1 && return 0; sleep 0.2; done
+    return 1
+}
+
+# ---------------------------------------------------------------- check
+
+results=()
+note() { results+=("$1"$'\t'"$2"$'\t'"${3:-}"); }   # note ok|warn|fail MESSAGE [HINT]
+
+check() {
+    local log path vendor driver name count=0 sof_used=false
+
+    # Services first: nothing else can be checked without them
+    local unit
+    for unit in pipewire pipewire-pulse wireplumber; do
+        if systemctl --user is-active --quiet "$unit" 2>/dev/null; then
+            note ok "$unit running"
+        else
+            note fail "$unit is not running" "systemctl --user enable --now $unit"
+        fi
+    done
+    if pkg pulseaudio; then
+        note fail "PulseAudio is installed and fights with PipeWire" "sudo pacman -Rdd pulseaudio && sudo pacman -S pipewire-pulse, then restart"
+    fi
+
+    # Drivers: which kernel driver runs each sound chip
+    log="$(kernel_log)"
+    while IFS=$'\t' read -r path vendor driver; do
+        [[ -n "$path" ]] || continue
+        count=$((count + 1))
+        name="$(lspci -s "$path" 2>/dev/null | sed 's/^[^ ]* [^:]*: //')"
+        [[ -n "$name" ]] || name="sound controller $path"
+        if [[ "$vendor" == 0x10de ]]; then
+            # Only used for a TV or monitor over HDMI; often asleep with the GPU
+            note ok "NVIDIA HDMI sound: ${driver:-not in use right now} (only for a TV or monitor over HDMI)"
+        elif [[ -z "$driver" ]]; then
+            note fail "No driver loaded for $name" "sudo pacman -S sof-firmware alsa-ucm-conf linux-firmware, then restart. Still nothing? Run: lennox-sound report"
+        elif [[ "$driver" == sof-audio-pci* ]]; then
+            sof_used=true
+            note ok "Driver: $driver (Intel SOF: built-in digital mics work with this) for $name"
+        else
+            note ok "Driver: $driver for $name"
+        fi
+    done < <(audio_controllers)
+    (( count == 0 )) && note fail "No sound hardware found on the PCI bus" "Run: lennox-sound report, and share it"
+
+    # Firmware and driver errors this boot
+    if [[ -n "$log" ]]; then
+        local errors
+        errors="$(grep -iE 'sof-audio|snd_sof|snd_hda|hda_codec|hdaudio|soundwire|sof_sdw|tplg|topology' <<<"$log" \
+            | grep -iE 'error|fail|timeout|not found|unable|cannot' | grep -viE 'ignore|deferred' | head -n 3)"
+        if [[ -n "$errors" ]]; then
+            note fail "Sound driver errors at startup: $(head -n1 <<<"$errors" | cut -c1-160)" \
+                "Update: sudo pacman -Syu sof-firmware alsa-ucm-conf linux-firmware, then restart. Still there? Run: lennox-sound report"
+        else
+            note ok "No sound driver or firmware errors this boot"
+        fi
+        if grep -qiE 'Digital mics? found|DMICs? detected' <<<"$log" && ! $sof_used; then
+            note fail "Your laptop has digital mics but the old HDA driver is running" \
+                "echo 'options snd_intel_dspcfg dsp_driver=3' | sudo tee /etc/modprobe.d/lennox-sof.conf, then restart"
+        fi
+    else
+        note warn "Could not read the kernel log, so driver errors were not checked" "Run: sudo lennox-sound check"
+    fi
+
+    # Firmware and config packages
+    local p missing=()
+    for p in sof-firmware alsa-ucm-conf alsa-firmware; do pkg "$p" || missing+=("$p"); done
+    pkg linux-firmware || pkg linux-firmware-intel || missing+=(linux-firmware)
+    if (( ${#missing[@]} )); then
+        note fail "Missing sound firmware: ${missing[*]}" "sudo pacman -S ${missing[*]}, then restart"
+    else
+        note ok "Sound firmware installed (sof-firmware $(pacman -Q sof-firmware 2>/dev/null | cut -d' ' -f2))"
+    fi
+
+    # Sound chips (codecs) the driver found
+    local codecs
+    codecs="$(grep -h '^Codec:' "$PROC"/asound/card*/codec#* 2>/dev/null | sed 's/^Codec: //' | sort -u | paste -sd, - | sed 's/,/, /g')"
+    [[ -n "$codecs" ]] && note ok "Sound chips: $codecs"
+    if ! grep -q '^ *[0-9]' "$PROC/asound/cards" 2>/dev/null; then
+        note fail "No sound cards: the driver loaded nothing" "sudo pacman -S sof-firmware alsa-ucm-conf, then restart"
+    fi
+
+    have pactl || { note fail "pactl missing" "sudo pacman -S libpulse"; return; }
+    pactl info >/dev/null 2>&1 || return
+
+    # Cards left on a profile with no sound
+    local cards
+    cards="$(pactl -f json list cards 2>/dev/null)"
+    while IFS=$'\t' read -r card profile; do
+        [[ -n "$card" ]] || continue
+        case "$profile" in
+            off) note warn "Sound card is switched off: $card" "Run: lennox-sound fix" ;;
+            pro-audio) note warn "Sound card is in Pro Audio mode (no mic/speaker switching): $card" "Run: lennox-sound fix" ;;
+            headset-head-unit*) note warn "Bluetooth headset is in call mode, which sounds much worse: $card" \
+                "Its mic only works in this low quality mode. For better sound use the laptop mic, or a wired / USB headset." ;;
+        esac
+    done < <(jq -r '.[] | [.name, (.active_profile // "")] | @tsv' <<<"$cards" 2>/dev/null)
+
+    # Output
+    local sink
+    sink="$(default_node sink)"
+    if [[ -z "$sink" || "$sink" == auto_null ]]; then
+        note fail "No speakers: only a dummy output exists" "The driver did not load. Run: lennox-sound report"
+    elif [[ "$sink" == *hdmi* ]]; then
+        note warn "Sound goes to HDMI: $sink" "Pick your speakers in Lennox Settings > Sound > Output."
+    else
+        note ok "Output: $(pactl -f json list sinks 2>/dev/null | jq -r --arg n "$sink" '.[] | select(.name == $n) | .description' 2>/dev/null)"
+    fi
+
+    # Microphone
+    local source vol boosts
+    source="$(default_node source)"
+    if [[ -z "$source" || "$source" == *.monitor ]]; then
+        note fail "No microphone found" "Laptop mics need sof-firmware and alsa-ucm-conf: sudo pacman -S sof-firmware alsa-ucm-conf, then restart"
+    else
+        note ok "Microphone: $(pactl -f json list sources 2>/dev/null | jq -r --arg n "$source" '.[] | select(.name == $n) | .description' 2>/dev/null)"
+        vol="$(mic_percent)"
+        if [[ -n "$vol" ]] && (( vol > 100 )); then
+            note warn "Mic volume is ${vol}%: over 100% adds hiss and crackling" "Run: lennox-sound fix"
+        elif [[ -n "$vol" ]] && (( vol < 25 )); then
+            note warn "Mic volume is only ${vol}%" "Raise it in Lennox Settings > Sound > Microphone."
+        fi
+    fi
+    local loud
+    loud="$(loud_mics)"
+    if [[ -n "$loud" ]]; then
+        note warn "A microphone is set above 100%: $(head -n1 <<<"$loud" | cut -f1) ($(head -n1 <<<"$loud" | cut -f2)%)" "Run: lennox-sound fix"
+    fi
+    boosts="$(boost_controls)"
+    if [[ -n "$boosts" ]]; then
+        note warn "Mic boost turned all the way up ($(cut -f2 <<<"$boosts" | paste -sd, - | sed 's/,/, /g')): adds hiss" "Run: lennox-sound fix"
+    fi
+    if clean_mic_on; then
+        if pactl list short sources 2>/dev/null | grep -q "$CLEAN_NODE"; then
+            note ok "Clean microphone on (noise suppression, echo cancelling, steady volume)"
+        else
+            note warn "Clean microphone is on but did not start" "Run: lennox-sound clean-mic on"
+        fi
+    else
+        note warn "Clean microphone is off: background noise and echo get through" "Run: lennox-sound clean-mic on"
+    fi
+}
+
+print_check() {
+    local json="$1" line level message hint fails=0
+    if [[ "$json" == true ]]; then
+        printf '%s\n' "${results[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0) | split("\t")
+            | {level: .[0], message: .[1], hint: (.[2] // "")})'
+        return
+    fi
+    local green=$'\e[32m' yellow=$'\e[33m' red=$'\e[31m' reset=$'\e[0m'
+    for line in "${results[@]}"; do
+        IFS=$'\t' read -r level message hint <<<"$line"
+        case "$level" in
+            ok)   printf '  %s✓%s %s\n' "$green" "$reset" "$message" ;;
+            warn) printf '  %s!%s %s\n' "$yellow" "$reset" "$message" ;;
+            *)    printf '  %s✗%s %s\n' "$red" "$reset" "$message"; fails=$((fails + 1)) ;;
+        esac
+        [[ "$level" != ok && -n "$hint" ]] && printf '      %s\n' "$hint"
+    done
+    return $(( fails > 0 ))
+}
+
+# ---------------------------------------------------------------- clean mic
+
+write_clean_conf() {
+    mkdir -p "${CLEAN_CONF%/*}"
+    cat > "$CLEAN_CONF" <<'EOF'
+# Lennox clean microphone (Lennox Settings > Sound, or: lennox-sound clean-mic off)
+# WebRTC voice processing on the default mic: noise suppression, echo
+# cancelling against whatever plays on the speakers, a low-cut filter
+# for fan and desk rumble, and automatic gain for a steady volume.
+context.modules = [
+    {   name = libpipewire-module-echo-cancel
+        args = {
+            library.name = aec/libspa-aec-webrtc
+            # Cancel the echo of the speakers' sound, without an extra output
+            monitor.mode = true
+            node.latency = 480/48000
+            audio.rate = 48000
+            audio.channels = 1
+            audio.position = [ MONO ]
+            aec.args = {
+                webrtc.high_pass_filter = true
+                webrtc.noise_suppression = true
+                webrtc.extended_filter = true
+                webrtc.delay_agnostic = true
+                webrtc.voice_detection = true
+                webrtc.gain_control = true
+            }
+            capture.props = {
+                node.name = "lennox_clean_mic_capture"
+                node.passive = true
+            }
+            source.props = {
+                node.name = "lennox_clean_mic"
+                node.description = "Microphone (clean)"
+                media.class = "Audio/Source"
+            }
+        }
+    }
+]
+EOF
+}
+
+clean_mic() {
+    case "${1:-status}" in
+        on)
+            write_clean_conf
+            if ! restart_sound; then
+                rm -f "$CLEAN_CONF"; restart_sound
+                echo "The sound system did not start with the clean microphone, so it was turned off again" >&2
+                return 1
+            fi
+            for _ in $(seq 1 25); do
+                pactl list short sources 2>/dev/null | grep -q "$CLEAN_NODE" && break
+                sleep 0.2
+            done
+            if ! pactl list short sources 2>/dev/null | grep -q "$CLEAN_NODE"; then
+                rm -f "$CLEAN_CONF"; restart_sound
+                echo "The clean microphone could not start, so it was turned off again" >&2
+                return 1
+            fi
+            # Apps record from it from now on (WirePlumber remembers this)
+            pactl set-default-source "$CLEAN_NODE"
+            echo "Clean microphone on"
+            ;;
+        off)
+            [[ -f "$CLEAN_CONF" ]] || { echo "Clean microphone off"; return 0; }
+            rm -f "$CLEAN_CONF" "${CLEAN_CONF%/*}/.lennox-clean-mic-pending"
+            restart_sound
+            echo "Clean microphone off"
+            ;;
+        setup)
+            # From the installer, which may run outside the desktop: write the
+            # config now, make it the default mic at the next login (autostart)
+            write_clean_conf
+            touch "${CLEAN_CONF%/*}/.lennox-clean-mic-pending"
+            ;;
+        login)
+            # At login: finish a setup from the installer
+            local flag="${CLEAN_CONF%/*}/.lennox-clean-mic-pending"
+            [[ -f "$flag" ]] || return 0
+            for _ in $(seq 1 50); do
+                pactl list short sources 2>/dev/null | grep -q "$CLEAN_NODE" && break
+                sleep 0.2
+            done
+            pactl list short sources 2>/dev/null | grep -q "$CLEAN_NODE" && pactl set-default-source "$CLEAN_NODE"
+            rm -f "$flag"
+            ;;
+        status)
+            if clean_mic_on; then echo on; else echo off; fi
+            ;;
+        *)
+            echo "usage: lennox-sound clean-mic on|off|status" >&2
+            return 2
+            ;;
+    esac
+}
+
+# ---------------------------------------------------------------- fix
+
+fix() {
+    local did=0 vol card name value max profile best
+    vol="$(mic_percent)"
+    if [[ -n "$vol" ]] && (( vol > 100 )); then
+        wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 100% && echo "Mic volume ${vol}% -> 100%" && did=1
+    fi
+    while IFS=$'\t' read -r name value; do
+        [[ -n "$name" ]] || continue
+        pactl set-source-volume "$name" 100% && echo "Mic volume of $name ${value}% -> 100%" && did=1
+    done < <(loud_mics)
+    while IFS=$'\t' read -r card name value max; do
+        [[ -n "$card" ]] || continue
+        amixer -c "$card" -q sset "$name" "$((max - 1))" && echo "$name: $value -> $((max - 1)) of $max" && did=1
+    done < <(boost_controls)
+    while IFS=$'\t' read -r card profile best; do
+        [[ -n "$card" && -n "$best" ]] || continue
+        pactl set-card-profile "$card" "$best" && echo "Sound card $card: $profile -> $best" && did=1
+    done < <(pactl -f json list cards 2>/dev/null | jq -r '.[]
+        | select(.active_profile == "off" or .active_profile == "pro-audio")
+        | . as $c
+        | [.name, .active_profile,
+           ([.profiles | to_entries[] | select(.key != "off" and .key != "pro-audio" and .value.available != false)]
+            | sort_by(-.value.priority) | .[0].key // "")] | @tsv' 2>/dev/null)
+    # A fresh start clears stuck devices and reloads the driver settings
+    restart_sound && echo "Restarted the sound system" && did=1
+    (( did )) || echo "Nothing to fix"
+}
+
+# ---------------------------------------------------------------- report
+
+report() {
+    local out
+    out="$(xdg-user-dir DOCUMENTS 2>/dev/null || echo "$HOME")/lennox-sound-report.txt"
+    [[ -d "${out%/*}" ]] || out="$HOME/lennox-sound-report.txt"
+    {
+        echo "Lennox sound report, $(date '+%F %T')"
+        echo "Kernel: $(uname -r)"
+        echo "Laptop: $(cat "$SYS"/class/dmi/id/sys_vendor "$SYS"/class/dmi/id/product_name 2>/dev/null | paste -sd' ' -)"
+        echo; echo "== Check"; check; print_check false | sed 's/\x1b\[[0-9;]*m//g'
+        echo; echo "== Sound hardware (lspci)"; lspci -nnk 2>/dev/null | grep -A3 -iE 'audio|multimedia'
+        echo; echo "== Cards"; cat "$PROC/asound/cards" 2>/dev/null
+        echo; echo "== Codecs"; head -n 3 "$PROC"/asound/card*/codec#* 2>/dev/null
+        echo; echo "== Playback devices"; aplay -l 2>&1
+        echo; echo "== Recording devices"; arecord -l 2>&1
+        echo; echo "== Packages"; pacman -Q pipewire wireplumber pipewire-pulse sof-firmware alsa-ucm-conf alsa-firmware \
+            linux-firmware linux-firmware-intel linux-firmware-realtek 2>&1
+        echo; echo "== Kernel modules"; lsmod 2>/dev/null | grep -E '^snd|^soundwire' | awk '{print $1}' | paste -sd' ' -
+        echo; echo "== Module options"; grep -rhs 'snd\|sof\|dspcfg' /etc/modprobe.d/ /usr/lib/modprobe.d/ 2>/dev/null
+        echo; echo "== Kernel log (sound)"; kernel_log | grep -iE 'snd|sof|hda|audio|soundwire|dmic|nhlt' | tail -n 60
+        echo; echo "== PipeWire"; pactl info 2>&1 | grep -E 'Server|Default'
+        echo; echo "== Outputs"; pactl list short sinks 2>&1
+        echo; echo "== Inputs"; pactl list short sources 2>&1
+        echo; echo "== Card profiles"; pactl -f json list cards 2>/dev/null | jq -r '.[] | "\(.name): \(.active_profile)"'
+        echo; echo "== Mic volume"; wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>&1
+        echo; echo "== Mixer (mic and speaker controls)"
+        for c in "$PROC"/asound/card[0-9]*; do
+            c="${c##*card}"
+            echo "-- card $c"
+            amixer -c "$c" scontents 2>/dev/null | grep -A6 -iE "control '.*(mic|capture|speaker|master|headphone|boost|dmic)" \
+                | grep -E 'Simple mixer|Limits|Front|Mono|Capture:|Playback:' | head -n 60
+        done
+        echo; echo "== PipeWire config overrides"; ls -la "${XDG_CONFIG_HOME:-$HOME/.config}"/pipewire/*.conf.d "${XDG_CONFIG_HOME:-$HOME/.config}"/wireplumber 2>&1
+        echo; echo "== Sound errors in this session's log"
+        journalctl --user -b 0 --no-pager -q -o cat -u pipewire -u wireplumber -u pipewire-pulse 2>/dev/null \
+            | grep -iE 'error|fail|warn' | tail -n 30
+    } > "$out" 2>&1
+    echo "$out"
+}
+
+case "${1:-check}" in
+    check)
+        check
+        print_check "$([[ "${2:-}" == --json ]] && echo true || echo false)"
+        ;;
+    fix)        fix ;;
+    clean-mic)  clean_mic "${2:-status}" ;;
+    report)
+        file="$(report)"
+        echo "Saved: $file"
+        have wl-copy && wl-copy < "$file" 2>/dev/null && echo "Also copied, so you can paste it anywhere."
+        ;;
+    *)
+        echo "usage: lennox-sound check [--json] | fix | clean-mic on|off|status | report" >&2
+        exit 2
+        ;;
+esac

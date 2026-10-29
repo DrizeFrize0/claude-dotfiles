@@ -29,9 +29,13 @@ The automatic updater never restarts your computer and refuses to finish if the 
 
 On many GTX 1650 laptops the HDMI port is wired to the NVIDIA GPU. Lennox Settings → Graphics → **Mode**: *Automatic* turns the NVIDIA GPU on at login when a screen is plugged in, so plug it in **before** logging in (or log out and back in). *Intel + NVIDIA* keeps it on all the time. Then arrange the screens in Lennox Settings → Display → *Arrange displays*.
 
-## No sound or no microphone
+## No sound, or the microphone / speakers sound bad
 
-- `lennox doctor` shows which part is missing.
+- `lennox sound check` (or Lennox Settings → Sound → *Drivers and sound quality*) shows which driver each sound chip uses, firmware or driver errors from startup, missing packages, and the usual causes of a bad mic. Every problem comes with its fix.
+- `lennox sound fix` fixes the safe ones: a mic set above 100% (that only adds hiss), mic boost turned all the way up, a sound card switched off or left in Pro Audio mode. Then it restarts sound.
+- **Clean microphone** (Lennox Settings → Sound, on by default): noise suppression, echo cancelling and steady volume, like Windows' mic enhancements. Apps record from *Microphone (clean)*. `lennox sound clean-mic off` turns it off.
+- A Bluetooth headset's mic only works in "call mode", which makes both the mic and the sound much worse. That's Bluetooth, not a driver: use the laptop mic or a wired / USB headset for calls.
+- Still bad? `lennox sound report` saves everything about your sound to a text file (and copies it) so you can share it.
 - Most Intel laptop microphones need `sof-firmware` (Lennox installs it). After installing it, restart.
 - Lennox Settings → Sound: pick the right output / microphone and use *Test the microphone*.
 - Is the mic muted? The mic key toggles it, and the quick panel (`SUPER + N`) has a Microphone tile.

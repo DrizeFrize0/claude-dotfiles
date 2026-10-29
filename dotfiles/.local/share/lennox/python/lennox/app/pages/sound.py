@@ -38,7 +38,8 @@ class DeviceSection:
         self.group.add(self.combo)
 
         self.volume_debounce = Debouncer(120, self._set_volume)
-        self.volume_row = rows.scale_row("Volume", None, 0, 100 if kind == "sink" else 150, 50,
+        # 100% is the most a mic should get: past that it only adds hiss
+        self.volume_row = rows.scale_row("Volume", None, 0, 100, 50,
                                          lambda v: None if self.updating else self.volume_debounce.trigger(v))
         self.group.add(self.volume_row)
 
@@ -113,7 +114,26 @@ class Page:
         self.test_row = rows.button_row("Test the microphone", "Records 4 seconds, then plays them back",
                                         "Test", self._test_mic, "audio-input-microphone-symbolic", suggested=True)
         self.input.group.add(self.test_row)
+        self.clean_row = Adw.SwitchRow(title="Clean microphone",
+                                       subtitle="Removes background noise (fans, typing) and echo from the speakers, "
+                                                "and keeps your voice at a steady volume")
+        self.clean_row.add_prefix(Gtk.Image.new_from_icon_name("audio-input-microphone-symbolic"))
+        self.clean_busy = False
+        self.clean_row.connect("notify::active", self._on_clean)
+        self.input.group.add(self.clean_row)
         page.add(self.input.group)
+
+        self.drivers = Adw.PreferencesGroup(title="Drivers and sound quality",
+                                            description="Checks that every sound driver and its firmware loaded, "
+                                                        "and the usual causes of a bad sounding mic.")
+        actions = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
+        for label, callback in (("Fix problems", self._fix), ("Save report", self._report)):
+            button = Gtk.Button(label=label)
+            button.connect("clicked", lambda _b, cb=callback: cb())
+            actions.append(button)
+        self.drivers.set_header_suffix(actions)
+        self.driver_rows = []
+        page.add(self.drivers)
 
         more = Adw.PreferencesGroup(title="More")
         more.add(rows.link_row("Per-app volume and advanced options", "Opens the audio mixer",
@@ -126,6 +146,73 @@ class Page:
     def refresh(self):
         self.output.load()
         self.input.load()
+        self._check()
+
+        def got_clean(ok, out, _err):
+            self.clean_busy = True
+            self.clean_row.set_active(ok and out.strip() == "on")
+            self.clean_busy = False
+
+        run_async([lennox_bin("lennox-sound"), "clean-mic", "status"], got_clean)
+
+    def _check(self):
+        def got(ok, out, _err):
+            for row in self.driver_rows:
+                self.drivers.remove(row)
+            self.driver_rows = []
+            try:
+                results = json.loads(out)
+            except ValueError:
+                results = [{"level": "fail", "message": "Could not run the sound check", "hint": "lennox-sound check"}]
+            # Problems first, then what is fine
+            order = {"fail": 0, "warn": 1, "ok": 2}
+            for item in sorted(results, key=lambda r: order.get(r.get("level"), 3)):
+                level = item.get("level", "ok")
+                row = Adw.ActionRow(title=item.get("message", ""), use_markup=False)
+                if level != "ok" and item.get("hint"):
+                    row.set_subtitle(item["hint"])
+                    row.set_subtitle_selectable(True)
+                icon = {"ok": "emblem-ok-symbolic", "warn": "dialog-warning-symbolic"}.get(level, "dialog-error-symbolic")
+                image = Gtk.Image.new_from_icon_name(icon)
+                image.add_css_class({"ok": "success", "warn": "warning"}.get(level, "error"))
+                row.add_prefix(image)
+                self.drivers.add(row)
+                self.driver_rows.append(row)
+
+        run_async([lennox_bin("lennox-sound"), "check", "--json"], got)
+
+    def _on_clean(self, row, _param):
+        if self.clean_busy:
+            return
+        state = "on" if row.get_active() else "off"
+        row.set_sensitive(False)
+        self.ctx.toast("Turning the clean microphone " + state + "… (sound restarts for a second)")
+
+        def done(ok, _out, err):
+            row.set_sensitive(True)
+            if not ok:
+                self.ctx.toast(err.strip().splitlines()[-1] if err.strip() else "Could not change the clean microphone", 5)
+            self.refresh()
+
+        run_async([lennox_bin("lennox-sound"), "clean-mic", state], done)
+
+    def _fix(self):
+        self.ctx.toast("Fixing… (sound restarts for a second)")
+
+        def done(_ok, out, _err):
+            lines = [line for line in out.splitlines() if line and not line.startswith("Restarted")]
+            self.ctx.toast("Fixed: " + "; ".join(lines) if lines else "No problems to fix. Sound was restarted.", 6)
+            self.refresh()
+
+        run_async([lennox_bin("lennox-sound"), "fix"], done)
+
+    def _report(self):
+        def done(ok, out, _err):
+            path = next((line[len("Saved: "):] for line in out.splitlines() if line.startswith("Saved: ")), "")
+            self.ctx.toast(f"Saved to {path} and copied: paste it to whoever helps you" if ok and path
+                           else "Could not save the report", 6)
+
+        run_async([lennox_bin("lennox-sound"), "report"], done)
 
     def _test_mic(self):
         self.ctx.toast("Recording for 4 seconds, say something…", 4)

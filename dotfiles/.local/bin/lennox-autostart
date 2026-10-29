@@ -36,6 +36,9 @@ start() {
 # Generated configs are always in sync with settings.json
 lennox-apply --no-reload all
 
+# Clean microphone set up by the installer becomes the default mic
+setsid -f lennox-sound clean-mic login >/dev/null 2>&1
+
 # Workspace buttons need their state before the bar starts
 start lennox-workspaces
 
