@@ -151,6 +151,14 @@ else
     info "matugen is not installed, colors unchanged"
 fi
 
+# Terminal colors that stay readable on any wallpaper (matugen takes them
+# from wallpaper pixels, which on a dark wallpaper are all dark)
+KITTY_COLORS="$HOME/.config/kitty/colors-matugen.conf"
+if [[ -f "$KITTY_COLORS" ]]; then
+    PYTHONPATH="$HOME/.local/share/lennox/python" python3 -m lennox.terminal_colors "$KITTY_COLORS" \
+        || info "could not adjust the terminal colors"
+fi
+
 # ---------------------------------------------------------------- lock screen images
 if command -v magick >/dev/null; then
     blur="$(lennox-get wallpaper.lockscreen_blur 2>/dev/null || echo 50x30)"
