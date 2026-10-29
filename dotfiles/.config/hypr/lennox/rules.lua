@@ -27,6 +27,7 @@ floating("nwg-displays",     { class = "^(nwg-displays)$" },                    
 floating("calculator",       { class = "^(org\\.gnome\\.Calculator)$" },             420, 640)
 floating("mission-center",   { class = "^(io\\.missioncenter\\.MissionCenter)$" },   1000, 680)
 floating("lennox-floating",  { class = "^(lennox-floating)$" },                      1000, 680)
+floating("password-prompt",  { class = "^(gcr-prompter|[Pp]inentry.*)$" },           520, 300, { pin = true })
 floating("polkit",           { class = "^(hyprpolkitagent|polkit-gnome-authentication-agent-1)$" }, 480, 260, { pin = true })
 floating("share-picker",     { class = "^(hyprland-share-picker)$" },                640, 420, { pin = true })
 floating("file-picker",      { class = "^(xdg-desktop-portal-gtk)$" },               900, 620)

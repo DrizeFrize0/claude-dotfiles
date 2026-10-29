@@ -51,3 +51,11 @@ mission-center
 btop
 fastfetch
 flatpak
+
+# Passwords: Bitwarden app, and the SUPER + P filler (rbw + rofi-rbw + wtype)
+bitwarden
+rbw
+rofi-rbw
+wtype
+pinentry
+gcr                        # the master password dialog (pinentry-gnome3)

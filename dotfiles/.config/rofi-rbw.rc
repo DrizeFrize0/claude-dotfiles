@@ -1,0 +1,9 @@
+# Lennox password filler (SUPER + P), see `rofi-rbw --help`.
+# Enter types username, Tab, password into the app you were in.
+# Typing never touches the clipboard; Alt+c copies the password instead,
+# marked "sensitive" so clipboard history skips it, cleared after 20 s.
+action = type
+typer = wtype
+clipboarder = wl-copy
+clear-after = 20
+prompt = 󰌾 Passwords

@@ -73,6 +73,7 @@ All shortcuts: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 | Login | SDDM with the ML4W theme, showing your wallpaper |
 | Terminal | kitty + zsh + Oh My Posh, fastfetch |
 | Apps | Zen Browser, Nautilus, Vesktop, Steam, Prism Launcher, VS Code, IntelliJ |
+| Passwords | Bitwarden (app, Zen add-on, phone), `SUPER + P` filler with rbw + rofi-rbw |
 | Settings app | Python + GTK4 / libadwaita |
 
 Your files:

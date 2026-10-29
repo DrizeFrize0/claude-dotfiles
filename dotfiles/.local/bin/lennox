@@ -11,6 +11,7 @@ case "$cmd" in
     look)      exec lennox-look "$@" ;;
     wallpapers) exec lennox-wallpapers "$@" ;;
     minimize)  exec lennox-minimize "$@" ;;
+    passwords) exec lennox-passwords "$@" ;;
     bar)       exec lennox-bar "$@" ;;
     dock)      exec lennox-dock "$@" ;;
     update)    exec lennox-update "$@" ;;
@@ -33,6 +34,7 @@ Lennox - Hyprland for Arch, in the spirit of ML4W
   lennox look NAME           one-click look: lennox | glass | neon | minimal | focus | lightweight | ml4w
   lennox wallpapers make     paint the Lennox wallpaper pack   (ml4w: download 200+ more)
   lennox minimize menu       bring back a minimized window (SUPER + H minimizes)
+  lennox passwords fill      fill a password (SUPER + P; set up in Settings > Passwords)
   lennox bar style NAME      modern | glass | minimal
   lennox dock toggle         show / hide the dock
   lennox update              update system, drivers, AUR apps and Flatpaks now

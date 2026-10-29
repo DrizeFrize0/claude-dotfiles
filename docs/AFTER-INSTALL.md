@@ -128,6 +128,7 @@ Do these in order. `SUPER` is the Windows key.
 ### 3.3 Sign in to your stuff
 
 - **Browser:** `SUPER + B` opens Zen. Sign in to your accounts or import bookmarks.
+- **Passwords:** `SUPER + I` → **Passwords** walks you through it: make a free Bitwarden account, connect the laptop, add Bitwarden to Zen and your phone, then import from Google / Chrome, your phone or another password manager. It deletes the exported file safely afterwards. From then on `SUPER + P` fills a login in any app.
 - **Discord:** `SUPER + SPACE`, type `vesktop`, Enter.
 - **Steam:** `SUPER + SPACE`, type `steam`. The first start downloads an update.
 - **Minecraft:** `SUPER + SPACE`, type `prism`. Add your Microsoft account in Prism Launcher. It already runs on the GTX 1650.
@@ -152,6 +153,7 @@ Do these in order. `SUPER` is the Windows key.
 | `SUPER + 1 … 0` | Go to workspace 1 to 10 |
 | `SUPER + SHIFT + 1 … 0` | Move the window to that workspace |
 | `SUPER + V` | Clipboard history |
+| `SUPER + P` | Fill in a password |
 | `PRINT` | Screenshot an area (saved and copied) |
 | `SUPER + L` | Lock |
 | `SUPER + ESC` | Power menu (lock, sleep, restart, shut down) |

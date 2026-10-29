@@ -13,6 +13,8 @@ on_ac() {
 
 case "${1:-}" in
     lock)
+        # Lock the password vault together with the screen
+        command -v rbw >/dev/null && rbw unlocked >/dev/null 2>&1 && rbw lock >/dev/null 2>&1
         pidof hyprlock >/dev/null || setsid -f hyprlock >/dev/null 2>&1
         ;;
     suspend)

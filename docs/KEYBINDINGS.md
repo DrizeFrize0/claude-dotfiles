@@ -19,6 +19,7 @@ hl.bind("SUPER + B", hl.dsp.exec_cmd("firefox"), { description = "Open Firefox" 
 | `SUPER + SPACE` / `SUPER + CTRL + RETURN` | App launcher |
 | `SUPER + TAB` | Switch to an open window |
 | `SUPER + V` | Clipboard history |
+| `SUPER + P` | Fill a password (Bitwarden): pick a login, Lennox types it |
 | `SUPER + CTRL + E` | Emoji picker |
 | `SUPER + CTRL + K` | All keybindings |
 
@@ -72,7 +73,7 @@ Every screenshot is copied to the clipboard and saved in `~/Pictures/Screenshots
 | `SUPER + ALT + H` | Bring back a minimized window |
 | `SUPER + T` | Float / tile |
 | `SUPER + ALT + T` | Float and pin on every workspace |
-| `SUPER + P` | Pseudo-tile |
+| `SUPER + SHIFT + P` | Pseudo-tile |
 | `SUPER + J` | Flip the split direction |
 | `SUPER + K` | Swap the two halves |
 | `SUPER + G` | Group windows into tabs |
