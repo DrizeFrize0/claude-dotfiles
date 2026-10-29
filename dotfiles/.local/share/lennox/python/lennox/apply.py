@@ -277,6 +277,14 @@ def apply_wallpaper_timer(s, reload=True):
 
 # ---------------------------------------------------------------- gtk / qt / kitty
 
+def button_layout(s):
+    """Title bar buttons in apps. Minimize always works (lennox/minimize.lua);
+    maximize only in stacking mode, since tiling ignores maximize requests."""
+    if s["appearance"]["window_mode"] == "stacking":
+        return "appmenu:minimize,maximize,close"
+    return "appmenu:minimize,close"
+
+
 def render_gtk(s, gtk4):
     a = s["appearance"]
     dark = a["color_mode"] == "dark"
@@ -287,6 +295,7 @@ def render_gtk(s, gtk4):
         f"gtk-font-name={a['font']}",
         f"gtk-cursor-theme-name={a['cursor_theme']}",
         f"gtk-cursor-theme-size={a['cursor_size']}",
+        f"gtk-decoration-layout={button_layout(s)}",
     ]
     if not gtk4:
         # libadwaita (GTK4) reads dark mode from the color-scheme setting
@@ -358,6 +367,8 @@ def apply_gtk(s, reload=True):
             ("color-scheme", "prefer-dark" if dark else "prefer-light"),
         ):
             run(["gsettings", "set", schema, key, value])
+        # GTK4 / libadwaita apps read their title bar buttons from here
+        run(["gsettings", "set", "org.gnome.desktop.wm.preferences", "button-layout", button_layout(s)])
     if in_session():
         run(["hyprctl", "setcursor", a["cursor_theme"], str(a["cursor_size"])])
         run(["pkill", "-USR1", "-x", "kitty"])

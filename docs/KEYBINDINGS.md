@@ -72,6 +72,7 @@ Every screenshot is copied to the clipboard and saved in `~/Pictures/Screenshots
 | `SUPER + H` | Minimize (the bar shows a 󰖰 button with how many are hidden) |
 | `SUPER + ALT + H` | Bring back a minimized window |
 | `SUPER + T` | Float / tile |
+| `SUPER + SHIFT + T` | Window mode: tiling / stacking (all windows float and overlap) |
 | `SUPER + ALT + T` | Float and pin on every workspace |
 | `SUPER + SHIFT + P` | Pseudo-tile |
 | `SUPER + J` | Flip the split direction |

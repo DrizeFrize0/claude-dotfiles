@@ -512,11 +512,10 @@ class SlidersCard(Card):
         except (OSError, ValueError, subprocess.TimeoutExpired):
             pass
         try:
-            out = subprocess.run(["brightnessctl", "-m", "-c", "backlight"], capture_output=True, text=True,
-                                 timeout=2)
-            fields = out.stdout.splitlines()[0].split(",") if out.returncode == 0 and out.stdout else []
-            if len(fields) >= 4:
-                brightness = int(fields[3].rstrip("%"))
+            out = subprocess.run([os.path.join(BIN, "lennox-panel"), "get", "brightness"], capture_output=True,
+                                 text=True, timeout=2)
+            if out.returncode == 0 and out.stdout.strip():
+                brightness = int(out.stdout.strip())
         except (OSError, ValueError, IndexError, subprocess.TimeoutExpired):
             pass
         return volume, muted, brightness
@@ -555,7 +554,7 @@ class SlidersCard(Card):
             launch(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", f"{value}%"])
         else:
             value = max(2, int(self.brightness.get_value()))
-            launch(["brightnessctl", "-q", "-c", "backlight", "set", f"{value}%"])
+            launch([os.path.join(BIN, "lennox-panel"), "set", "brightness", str(value)])
         return GLib.SOURCE_REMOVE
 
     def _toggle_mute(self):

@@ -42,6 +42,7 @@ local DEFAULTS = {
         shadow           = true,
         dim_inactive     = false,
         layout           = "dwindle",
+        window_mode      = "tiling",
         cursor_theme     = "Bibata-Modern-Ice",
         cursor_size      = 24,
     },

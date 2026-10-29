@@ -6,7 +6,7 @@ import os
 from gi.repository import Adw
 
 from .. import rows
-from ..util import HOME, Debouncer, launch, read_file, run_async
+from ..util import HOME, Debouncer, launch, lennox_bin, read_file, run_async
 
 SCALES = [(1.0, "100%"), (1.25, "125%"), (1.5, "150%"), (1.75, "175%"), (2.0, "200%")]
 
@@ -18,7 +18,7 @@ class Page:
         page = Adw.PreferencesPage()
 
         screen = Adw.PreferencesGroup(title="Screen")
-        self.brightness_debounce = Debouncer(80, lambda v: run_async(["brightnessctl", "-q", "set", f"{int(v)}%"]))
+        self.brightness_debounce = Debouncer(80, lambda v: run_async([lennox_bin("lennox-panel"), "set", "brightness", str(int(v))]))
         self.brightness = rows.scale_row("Brightness", "Also on your keyboard's brightness keys", 5, 100, 50,
                                          lambda v: None if self.updating else self.brightness_debounce.trigger(v))
         screen.add(self.brightness)
@@ -48,8 +48,8 @@ class Page:
         def got_brightness(ok, out, _err):
             if ok and out.strip():
                 try:
-                    value = int(out.strip().splitlines()[0].split(",")[3].rstrip("%"))
-                except (IndexError, ValueError):
+                    value = int(out.strip())
+                except ValueError:
                     return
                 self.updating = True
                 self.brightness.scale.set_value(value)
@@ -57,7 +57,8 @@ class Page:
             else:
                 self.brightness.set_visible(False)
 
-        run_async(["brightnessctl", "-m"], got_brightness)
+        # lennox-panel picks the backlight that really dims the screen (Intel + NVIDIA list several)
+        run_async([lennox_bin("lennox-panel"), "get", "brightness"], got_brightness)
 
         custom = read_file(os.path.join(HOME, ".config", "hypr", "monitors.lua"))
         if "hl.monitor" in custom:

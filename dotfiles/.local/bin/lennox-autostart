@@ -17,6 +17,8 @@ echo ":: Lennox autostart $(date '+%F %T')"
 RUNTIME="${XDG_RUNTIME_DIR:-/tmp}/lennox"
 rm -rf "$RUNTIME"
 mkdir -p "$RUNTIME/modes" "$RUNTIME/ws"
+# Windows open in the saved window mode (tiling / stacking): lennox-windows switches from here
+lennox-get appearance.window_mode > "$RUNTIME/window_mode" 2>/dev/null || echo tiling > "$RUNTIME/window_mode"
 
 start() {
     # start NAME [ARGS...]: run in the background, detached, unless running.

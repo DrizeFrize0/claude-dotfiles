@@ -4,6 +4,7 @@ from gi.repository import Adw, Gdk, Gtk
 
 from ... import settings as S
 from .. import rows
+from ..util import launch, lennox_bin
 
 SCHEMES = [
     ("scheme-tonal-spot", "Calm (default)"),
@@ -79,6 +80,10 @@ class Page:
         windows.add(rows.spin_row(store, "appearance.rounding", "Rounded corners", lower=0, upper=30))
         windows.add(rows.spin_row(store, "appearance.gaps_in", "Gap between windows", lower=0, upper=40))
         windows.add(rows.spin_row(store, "appearance.gaps_out", "Gap to the screen edge", lower=0, upper=60))
+        windows.add(rows.combo_row(store, "appearance.window_mode", "Window mode",
+                                   [("tiling", "Tiling (side by side)"), ("stacking", "Stacking (overlap, like Windows)")],
+                                   "Stacking: move with SUPER + drag, resize from the edges. SUPER + SHIFT + T switches",
+                                   on_change=lambda mode: launch([lennox_bin("lennox-windows"), mode])))
         windows.add(rows.combo_row(store, "appearance.layout", "Tiling layout",
                                    [("dwindle", "Dwindle (split in half)"), ("master", "Master (one big window)")]))
         page.add(windows)

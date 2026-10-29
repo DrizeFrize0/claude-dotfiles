@@ -51,50 +51,50 @@
         {
           "label": "󰖩  Wi-Fi",
           "type": "toggle",
-          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then nmcli radio wifi on; else nmcli radio wifi off; fi'",
-          "update-command": "sh -c 'if [ \"$(nmcli radio wifi)\" = enabled ]; then echo true; else echo false; fi'"
+          "command": "~/.local/bin/lennox-panel switch wifi",
+          "update-command": "~/.local/bin/lennox-panel state wifi"
         },
         {
           "label": "󰂯  Bluetooth",
           "type": "toggle",
-          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then rfkill unblock bluetooth; sleep 1; bluetoothctl power on; else bluetoothctl power off; rfkill block bluetooth; fi'",
-          "update-command": "sh -c 'if bluetoothctl show 2>/dev/null | grep -q \"Powered: yes\"; then echo true; else echo false; fi'"
+          "command": "~/.local/bin/lennox-panel switch bluetooth",
+          "update-command": "~/.local/bin/lennox-panel state bluetooth"
         },
         {
           "label": "󰍬  Microphone",
           "type": "toggle",
-          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 0; else wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 1; fi'",
-          "update-command": "sh -c 'if ! wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED; then echo true; else echo false; fi'"
+          "command": "~/.local/bin/lennox-panel switch mic",
+          "update-command": "~/.local/bin/lennox-panel state mic"
         },
         {
           "label": "󰖔  Night light",
           "type": "toggle",
-          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then ~/.local/bin/lennox-nightlight on; else ~/.local/bin/lennox-nightlight off; fi'",
-          "update-command": "sh -c 'if [ \"$(~/.local/bin/lennox-nightlight status)\" = on ]; then echo true; else echo false; fi'"
+          "command": "~/.local/bin/lennox-panel switch nightlight",
+          "update-command": "~/.local/bin/lennox-panel state nightlight"
         },
         {
           "label": "󰊗  Game mode",
           "type": "toggle",
-          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then ~/.local/bin/lennox-mode game on; else ~/.local/bin/lennox-mode game off; fi'",
-          "update-command": "sh -c 'if [ \"$(~/.local/bin/lennox-mode game status)\" = on ]; then echo true; else echo false; fi'"
+          "command": "~/.local/bin/lennox-panel switch game",
+          "update-command": "~/.local/bin/lennox-panel state game"
         },
         {
           "label": "󰅶  Stay awake",
           "type": "toggle",
-          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then ~/.local/bin/lennox-idle off; else ~/.local/bin/lennox-idle on; fi'",
-          "update-command": "sh -c 'if [ \"$(~/.local/bin/lennox-idle status)\" = off ]; then echo true; else echo false; fi'"
+          "command": "~/.local/bin/lennox-panel switch awake",
+          "update-command": "~/.local/bin/lennox-panel state awake"
         },
         {
           "label": "󰌪  Battery saver",
           "type": "toggle",
-          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then powerprofilesctl set power-saver; else powerprofilesctl set balanced; fi'",
-          "update-command": "sh -c 'if [ \"$(powerprofilesctl get)\" = power-saver ]; then echo true; else echo false; fi'"
+          "command": "~/.local/bin/lennox-panel switch saver",
+          "update-command": "~/.local/bin/lennox-panel state saver"
         },
         {
           "label": "󰔎  Dark mode",
           "type": "toggle",
-          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then ~/.local/bin/lennox-theme dark; else ~/.local/bin/lennox-theme light; fi'",
-          "update-command": "sh -c 'if [ \"$(~/.local/bin/lennox-get appearance.color_mode)\" = dark ]; then echo true; else echo false; fi'"
+          "command": "~/.local/bin/lennox-panel switch dark",
+          "update-command": "~/.local/bin/lennox-panel state dark"
         }
       ]
     },
@@ -132,8 +132,8 @@
     },
     "slider#mic": {
       "label": "󰍬",
-      "cmd_getter": "sh -c \"wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | awk '{print int($2 * 100 + 0.5)}'\"",
-      "cmd_setter": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ $value%",
+      "cmd_getter": "~/.local/bin/lennox-panel get mic",
+      "cmd_setter": "~/.local/bin/lennox-panel set mic $value",
       "min": 0,
       "max": 100,
       "min_limit": 0,
@@ -141,8 +141,8 @@
     },
     "slider#brightness": {
       "label": "󰃟",
-      "cmd_getter": "sh -c \"brightnessctl -m | head -n1 | cut -d, -f4 | tr -d %\"",
-      "cmd_setter": "brightnessctl -q set $value%",
+      "cmd_getter": "~/.local/bin/lennox-panel get brightness",
+      "cmd_setter": "~/.local/bin/lennox-panel set brightness $value",
       "min": 0,
       "max": 100,
       "min_limit": 5,

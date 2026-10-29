@@ -70,6 +70,7 @@ hl.bind(key("SHIFT + Q"),      hl.dsp.window.kill(),                            
 hl.bind(key("F"),              hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), { description = "Fullscreen" })
 hl.bind(key("M"),              hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }),  { description = "Maximize" })
 hl.bind(key("T"),              hl.dsp.window.float({ action = "toggle" }),                    { description = "Float / tile the window" })
+hl.bind(key("SHIFT + T"),      run("lennox-windows toggle"),                                  { description = "Tiling / stacking windows (overlap like Windows)" })
 hl.bind(key("ALT + T"), function()
     hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
     hl.dispatch(hl.dsp.window.pin({ action = "toggle" }))

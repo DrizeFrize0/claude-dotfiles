@@ -11,6 +11,7 @@ case "$cmd" in
     look)      exec lennox-look "$@" ;;
     wallpapers) exec lennox-wallpapers "$@" ;;
     minimize)  exec lennox-minimize "$@" ;;
+    windows)   exec lennox-windows "$@" ;;
     passwords) exec lennox-passwords "$@" ;;
     bar)       exec lennox-bar "$@" ;;
     dock)      exec lennox-dock "$@" ;;
@@ -33,6 +34,7 @@ Lennox - Hyprland for Arch, in the spirit of ML4W
   lennox theme set NAME      color theme: wallpaper | ocean | sakura | sunset ... (lennox theme list)
   lennox look NAME           one-click look: lennox | glass | neon | minimal | focus | lightweight | ml4w
   lennox wallpapers make     paint the Lennox wallpaper pack   (ml4w: download 200+ more)
+  lennox windows toggle      tiling (side by side) / stacking (overlap like Windows)   (SUPER + SHIFT + T)
   lennox minimize menu       bring back a minimized window (SUPER + H minimizes)
   lennox passwords fill      fill a password (SUPER + P; set up in Settings > Passwords)
   lennox bar style NAME      modern | glass | minimal

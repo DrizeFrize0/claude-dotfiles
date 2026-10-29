@@ -149,6 +149,7 @@ Do these in order. `SUPER` is the Windows key.
 | `SUPER + F` | Fullscreen |
 | `SUPER + H` | Minimize (`SUPER + ALT + H` or the 󰖰 button in the bar brings it back) |
 | `SUPER + T` | Make a window float (or tile it again) |
+| `SUPER + SHIFT + T` | Stacking windows (overlap like Windows) / tiling |
 | `SUPER + arrows` | Move between windows |
 | `SUPER + 1 … 0` | Go to workspace 1 to 10 |
 | `SUPER + SHIFT + 1 … 0` | Move the window to that workspace |
@@ -170,6 +171,8 @@ Hyprland is a *tiling* desktop. New windows split the screen instead of stacking
 
 - One window fills the screen. Open a second and they share it side by side.
 - Want an old-style floating window? `SUPER + T`, then drag it with `SUPER + left mouse` and resize with `SUPER + right mouse`.
+- **Prefer windows on top of each other, like Windows?** Press `SUPER + SHIFT + T` for *stacking* mode: every window floats and can overlap. Move one with `SUPER + left mouse` (or drag its title bar), resize from any edge, and `SUPER + M` maximizes. Press it again to go back to tiling. You'll also find it in Settings → Appearance → Window mode.
+- **Minimize:** the `–` button in an app's title bar, or `SUPER + H`. Get it back from the 󰖰 button in the bar or `SUPER + ALT + H`.
 - Running out of space? Use another workspace (`SUPER + 2`, `SUPER + 3`…), like having several desktops.
 
 A layout that works: workspace 1 for the browser, 2 for code, 3 for Discord, 4 for games.

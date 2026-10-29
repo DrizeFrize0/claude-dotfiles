@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Window mode: tiling (windows share the screen) or stacking (windows float
+# and overlap, like on Windows or macOS).
+#   lennox-windows toggle            switch between them (SUPER + SHIFT + T)
+#   lennox-windows tiling|stacking   use one
+#   lennox-windows status            the current mode
+# Open windows switch too. Tool windows (Settings, the mixer, dialogs...)
+# carry the lennox-tool tag and stay floating in tiling mode.
+export PATH="$HOME/.local/bin:$PATH"
+
+dispatch() { hyprctl dispatch "$1" >/dev/null; }
+
+windows() {
+    # Windows on normal workspaces (not minimized or scratchpads) that need
+    # changing: tiled ones for stacking, floating non-tools for tiling.
+    hyprctl clients -j 2>/dev/null | jq -r --arg mode "$1" '
+        .[] | select(.mapped and (.workspace.id // 0) > 0 and (.fullscreen // 0) == 0)
+        | select(if $mode == "stacking" then (.floating | not)
+                 else .floating and ((.tags // []) | any(startswith("lennox-tool")) | not) and (.pinned | not) end)
+        | .address'
+}
+
+current() { lennox-get appearance.window_mode 2>/dev/null || echo tiling; }
+
+# The mode the open windows were last switched to (Lennox Settings calls
+# this script after saving the setting, so the setting alone can't tell)
+APPLIED="${XDG_RUNTIME_DIR:-/tmp}/lennox/window_mode"
+
+case "${1:-toggle}" in
+    toggle|tiling|stacking)
+        mode="${1:-toggle}"
+        if [[ "$mode" == toggle ]]; then
+            if [[ "$(current)" == stacking ]]; then mode=tiling; else mode=stacking; fi
+        fi
+        # Saves the setting and reloads Hyprland, so new windows follow it
+        [[ "$(current)" == "$mode" ]] || lennox-set appearance.window_mode "$mode" || exit 1
+        [[ "$(cat "$APPLIED" 2>/dev/null || echo tiling)" == "$mode" ]] && exit 0
+        mkdir -p "${APPLIED%/*}" && echo "$mode" > "$APPLIED"
+        if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+            if [[ "$mode" == stacking ]]; then action="set"; else action="unset"; fi
+            windows "$mode" | while read -r addr; do
+                [[ "$addr" =~ ^0x[0-9a-fA-F]+$ ]] || continue
+                dispatch "hl.dsp.window.float({ action = \"$action\", window = \"address:$addr\" })"
+            done
+        fi
+        if [[ "$mode" == stacking ]]; then
+            notify-send -a Lennox -i window-new -t 3500 "Stacking windows" \
+                "Windows overlap. Move: SUPER + drag. Resize: drag an edge. Back to tiling: SUPER + SHIFT + T"
+        else
+            notify-send -a Lennox -i view-grid -t 3000 "Tiling windows" "Windows share the screen side by side."
+        fi
+        ;;
+    status)
+        current
+        ;;
+    *)
+        echo "usage: lennox-windows toggle | tiling | stacking | status" >&2
+        exit 2
+        ;;
+esac

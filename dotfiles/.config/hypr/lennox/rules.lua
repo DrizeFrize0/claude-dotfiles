@@ -2,7 +2,9 @@
 -- Window and layer rules
 -- -----------------------------------------------------
 
--- Small tool windows float in the middle of the screen instead of tiling
+-- Small tool windows float in the middle of the screen instead of tiling.
+-- The lennox-tool tag keeps them floating when you switch back from
+-- stacking to tiling (lennox-windows).
 local function floating(name, match, w, h, extra)
     local rule = {
         name   = name,
@@ -10,6 +12,7 @@ local function floating(name, match, w, h, extra)
         float  = true,
         center = true,
         size   = w .. " " .. h,
+        tag    = "+lennox-tool",
     }
     for k, v in pairs(extra or {}) do
         rule[k] = v
@@ -33,10 +36,24 @@ floating("share-picker",     { class = "^(hyprland-share-picker)$" },           
 floating("file-picker",      { class = "^(xdg-desktop-portal-gtk)$" },               900, 620)
 floating("easyeffects",      { class = "^(com\\.github\\.wwmm\\.easyeffects)$" },    1000, 680)
 
+-- Stacking mode (Lennox Settings > Appearance > Windows, SUPER + SHIFT + T):
+-- every window floats and can overlap the others, like on Windows or macOS.
+-- Move with SUPER + drag, resize from the edges, SUPER + M to maximize.
+local stacking = LENNOX.appearance.window_mode == "stacking"
+if stacking then
+    hl.window_rule({
+        name   = "stacking",
+        match  = { class = ".*" },
+        float  = true,
+        center = true,
+    })
+end
+
 -- Picture-in-picture videos stay on top and follow you between workspaces
 hl.window_rule({
     name  = "picture-in-picture",
     match = { title = "^([Pp]icture[-\\s]?[Ii]n[-\\s]?[Pp]icture)(.*)$" },
+    tag   = "+lennox-tool",
     float = true,
     pin   = true,
     no_initial_focus = true,
@@ -47,6 +64,7 @@ hl.window_rule({
 hl.window_rule({
     name  = "steam-dialogs",
     match = { class = "^(steam)$", title = "^(Friends List|Steam Settings|Steam - News.*|Special Offers)$" },
+    tag   = "+lennox-tool",
     float = true,
     center = true,
 })
@@ -58,12 +76,15 @@ hl.window_rule({
     idle_inhibit = "fullscreen",
 })
 
--- Ignore apps that try to maximize themselves
-hl.window_rule({
-    name  = "suppress-maximize",
-    match = { class = ".*" },
-    suppress_event = "maximize",
-})
+-- Tiling: ignore apps that try to maximize themselves.
+-- Stacking: let the maximize button in apps work.
+if not stacking then
+    hl.window_rule({
+        name  = "suppress-maximize",
+        match = { class = ".*" },
+        suppress_event = "maximize",
+    })
+end
 
 -- Fix dragging issues with some XWayland apps
 hl.window_rule({
