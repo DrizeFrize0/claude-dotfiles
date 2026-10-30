@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.11.1 · 2026-10-30 · Fixes
+
+- Fixed: the mouse cursor was missing when screen sharing on Discord (and in recordings)
+
 ## 1.11.0 · 2026-10-30 · Live wallpapers
 
 - Live wallpapers: pick a video in Lennox Settings > Wallpaper and it plays behind your windows, without sound

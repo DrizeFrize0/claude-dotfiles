@@ -18,6 +18,9 @@ hl.config({
     },
 
     cursor = {
+        -- Software cursor: a hardware cursor sits on its own plane, which screen
+        -- sharing (Discord, OBS) and recordings don't capture, so it vanished there
+        no_hardware_cursors = true,
         hide_on_key_press = true,
         inactive_timeout  = 8,
     },
