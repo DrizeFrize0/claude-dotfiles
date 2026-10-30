@@ -174,7 +174,9 @@ window.lennox-island-window { background: transparent; }
     border-radius: 22px;
     padding: 0 14px;
     min-width: 150px;
-    box-shadow: 0 6px 18px alpha(black, 0.45);
+    /* No drop shadow: the window is exactly the pill's size, so a shadow
+       would be cut off into grey corners behind the round ends */
+    border: 1px solid alpha(white, 0.08);
     transition: all 300ms cubic-bezier(0.2, 0.9, 0.3, 1.0);
 }
 .lennox-island.music, .lennox-island.timer, .lennox-island.event, .lennox-island.call { min-width: 260px; }

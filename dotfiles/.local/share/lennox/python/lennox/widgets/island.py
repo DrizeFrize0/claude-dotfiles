@@ -407,7 +407,10 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.set_resizable(False)
 
         top, height = bar_geometry() if place == "bar" else (6, 34)
-        self.compact_height = max(26, height - 4)
+        # In the bar: exactly the bar's height and position, so it covers the
+        # bar's middle completely (nothing peeks out above or below)
+        self.compact_height = max(26, height - 2)     # + the 1 px border = the bar's height
+        self.top_margin = top
         if self.ls:
             self.ls.init_for_window(self)
             self.ls.set_namespace(self, "lennox-island")
@@ -417,7 +420,7 @@ class IslandWindow(Gtk.ApplicationWindow):
                 # Over the bar's middle, like the iPhone's island
                 self.ls.set_layer(self, self.ls.Layer.OVERLAY)
                 self.ls.set_exclusive_zone(self, -1)
-                self.ls.set_margin(self, self.ls.Edge.TOP, top + 2)
+                self.ls.set_margin(self, self.ls.Edge.TOP, top)
             else:
                 self.ls.set_layer(self, self.ls.Layer.TOP)
                 self.ls.set_margin(self, self.ls.Edge.TOP, 6)
