@@ -30,6 +30,9 @@ satty
 udiskie
 gvfs
 gvfs-mtp
+# Windows drives (NTFS) and USB sticks (exFAT) open in Files
+ntfs-3g
+exfatprogs
 polkit
 # Login screen (ML4W theme needs the three qt6 packages)
 sddm
