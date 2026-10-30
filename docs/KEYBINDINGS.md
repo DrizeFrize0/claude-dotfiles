@@ -17,7 +17,8 @@ hl.bind("SUPER + B", hl.dsp.exec_cmd("firefox"), { description = "Open Firefox" 
 | `SUPER + E` | Files (Nautilus) |
 | `SUPER + C` | Calculator |
 | `SUPER + SPACE` / `SUPER + CTRL + RETURN` | App launcher |
-| `SUPER + TAB` | Switch to an open window |
+| `SUPER + TAB` | Window overview: every window with a preview, type to search, Enter jumps there |
+| `SUPER + SHIFT + TAB` | Switch to an open window (list) |
 | `SUPER + V` | Clipboard history |
 | `SUPER + P` | Fill a password (Bitwarden): pick a login, Lennox types it |
 | `SUPER + CTRL + E` | Emoji picker |

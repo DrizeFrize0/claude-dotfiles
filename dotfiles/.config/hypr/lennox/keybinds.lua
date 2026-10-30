@@ -29,7 +29,8 @@ hl.bind(key("C"),              run("lennox-open calculator"),  { description = "
 hl.bind(key("CTRL + E"),       run("lennox-menu emoji"),       { description = "Emoji picker" })
 hl.bind(key("SPACE"),          run("lennox-menu apps"),        { description = "Open the app launcher" })
 hl.bind(key("CTRL + RETURN"),  run("lennox-menu apps"),        { description = "Open the app launcher" })
-hl.bind(key("TAB"),            run("lennox-menu windows"),     { description = "Switch to an open window" })
+hl.bind(key("TAB"),            run("lennox-overview"),         { description = "Window overview: every window, type to search" })
+hl.bind(key("SHIFT + TAB"),    run("lennox-menu windows"),     { description = "Switch to an open window (list)" })
 hl.bind(key("V"),              run("lennox-menu clipboard"),   { description = "Clipboard history" })
 hl.bind(key("CTRL + K"),       run("lennox-menu keybinds"),    { description = "Show all keybindings" })
 

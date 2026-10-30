@@ -35,6 +35,8 @@ case "${1:-hide}" in
         dispatch "hl.dsp.window.move({ workspace = \"$WS\", follow = false })"
         ;;
 
+    restore) restore "${2:-}" ;;              # restore ADDRESS (the window overview)
+
     last)
         addr="$(minimized | head -n1 | cut -f1)"
         [[ -n "$addr" ]] && restore "$addr"

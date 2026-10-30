@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.9.0 · 2026-10-30 · Window overview
+
+- SUPER + TAB opens a window overview: every window on every workspace, grouped, with previews
+- Type to search, arrows and Enter or a click to jump there, Esc closes; minimized windows come back too
+- The old window list moved to SUPER + SHIFT + TAB
+
 ## 1.8.0 · 2026-10-30 · Settings backup
 
 - Lennox Settings > Backup: your settings, tweaks, alarms, focus and sleep stats and wallpaper in one small file
