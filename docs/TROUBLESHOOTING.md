@@ -92,3 +92,9 @@ On many GTX 1650 laptops the HDMI port is wired to the NVIDIA GPU. Lennox Settin
 - A blocked site still loads: the browser may remember it for a minute, or use "secure DNS" (DNS over HTTPS), which skips the block. Zen / Firefox: Settings → Privacy & Security → DNS over HTTPS → Off.
 - Sites stay blocked after a crash: `lennox focus stop` (or log out and in) unblocks them.
 - `lennox focus status` shows the session; `lennox focus stats` your totals.
+
+## Live wallpaper
+
+- Nothing moves: `lennox-livewall status`. "mpvpaper is not installed" → `lennox upgrade` (or `yay -S mpvpaper`).
+- It stutters or uses a lot of battery: turn on *Pause on battery*, or use a 1080p video instead of 4K.
+- Back to a still picture: **Stop** in `SUPER + I` → **Wallpaper**, or pick any picture.

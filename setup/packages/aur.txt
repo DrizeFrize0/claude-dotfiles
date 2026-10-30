@@ -1,3 +1,5 @@
 # AUR packages (built with yay). Updated with one click, not automatically.
 bibata-cursor-theme-bin
 oh-my-posh-bin
+# Live (video) wallpapers (lennox-livewall)
+mpvpaper

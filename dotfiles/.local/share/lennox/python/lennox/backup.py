@@ -37,7 +37,7 @@ FILES = [
     ".local/state/lennox/focus_log.json",
     ".local/state/lennox/sleep.log",
 ]
-WALLPAPER_NOTE = ".cache/lennox/current"           # the path of the current wallpaper
+WALLPAPER_NOTE = ".cache/lennox/wallpaper/current"   # the path of the current wallpaper (lennox-wallpaper)
 WALLPAPER_DIR = ".config/lennox/wallpapers/restored"
 PREFIX = "lennox-backup-"
 MANIFEST = "lennox-backup.json"

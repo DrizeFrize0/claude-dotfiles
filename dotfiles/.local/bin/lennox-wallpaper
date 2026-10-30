@@ -8,7 +8,7 @@
 # Set the wallpaper and re-color the whole desktop to match it.
 #
 # Usage:
-#   lennox-wallpaper IMAGE        set IMAGE
+#   lennox-wallpaper IMAGE        set IMAGE (a GIF moves; a video becomes a live wallpaper)
 #   lennox-wallpaper --random     pick a random image from the wallpaper folder
 #   lennox-wallpaper --restore    re-apply the current wallpaper (used at login)
 # Options:
@@ -31,6 +31,7 @@ theme=true
 wallpaper=true
 notify=true
 reload=true
+flags=()
 
 info() { echo ":: $*" >&2; }
 fail() { echo "lennox-wallpaper: $*" >&2; exit 1; }
@@ -39,16 +40,21 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --random) mode="random" ;;
         --restore) mode="restore" ;;
-        --theme-only) wallpaper=false ;;
-        --no-theme) theme=false ;;
-        --quiet) notify=false ;;
-        --no-reload) reload=false ;;
+        --theme-only) wallpaper=false; flags+=("$1") ;;
+        --no-theme) theme=false; flags+=("$1") ;;
+        --quiet) notify=false; flags+=("$1") ;;
+        --no-reload) reload=false; flags+=("$1") ;;
         -h|--help) grep '^#   ' "$0" | sed 's/^# //'; exit 0 ;;
         -*) fail "unknown option $1" ;;
         *) image="$1"; mode="set" ;;
     esac
     shift
 done
+
+# A video: lennox-livewall plays it and themes from a still frame of it
+if [[ "$mode" == "set" && -f "$image" ]] && [[ "$(file --brief --mime-type -- "$image" 2>/dev/null)" == video/* ]]; then
+    exec lennox-livewall set "$image" "${flags[@]}"
+fi
 
 # One run at a time; a second click while theming just waits its turn
 mkdir -p "$CACHE"
@@ -122,6 +128,11 @@ if $wallpaper && in_session && command -v awww >/dev/null; then
 fi
 
 echo "$image" > "$CURRENT_FILE"
+
+# A new still wallpaper replaces a live one (lennox-livewall sets LENNOX_LIVE_KEEP for its frame)
+if $wallpaper && [[ "$mode" != "restore" && -z "${LENNOX_LIVE_KEEP:-}" ]]; then
+    lennox-livewall stop >/dev/null 2>&1
+fi
 
 $theme || { info "Colors unchanged"; exit 0; }
 

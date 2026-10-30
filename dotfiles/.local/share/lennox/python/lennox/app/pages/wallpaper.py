@@ -103,6 +103,25 @@ class Page:
                                     "Download", self._download_more, "folder-download-symbolic"))
         page.add(options)
 
+        live = Adw.PreferencesGroup(
+            title="Live wallpaper",
+            description="A video plays behind your windows (no sound). Colors and the lock screen use a still "
+                        "frame of it. It pauses in games, fullscreen and on the lock screen. GIFs from the "
+                        "list above move too.")
+        self.live_row = Adw.ActionRow(title="Live wallpaper", subtitle="Off")
+        self.live_row.add_prefix(Gtk.Image.new_from_icon_name("video-x-generic-symbolic"))
+        choose = Gtk.Button(label="Choose a video…", valign=Gtk.Align.CENTER)
+        choose.connect("clicked", lambda _b: self._choose_video())
+        self.live_stop = Gtk.Button(label="Stop", valign=Gtk.Align.CENTER, visible=False)
+        self.live_stop.connect("clicked", lambda _b: run_async([lennox_bin("lennox-livewall"), "stop"],
+                                                               lambda *_a: self._live_status()))
+        self.live_row.add_suffix(self.live_stop)
+        self.live_row.add_suffix(choose)
+        live.add(self.live_row)
+        live.add(rows.switch_row(self.ctx.store, "wallpaper.live_pause_battery", "Pause on battery",
+                                 "A still picture uses less battery"))
+        page.add(live)
+
         self.widget = page
 
     # ---------------------------------------------------------------- data
@@ -127,7 +146,39 @@ class Page:
 
     # ---------------------------------------------------------------- grid
 
+    def _live_status(self):
+        def got(_ok, out, _err):
+            text = out.strip() or "off"
+            on = text != "off"
+            state, _, video = text.partition(": ")
+            self.live_row.set_subtitle(GLib.markup_escape_text(
+                f"{state.capitalize()}: {os.path.basename(video)}" if on else "Off"))
+            self.live_stop.set_visible(on)
+
+        run_async([lennox_bin("lennox-livewall"), "status"], got)
+
+    def _choose_video(self):
+        videos = Gtk.FileFilter(name="Videos")
+        videos.add_mime_type("video/*")
+        filters = Gio.ListStore.new(Gtk.FileFilter)
+        filters.append(videos)
+        dialog = Gtk.FileDialog(title="Choose a video for the wallpaper", filters=filters, default_filter=videos)
+
+        def chosen(dlg, result):
+            try:
+                file = dlg.open_finish(result)
+            except GLib.Error:
+                return
+            if file and file.get_path():
+                self.ctx.toast("Setting the live wallpaper…")
+                run_async([lennox_bin("lennox-livewall"), "set", file.get_path()], lambda ok, _o, err: (
+                    self.ctx.toast("Live wallpaper on" if ok else (err.strip().splitlines() or ["It didn't work"])[-1]),
+                    self._live_status()))
+
+        dialog.open(self.ctx.window, None, chosen)
+
     def refresh(self):
+        self._live_status()
         folder = self._folder()
         if folder == self.loaded_folder:
             self._mark_current()

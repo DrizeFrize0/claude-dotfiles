@@ -3,6 +3,14 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.11.0 · 2026-10-30 · Live wallpapers
+
+- Live wallpapers: pick a video in Lennox Settings > Wallpaper and it plays behind your windows, without sound
+- It pauses in games, in fullscreen, on the lock screen and (if you like) on battery
+- Colors, the lock screen and the login screen use a still frame of it; GIF wallpapers move too
+- Upgrades now also install new AUR packages
+- Fixed: backups now include the current wallpaper
+
 ## 1.10.0 · 2026-10-30 · Lock screen widgets
 
 - The lock screen shows what's playing, your next alarm or timer, the weather, your phone's battery and who's on the Minecraft server

@@ -44,6 +44,7 @@ start lennox-workspaces
 
 # Wallpaper and colors (awww-daemon was started by Hyprland)
 lennox-wallpaper --restore --quiet --no-reload
+lennox-livewall restore >/dev/null 2>&1        # a live (video) wallpaper plays again
 
 # Desktop
 start swaync

@@ -240,6 +240,20 @@ install_new_packages() {
     else
         warn "Could not install: ${missing[*]}. Run 'lennox update', then 'lennox upgrade' again."
     fi
+    # New AUR packages too (e.g. mpvpaper for live wallpapers)
+    local helper="" aur_missing=()
+    command -v yay >/dev/null && helper=yay
+    [[ -z "$helper" ]] && command -v paru >/dev/null && helper=paru
+    [[ -n "$helper" ]] || return 0
+    while read -r p; do
+        installed "$p" || aur_missing+=("$p")
+    done < <(pkg_list "$SETUP/packages/aur.txt")
+    (( ${#aur_missing[@]} == 0 )) && return 0
+    if "$helper" -S --needed --noconfirm "${aur_missing[@]}"; then
+        ok "Installed from the AUR: ${aur_missing[*]}"
+    else
+        warn "Could not install from the AUR: ${aur_missing[*]}. Try: $helper -S ${aur_missing[*]}"
+    fi
 }
 
 install_aur() {

@@ -39,7 +39,7 @@ wind-down at 23:00 with weekly sleep stats.
   200 MB, AUR build files, unused Flatpak runtimes, old trash and
   thumbnails; one button with the space freed, plus a weekly run.
 
-## Release 4: Focus, looks & polish (in progress)
+## Release 4: Focus, looks & polish (done)
 
 - **Focus mode (new):** one key (SUPER + F12) or the quick panel starts a
   focus session (25 / 50 / 90 min or until stopped). It blocks chosen apps

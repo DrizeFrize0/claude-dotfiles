@@ -247,7 +247,14 @@ Press `SUPER + F12` (or **Focus** in the quick panel) to start a 50-minute sessi
 
 `SUPER + I` → **Backup** → pick a folder that survives a reinstall (the Windows drive is offered when it's mounted, or a USB stick) and turn on **Back up every week**. If you ever reinstall: `./install.sh --restore /path/to/lennox-backup-….tar.gz` puts your settings, tweaks, alarms, stats and wallpaper back.
 
-### 4.11 A second monitor
+### 4.11 Looks: overview, lock screen, live wallpapers
+
+- `SUPER + TAB` shows every window on every workspace with a preview: type to search, Enter or a click jumps there.
+- The lock screen shows what's playing, your next alarm, the weather, your phone's battery and who's on the server (`SUPER + I` → **Widgets** → *Lock screen*).
+- `SUPER + I` → **Wallpaper** → *Live wallpaper* → **Choose a video…** plays a video behind your windows (no sound). It pauses in games, fullscreen, on the lock screen and on battery. **Stop** goes back to a still picture.
+- Sounds: `SUPER + I` → **Sound** → *Sound effects*.
+
+### 4.12 A second monitor
 
 1. Plug the monitor in **before** logging in (or log out and in again).
 2. `SUPER + I` → **Display** → *Arrange displays* to place it left/right and set its resolution.

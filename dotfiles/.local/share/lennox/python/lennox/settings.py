@@ -49,6 +49,7 @@ DEFAULTS = {
         "transition": "grow",
         "lockscreen_blur": "50x30",
         "auto_change_minutes": 0,
+        "live_pause_battery": True,    # live (video) wallpaper: a still picture on battery
     },
     "bar": {
         "enabled": True,

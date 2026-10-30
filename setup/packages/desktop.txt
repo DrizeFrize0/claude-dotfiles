@@ -60,6 +60,9 @@ btop
 fastfetch
 flatpak
 
+# Live wallpapers play with mpv (through mpvpaper, from the AUR)
+mpv
+
 # Phone link (Lennox Settings > Phone): notifications, files, battery, find my phone
 kdeconnect
 
