@@ -81,6 +81,7 @@ Your files:
 - `~/.config/lennox/settings.json`: every setting (Lennox Settings writes it; `lennox get` / `lennox set` from a terminal).
 - `~/.config/hypr/custom.lua`: your own Hyprland tweaks. Loaded last, never overwritten.
 - `~/.config/zshrc/90-custom`, `~/.config/kitty/custom.conf`: your own shell and terminal tweaks.
+- `~/.claude/CLAUDE.md`: your Claude Code rules (token-saving defaults). Installed once; your edits are never overwritten.
 
 ## Something wrong?
 

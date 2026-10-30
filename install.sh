@@ -39,6 +39,7 @@ KEEP_IF_EXISTS=(
     .config/hypr/workspaces.lua
     .config/kitty/custom.conf
     .config/zshrc/90-custom
+    .claude/CLAUDE.md          # your Claude Code rules: placed once, your edits are kept
     # generated from your settings and wallpaper (regenerated at the end)
     .config/hypr/colors.lua
     .config/hypr/colors.conf
