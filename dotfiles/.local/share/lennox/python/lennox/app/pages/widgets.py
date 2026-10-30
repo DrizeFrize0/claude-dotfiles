@@ -75,6 +75,18 @@ class Page:
                                  lambda: launch([lennox_bin("lennox-clock")]), "alarm-symbolic"))
         page.add(island)
 
+        lock = Adw.PreferencesGroup(
+            title="Lock screen",
+            description="Lines bottom left on the lock screen. Media keys still work while it's locked.")
+        lock.add(rows.switch_row(store, "lockscreen.widgets", "Show widgets on the lock screen"))
+        for key, title in (("music", "What's playing"), ("alarm", "Next alarm, timer or reminder"),
+                           ("weather", "Weather"), ("phone", "Phone battery (Phone link)"),
+                           ("server", "Minecraft server players")):
+            lock.add(rows.switch_row(store, f"lockscreen.{key}", title))
+        lock.add(rows.button_row("Try it", "Locks the screen", "Lock",
+                                 lambda: run_async([lennox_bin("lennox-power"), "lock"]), "system-lock-screen-symbolic"))
+        page.add(lock)
+
         ai = Adw.PreferencesGroup(
             title="AI spend",
             description="What you spend on AI coding (Claude Code, Codex, Cursor…), read from CodeBurn. "

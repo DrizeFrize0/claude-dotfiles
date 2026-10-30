@@ -148,6 +148,14 @@ DEFAULTS = {
         "spend_widget": True,          # AI coding spend in the bar (CodeBurn)
         "monthly_budget": 200,         # warn at 80% and 100%; 0 = no warnings
     },
+    "lockscreen": {
+        "widgets": True,               # lines bottom left on the lock screen
+        "music": True,
+        "alarm": True,                 # next alarm, timer or reminder
+        "weather": True,
+        "phone": True,                 # phone battery (KDE Connect)
+        "server": True,                # Minecraft server players
+    },
     "sounds": {
         "enabled": True,               # UI sounds (Lennox Settings > Sound > Sound effects)
         "volume": 60,

@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.10.0 · 2026-10-30 · Lock screen widgets
+
+- The lock screen shows what's playing, your next alarm or timer, the weather, your phone's battery and who's on the Minecraft server
+- The date sits above the clock; media keys still work while locked
+- Lennox Settings > Widgets > Lock screen turns each line on or off
+
 ## 1.9.0 · 2026-10-30 · Window overview
 
 - SUPER + TAB opens a window overview: every window on every workspace, grouped, with previews

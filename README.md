@@ -77,6 +77,7 @@ All shortcuts: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 | Clock & island | Clock app (timers, alarms, stopwatch, reminders, world clock) and a dynamic island under the bar (`lennox-clock`) |
 | Gaming | Game Center in Settings: clips with a vertical TikTok copy (`lennox-clips`, `SUPER + ALT + R`), performance modes (`lennox-perf`), FPS overlay (MangoHud), Minecraft server in the bar (`lennox-mcserver`) |
 | Sound effects | Soft UI sounds for notifications, volume, screenshots, charging, devices and locking (`lennox-sound-fx`) |
+| Lock screen | Music, next alarm, weather, phone battery and server players on the lock screen (`lennox-lockinfo`) |
 | Window overview | `SUPER + TAB`: every window with a preview, type to search (`lennox-overview`) |
 | Focus | Focus mode (`SUPER + F12`): timed sessions that close distracting apps, block sites and hold notifications, with a break and daily stats (`lennox-focus`) |
 | Sleep | Wind-down at bedtime (warmer, dimmer, quiet, reminders) and weekly sleep stats (`lennox-winddown`), smart bedtime that adapts to when you really stop (`lennox-bedtime`) |
