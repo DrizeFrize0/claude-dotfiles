@@ -77,6 +77,8 @@ All shortcuts: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 | Clock & island | Clock app (timers, alarms, stopwatch, reminders, world clock) and a dynamic island under the bar (`lennox-clock`) |
 | Gaming | Game Center in Settings: clips with a vertical TikTok copy (`lennox-clips`, `SUPER + ALT + R`), performance modes (`lennox-perf`), FPS overlay (MangoHud), Minecraft server in the bar (`lennox-mcserver`) |
 | Sleep | Wind-down at bedtime (warmer, dimmer, quiet, reminders) and weekly sleep stats (`lennox-winddown`) |
+| Apps & phone | App Store page (Arch, AUR and Flathub in one search; `lennox-apps`), phone link with KDE Connect (`lennox-phone`) |
+| Cleanup | One button and a weekly run free old downloads, unused packages, logs and trash (`lennox-cleanup`) |
 | Passwords | Bitwarden (app, Zen add-on, phone), `SUPER + P` filler with rbw + rofi-rbw |
 | Settings app | Python + GTK4 / libadwaita |
 

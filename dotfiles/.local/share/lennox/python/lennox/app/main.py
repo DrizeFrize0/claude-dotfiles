@@ -29,6 +29,7 @@ PAGES = [
     ("display", "Display", "video-display-symbolic", "display"),
     ("input", "Keyboard & Touchpad", "input-keyboard-symbolic", "input"),
     ("connections", "Wi-Fi & Bluetooth", "network-wireless-symbolic", "connections"),
+    ("phone", "Phone", "phone-symbolic", "phone"),
     ("power", "Power & Battery", "battery-good-symbolic", "power"),
     ("night", "Night", "weather-clear-night-symbolic", "night"),
     ("games", "Game Center", "input-gaming-symbolic", "games"),

@@ -74,3 +74,15 @@ On many GTX 1650 laptops the HDMI port is wired to the NVIDIA GPU. Lennox Settin
 - Minecraft (Prism Launcher) is already set to use the GTX.
 - Any other app: `prime-run app` or `lennox gpu run app`.
 - `SUPER + ALT + G` (game mode) turns off effects and switches to the performance power mode.
+
+## Phone not found (KDE Connect)
+
+- Both on the same Wi-Fi, and the KDE Connect app open on the phone.
+- Guest or school / work Wi-Fi often blocks devices from seeing each other: try your home Wi-Fi or a phone hotspot.
+- Restart the PC side: `pkill kdeconnectd; /usr/lib/kdeconnectd &` then press the refresh button in `SUPER + I` → **Phone**.
+- `lennox phone status` shows what KDE Connect sees.
+
+## App Store or Cleanup
+
+- An install failed: the small window shows why. Running `lennox update` first fixes most "not found" errors.
+- `lennox cleanup` lists what can be freed; `lennox cleanup now` cleans from a terminal.

@@ -19,6 +19,7 @@ case "$cmd" in
     server)    exec lennox-mcserver "$@" ;;
     cleanup)   exec lennox-cleanup "$@" ;;
     apps)      exec lennox-apps "$@" ;;
+    phone)     exec lennox-phone "$@" ;;
     passwords) exec lennox-passwords "$@" ;;
     bar)       exec lennox-bar "$@" ;;
     dock)      exec lennox-dock "$@" ;;
@@ -52,6 +53,7 @@ Lennox - Hyprland for Arch, in the spirit of ML4W
   lennox clips save          save the last 2 minutes of gameplay (perf quiet|balanced|max, server)
   lennox cleanup [now]       see what takes space for nothing, or free it
   lennox apps search WORDS   find apps on Arch, the AUR and Flathub (no words: App Store)
+  lennox phone ring ID       phone link (KDE Connect): status, ring, send FILE, clipboard
   lennox sound check         sound drivers and mic quality   (fix | clean-mic on|off | report)
   lennox gpu status          NVIDIA / Intel status   (gpu run APP: run on NVIDIA)
   lennox get KEY / set KEY V read or change a setting, e.g. lennox set bar.style glass

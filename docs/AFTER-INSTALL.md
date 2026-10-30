@@ -233,7 +233,13 @@ Everything is here. You never need to edit a config file:
 - **Game mode:** `SUPER + ALT + G` (or the quick panel tile) turns off animations and blur and switches to performance mode. Turn it off afterwards to save battery.
 - Plug in the charger for gaming. The GTX draws a lot of power.
 
-### 4.8 A second monitor
+### 4.8 Apps, your phone and free space
+
+- **New apps:** `SUPER + I` → **App Store**. Type a name (discord, obs, spotify…): Arch, the AUR and Flathub are searched at once. Press **Install**; a small window opens where you type your password. Apps you added are listed when the search is empty, with **Remove**.
+- **Your phone:** install **KDE Connect** on the phone (Android: Play Store / F-Droid, iPhone: App Store), same Wi-Fi as the laptop. `SUPER + I` → **Phone** → **Pair**, then accept on the phone. You get phone notifications on the desktop, its battery, files both ways, a shared clipboard and **Ring** to find it.
+- **Free space:** `SUPER + I` → **Cleanup** shows what takes space for nothing (old downloads, unused packages, logs, old trash) and **Clean now** frees it, showing how much. A quiet weekly run cleans your own files on its own.
+
+### 4.9 A second monitor
 
 1. Plug the monitor in **before** logging in (or log out and in again).
 2. `SUPER + I` → **Display** → *Arrange displays* to place it left/right and set its resolution.

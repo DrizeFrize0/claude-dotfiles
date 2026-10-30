@@ -26,10 +26,15 @@ wind-down at 23:00 with weekly sleep stats.
 - **Minecraft server widget:** online / offline, players online with names,
   ping, a notification when someone joins. Server: vetosmp.net.
 
-## Release 3: Easy apps & phone
+## Release 3: Easy apps & phone (done)
 
-App store page (Arch, AUR and Flathub in one search), phone link
-(KDE Connect), auto cleanup.
+- **App Store:** one search over Arch, the AUR and Flathub, Install /
+  Update / Remove in one click (a small window for the password).
+- **Phone link:** KDE Connect, with a Phone page to pair, see the battery,
+  ring it, send files and the clipboard.
+- **Auto cleanup:** old package downloads, unused packages, logs over
+  200 MB, AUR build files, unused Flatpak runtimes, old trash and
+  thumbnails; one button with the space freed, plus a weekly run.
 
 ## Release 4: Looks & polish
 

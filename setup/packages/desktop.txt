@@ -60,6 +60,9 @@ btop
 fastfetch
 flatpak
 
+# Phone link (Lennox Settings > Phone): notifications, files, battery, find my phone
+kdeconnect
+
 # Passwords: Bitwarden app, and the SUPER + P filler (rbw + rofi-rbw + wtype)
 bitwarden
 rbw

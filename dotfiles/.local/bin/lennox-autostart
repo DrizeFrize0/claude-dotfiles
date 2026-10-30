@@ -54,6 +54,8 @@ start hyprsunset
 start lennox-battery
 # Game clips: the recorder runs while a game is open
 setsid -f lennox-clips watch >/dev/null 2>&1
+# Phone link (KDE Connect): phones find this PC as soon as you log in
+[[ -x /usr/lib/kdeconnectd ]] && ! pgrep -x kdeconnectd >/dev/null && setsid -f /usr/lib/kdeconnectd >/dev/null 2>&1 </dev/null
 
 # Desktop widgets and the dashboard (one process; it refuses to run twice)
 setsid -f lennox-widgets >/dev/null 2>&1 </dev/null
