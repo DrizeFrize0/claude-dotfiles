@@ -369,3 +369,16 @@ window#waybar.empty #window {
     color: @on_error;
     background: @error;
 }
+
+/* Next timer / alarm (lennox-clock) */
+#custom-clocknext {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @primary;
+    font-size: 13px;
+}
+#custom-clocknext.ringing {
+    color: @on_primary;
+    background: @primary;
+}

@@ -200,6 +200,7 @@ Press `Escape`, `SUPER + D` again, or click next to it to close it.
 
 - **Temperatures:** the bar shows your CPU temperature (and the NVIDIA GPU's while it's in use). It turns orange when warm and red when hot. Hover for CPU, fans, memory, battery use and the busiest apps; click (or `SUPER + CTRL + ESC`) for the full system monitor.
 - **AI spend:** today's AI coding cost from CodeBurn, with warnings at 80% and 100% of your monthly budget (Settings → Widgets). Needs CodeBurn's command: `yay -S codeburn`.
+- **Clock and the island:** `SUPER + ALT + C` opens the Clock: timers, alarms, a stopwatch, reminders and a world clock. They ring even with the Clock closed. Under the bar, the *dynamic island* grows to show a timer counting down, an alarm (Snooze / Stop), a call, new notifications, charging, Wi-Fi and Bluetooth, and your music (controls on hover). From a terminal: `lennox clock timer 20m Pizza`, `lennox clock remind 18:00 Check the server`, `lennox clock alarm 07:30 --days weekdays`.
 - **Bedtime:** at 23:00 the screen slowly gets warmer and dimmer, notifications go quiet until morning, and you get a reminder (and one more 30 minutes later if you're still on). It waits while you're gaming or in a call. Every Monday you get a summary of when you really stopped each night. All in Settings → Night.
 
 ### 4.6 Lennox Settings (`SUPER + I`)

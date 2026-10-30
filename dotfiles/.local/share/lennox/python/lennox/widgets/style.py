@@ -165,6 +165,29 @@ calendar > grid > label:selected { background-color: alpha(@primary, 0.3); color
 }
 .notes-frame { border-radius: 14px; background-color: alpha(@surface_container_highest, 0.5); padding: 8px; }
 .lennox-dashboard scrolledwindow, .lennox-dashboard viewport { background: transparent; }
+
+/* Dynamic island */
+window.lennox-island-window { background: transparent; }
+.lennox-island {
+    background-color: alpha(@surface, 0.92);
+    color: @on_surface;
+    border-radius: 99px;
+    padding: 5px 14px;
+    min-height: 26px;
+    border: 1px solid alpha(@primary, 0.25);
+    box-shadow: 0 4px 14px alpha(black, 0.35);
+    transition: all 250ms ease;
+}
+.lennox-island image { color: @primary; }
+.lennox-island .island-text { font-weight: 600; }
+.lennox-island .island-detail { font-feature-settings: "tnum"; color: @primary; font-weight: 600; }
+.lennox-island .island-art { border-radius: 99px; }
+.lennox-island.ringing { background-color: @primary; color: @on_primary; border-color: @primary; }
+.lennox-island.ringing image, .lennox-island.ringing .island-detail { color: @on_primary; }
+.island-button { min-width: 26px; min-height: 26px; padding: 0; border-radius: 99px; background: alpha(@primary, 0.15); }
+.island-button:hover { background: alpha(@primary, 0.35); }
+.lennox-island.ringing .island-button { background: alpha(@on_primary, 0.2); color: @on_primary; }
+.island-button.destructive { background: @error; color: @on_error; }
 """
 
 

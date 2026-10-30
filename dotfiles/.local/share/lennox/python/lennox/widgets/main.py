@@ -6,6 +6,7 @@ One background process (started at login) owns both. Later calls of
     lennox-widgets                      start (at login)
     lennox-widgets dashboard [toggle|open|close]
     lennox-widgets desktop [toggle|on|off]
+    lennox-widgets island event ICON TEXT [SECONDS]   show a message in the dynamic island
     lennox-widgets reload               re-read settings and colors
     lennox-widgets quit
 """
@@ -40,6 +41,7 @@ if LAYER_SHELL:
 
 from .. import settings as S  # noqa: E402
 from . import cards, style  # noqa: E402
+from .island import ClockEngine, IslandWindow, NotificationWatcher, StatusWatcher  # noqa: E402
 from .mpris import Mpris  # noqa: E402
 
 APP_ID = "dev.lennox.Widgets"
@@ -259,6 +261,9 @@ class App(Gtk.Application):
         self.css = None
         self.started = False
         self.monitors = []
+        self.island = None
+        self.engine = ClockEngine()
+        self.dnd = False
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
@@ -297,6 +302,7 @@ class App(Gtk.Application):
         before = self.settings.data.get("widgets"), self.settings.data["bar"]["clock_24h"]
         self.settings.reload()
         after = self.settings.data.get("widgets"), self.settings.data["bar"]["clock_24h"]
+        self.apply_island()
         if before != after:
             self.apply_desktop()
             if self.dashboard:
@@ -316,6 +322,52 @@ class App(Gtk.Application):
             self.desktop.destroy()
             self.desktop = None
 
+    # ---------------------------------------------------------------- island + clock
+
+    def apply_island(self):
+        if self.settings.get("widgets.island"):
+            if self.island is None:
+                self.island = IslandWindow(self, LS if layer_shell_ready(None) else None)
+            self.island.state["show_music"] = bool(self.settings.get("widgets.island_music"))
+            self.island.render()
+        elif self.island is not None:
+            self.island.destroy()
+            self.island = None
+
+    def clock_tick(self):
+        """Every second: fire due timers / alarms / reminders, update the island.
+        Runs even with the island off, so alarms always ring."""
+        import time as _time
+        now = _time.time()
+        try:
+            data = self.engine.tick(now)
+        except Exception as e:  # noqa: BLE001  a broken clock file must not stop the widgets
+            print(f"lennox-widgets: clock: {e!r}", file=sys.stderr)
+            return GLib.SOURCE_CONTINUE
+        if self.island is not None:
+            self.island.set_clock(data, now)
+            self.island.render(now)
+        return GLib.SOURCE_CONTINUE
+
+    def _status(self, status):
+        self.dnd = status.get("dnd", False)
+        if self.island is not None:
+            self.island.set_status(status)
+            self.island.render()
+
+    def island_event(self, icon, text, seconds=None):
+        if self.island is not None:
+            self.island.event(icon, text, *([seconds] if seconds else []))
+
+    def _notification(self, app, summary, urgency):
+        if self.island is None or not self.settings.get("widgets.island_notifications"):
+            return GLib.SOURCE_REMOVE
+        if (self.dnd and urgency != 2) or not summary:
+            return GLib.SOURCE_REMOVE
+        icon = "dialog-warning-symbolic" if urgency == 2 else "mail-unread-symbolic"
+        self.island_event(icon, f"{app}: {summary}" if app and app != "Lennox" else summary)
+        return GLib.SOURCE_REMOVE
+
     def do_command_line(self, command_line):
         # Always answer: a caller waits for this (an exception here would
         # leave `lennox-widgets ...` hanging)
@@ -334,6 +386,10 @@ class App(Gtk.Application):
         if first_run:
             self.dashboard = DashboardWindow(self)
             self.apply_desktop()
+            self.apply_island()
+            GLib.timeout_add_seconds(1, self.clock_tick)
+            self.status_watcher = StatusWatcher(self.mpris, self._status, self.island_event)
+            self.notification_watcher = NotificationWatcher(self._notification)
         cmd = args[0] if args else ""
         if cmd == "dashboard":
             action = args[1] if len(args) > 1 else "toggle"
@@ -345,13 +401,18 @@ class App(Gtk.Application):
             value = {"on": True, "off": False}.get(action, not self.settings.get("widgets.desktop"))
             S.set_value("widgets.desktop", value)
             self.reload()
+        elif cmd == "island":
+            # lennox-widgets island event ICON TEXT [SECONDS]  (clips saved, game mode…)
+            if len(args) >= 4 and args[1] == "event":
+                seconds = float(args[4]) if len(args) > 4 else None
+                self.island_event(args[2], args[3], seconds)
         elif cmd == "reload" and not first_run:
             self.reload()
         elif cmd == "quit":
             self.quit()
         elif cmd not in ("", "reload", "start"):
             message = (f"lennox-widgets: unknown command '{cmd}'\n"
-                       "usage: lennox-widgets [dashboard [toggle|open|close] | desktop [toggle|on|off] | reload | quit]\n")
+                       "usage: lennox-widgets [dashboard [toggle|open|close] | desktop [toggle|on|off] | island event ICON TEXT [SECONDS] | reload | quit]\n")
             if hasattr(command_line, "printerr_literal"):
                 command_line.printerr_literal(message)
             else:

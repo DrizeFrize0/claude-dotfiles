@@ -27,6 +27,7 @@ floating("blueman",          { class = "^(\\.?blueman-manager.*)$" },           
 floating("nm-editor",        { class = "^(nm-connection-editor)$" },                 800, 640)
 floating("nwg-look",         { class = "^(nwg-look)$" },                             760, 620)
 floating("nwg-displays",     { class = "^(nwg-displays)$" },                         960, 640)
+floating("clock",            { class = "^(dev\\.lennox\\.Clock)$" },                 880, 660)
 floating("calculator",       { class = "^(org\\.gnome\\.Calculator)$" },             420, 640)
 floating("mission-center",   { class = "^(io\\.missioncenter\\.MissionCenter)$" },   1000, 680)
 floating("lennox-floating",  { class = "^(lennox-floating)$" },                      1000, 680)

@@ -28,6 +28,7 @@
     "group/tools",
     "custom/exit",
     "clock",
+    "custom/clocknext",
     "tray",
     "custom/notification",
     "custom/lennox"

@@ -71,6 +71,9 @@ DEFAULTS = {
         "name": "",
         "weather_city": "",
         "temperature_unit": "celsius",
+        "island": True,                # dynamic island under the bar
+        "island_music": True,
+        "island_notifications": True,
     },
     "dock": {
         "enabled": True,

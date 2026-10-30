@@ -256,6 +256,15 @@
     "path": "/",
     "on-click": "~/.local/bin/lennox-open system_monitor"
   },
+  "custom/clocknext": {
+    "exec": "~/.local/bin/lennox-clock waybar",
+    "return-type": "json",
+    "interval": 5,
+    "signal": 14,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-clock timers",
+    "hide-empty-text": true
+  },
   "custom/sysmon": {
     "exec": "~/.local/bin/lennox-sysmon waybar",
     "return-type": "json",

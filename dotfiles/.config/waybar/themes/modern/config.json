@@ -29,6 +29,7 @@
     "custom/notification",
     "custom/exit",
     "custom/lennox",
-    "clock"
+    "clock",
+    "custom/clocknext"
   ]
 }

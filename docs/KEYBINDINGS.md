@@ -23,6 +23,7 @@ hl.bind("SUPER + B", hl.dsp.exec_cmd("firefox"), { description = "Open Firefox" 
 | `SUPER + CTRL + E` | Emoji picker |
 | `SUPER + CTRL + K` | All keybindings |
 | `SUPER + CTRL + ESC` | System monitor (like Task Manager) |
+| `SUPER + ALT + C` | Clock: timers, alarms, stopwatch, reminders, world clock |
 
 ## Lennox
 

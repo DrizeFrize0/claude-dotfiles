@@ -55,6 +55,7 @@ hl.bind(key("SHIFT + R"),      hl.dsp.exec_cmd("hyprctl reload"), { description 
 hl.bind(key("L"),              run("lennox-power lock"),        { description = "Lock the screen" })
 hl.bind(key("CTRL + L"),       run("lennox-power lock"),        { description = "Lock the screen" })
 hl.bind(key("ESCAPE"),         run("lennox-menu power"),        { description = "Power menu" })
+hl.bind(key("ALT + C"),        run("lennox-clock"),             { description = "Clock: timers, alarms, reminders" })
 hl.bind(key("CTRL + ESCAPE"),  run("lennox-open system_monitor"), { description = "System monitor (like Task Manager)" })
 hl.bind(key("CTRL + P"),       run("lennox-menu power"),        { description = "Power menu" })
 

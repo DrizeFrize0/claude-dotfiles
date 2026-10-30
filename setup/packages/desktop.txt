@@ -30,6 +30,8 @@ satty
 udiskie
 gvfs
 gvfs-mtp
+# Alarm and timer sounds (Lennox Clock)
+sound-theme-freedesktop
 # Windows drives (NTFS) and USB sticks (exFAT) open in Files
 ntfs-3g
 exfatprogs

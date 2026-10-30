@@ -59,6 +59,19 @@ class Page:
         weather.add(self.weather_row)
         page.add(weather)
 
+        island = Adw.PreferencesGroup(
+            title="Dynamic island",
+            description="A pill under the bar that grows to show what's happening: alarms and timers, "
+                        "calls, notifications, charging, Wi-Fi and Bluetooth, and music. Hidden when there's "
+                        "nothing to show. Alarms and timers ring even when it's off.")
+        island.add(rows.switch_row(store, "widgets.island", "Show the island"))
+        island.add(rows.switch_row(store, "widgets.island_music", "Music", "What's playing, with controls on hover"))
+        island.add(rows.switch_row(store, "widgets.island_notifications", "Notifications",
+                                   "A few seconds of each new one (not in do not disturb)"))
+        island.add(rows.link_row("Clock", "Timers, alarms, stopwatch, reminders and world clock (SUPER + ALT + C)",
+                                 lambda: launch([lennox_bin("lennox-clock")]), "alarm-symbolic"))
+        page.add(island)
+
         ai = Adw.PreferencesGroup(
             title="AI spend",
             description="What you spend on AI coding (Claude Code, Codex, Cursor…), read from CodeBurn. "

@@ -13,7 +13,8 @@
     "custom/minimized"
   ],
   "modules-center": [
-    "clock"
+    "clock",
+    "custom/clocknext"
   ],
   "modules-right": [
     "custom/updates",

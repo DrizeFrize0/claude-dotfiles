@@ -74,6 +74,7 @@ All shortcuts: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 | Terminal | kitty + zsh + Oh My Posh, fastfetch |
 | Apps | Zen Browser, Nautilus, Vesktop, Steam, Prism Launcher, VS Code, IntelliJ |
 | Bar extras | Temperatures with a live tooltip (`lennox-sysmon`), AI coding spend with a monthly budget (`lennox-aispend`, needs `codeburn`) |
+| Clock & island | Clock app (timers, alarms, stopwatch, reminders, world clock) and a dynamic island under the bar (`lennox-clock`) |
 | Sleep | Wind-down at bedtime (warmer, dimmer, quiet, reminders) and weekly sleep stats (`lennox-winddown`) |
 | Passwords | Bitwarden (app, Zen add-on, phone), `SUPER + P` filler with rbw + rofi-rbw |
 | Settings app | Python + GTK4 / libadwaita |
