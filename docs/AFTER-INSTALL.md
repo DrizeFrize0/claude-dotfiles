@@ -243,7 +243,11 @@ Everything is here. You never need to edit a config file:
 
 Press `SUPER + F12` (or **Focus** in the quick panel) to start a 50-minute session. While it runs, Discord / Vesktop / Steam close if you open them, YouTube, TikTok, Instagram, Reddit, X and Twitch don't load, notifications wait in the quick panel, and the island counts down. Then a sound and a 5-minute break. Change the length and the lists in `SUPER + I` → **Focus**, which also shows today, the last 7 days and your streak. Starting game mode ends a session.
 
-### 4.10 A second monitor
+### 4.10 Back up your setup
+
+`SUPER + I` → **Backup** → pick a folder that survives a reinstall (the Windows drive is offered when it's mounted, or a USB stick) and turn on **Back up every week**. If you ever reinstall: `./install.sh --restore /path/to/lennox-backup-….tar.gz` puts your settings, tweaks, alarms, stats and wallpaper back.
+
+### 4.11 A second monitor
 
 1. Plug the monitor in **before** logging in (or log out and in again).
 2. `SUPER + I` → **Display** → *Arrange displays* to place it left/right and set its resolution.

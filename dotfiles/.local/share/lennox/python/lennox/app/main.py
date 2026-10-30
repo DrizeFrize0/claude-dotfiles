@@ -39,6 +39,7 @@ PAGES = [
     ("apps", "Default Apps", "applications-system-symbolic", "apps"),
     ("updates", "Updates", "software-update-available-symbolic", "updates"),
     ("cleanup", "Cleanup", "user-trash-symbolic", "cleanup"),
+    ("backup", "Backup", "document-save-symbolic", "backup"),
     ("passwords", "Passwords", "dialog-password-symbolic", "passwords"),
     ("keybinds", "Keybindings", "preferences-desktop-keyboard-shortcuts-symbolic", "keybinds"),
     ("health", "Health Check", "emblem-ok-symbolic", "health"),

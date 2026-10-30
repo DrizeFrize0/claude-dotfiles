@@ -324,18 +324,30 @@ WantedBy=timers.target
 """
 
 
-def apply_cleanup(s, reload=True):
+def weekly_job(name, what, command, on):
+    """A user timer that runs `command` once a week (catching up after the laptop was off)."""
     units = os.path.join(CONFIG, "systemd", "user")
-    changed = write_file(os.path.join(units, "lennox-cleanup.service"), CLEANUP_SERVICE)
-    changed |= write_file(os.path.join(units, "lennox-cleanup.timer"), CLEANUP_TIMER)
+    changed = write_file(os.path.join(units, f"{name}.service"),
+                         CLEANUP_SERVICE.replace("Lennox weekly cleanup", what)
+                         .replace("%h/.local/bin/lennox-cleanup auto", command))
+    changed |= write_file(os.path.join(units, f"{name}.timer"), CLEANUP_TIMER.replace("Lennox weekly cleanup", what))
     if not have("systemctl"):
         return
     if changed:
         run(["systemctl", "--user", "daemon-reload"])
-    if s["cleanup"]["weekly"]:
-        run(["systemctl", "--user", "enable", "--now", "lennox-cleanup.timer"])
+    if on:
+        run(["systemctl", "--user", "enable", "--now", f"{name}.timer"])
     else:
-        run(["systemctl", "--user", "disable", "--now", "lennox-cleanup.timer"])
+        run(["systemctl", "--user", "disable", "--now", f"{name}.timer"])
+
+
+def apply_cleanup(s, reload=True):
+    weekly_job("lennox-cleanup", "Lennox weekly cleanup", "%h/.local/bin/lennox-cleanup auto", s["cleanup"]["weekly"])
+
+
+def apply_backup(s, reload=True):
+    weekly_job("lennox-backup", "Lennox weekly backup", "%h/.local/bin/lennox-backup auto",
+               s["backup"]["weekly"] and bool(s["backup"]["folder"]))
 
 
 # ---------------------------------------------------------------- gtk / qt / kitty
@@ -518,6 +530,7 @@ PARTS = {
     "aispend": apply_aispend,
     "games": apply_games,
     "cleanup": apply_cleanup,
+    "backup": apply_backup,
     "dock": apply_dock,
     "widgets": apply_widgets,
     "theme": apply_theme,
@@ -531,7 +544,7 @@ def main(argv=None):
         argv.remove("--no-reload")
         reload = False
     if not argv or argv == ["all"]:
-        parts = ["hypr", "idle", "night", "wallpaper", "gtk", "bar", "dock", "widgets", "games", "cleanup"]
+        parts = ["hypr", "idle", "night", "wallpaper", "gtk", "bar", "dock", "widgets", "games", "cleanup", "backup"]
     else:
         parts = argv
     unknown = [p for p in parts if p not in PARTS]

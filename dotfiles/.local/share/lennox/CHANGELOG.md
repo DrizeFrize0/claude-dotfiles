@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.8.0 · 2026-10-30 · Settings backup
+
+- Lennox Settings > Backup: your settings, tweaks, alarms, focus and sleep stats and wallpaper in one small file
+- Back up to the Windows drive, a USB stick or a cloud folder, now or every week, keeping the newest 5
+- Restore with one button, or right after a reinstall: ./install.sh --restore FILE
+
 ## 1.7.0 · 2026-10-30 · Smart bedtime
 
 - Smart bedtime learns when you really stop at night and suggests a bedtime that actually catches you

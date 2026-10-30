@@ -11,6 +11,7 @@
 #   ./install.sh            install everything (asks a few questions)
 #   ./install.sh --yes      install everything with the default answers
 #   ./install.sh --update   refresh Lennox files after `git pull` (used by `lennox upgrade`)
+#   ./install.sh --restore FILE   also put back a Lennox backup (lennox-backup-*.tar.gz)
 #
 # Safe to run again. Everything it replaces in your home folder is backed
 # up to ~/.local/share/lennox/backups/<date>/ first.
@@ -26,6 +27,7 @@ LOGFILE="$STATE/install.log"
 
 ASSUME_YES=false
 MODE="install"
+RESTORE_FILE=""
 WANT_GAMING=true
 WANT_DISCORD=true
 WANT_DEV=true
@@ -86,7 +88,7 @@ ask() {
 }
 
 usage() {
-    sed -n '9,17p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '9,18p' "$0" | sed 's/^# \{0,1\}//'
     exit 0
 }
 
@@ -97,6 +99,9 @@ while [[ $# -gt 0 ]]; do
         -y|--yes) ASSUME_YES=true ;;
         --update) MODE="update"; ASSUME_YES=true ;;
         --no-aur) WANT_AUR=false ;;
+        --restore)
+            RESTORE_FILE="$(realpath -e "${2:-}" 2>/dev/null)" || { echo "--restore needs a backup file that exists"; exit 1; }
+            shift ;;
         -h|--help) usage ;;
         *) echo "Unknown option: $1"; usage ;;
     esac
@@ -599,6 +604,17 @@ echo "${reset}${dim}  Hyprland for Arch, in the spirit of ML4W   ·   log: $LOGF
 preflight
 detect_hardware
 
+# Your settings, tweaks and wallpaper from a Lennox backup (--restore FILE)
+restore_backup() {
+    [[ -n "$RESTORE_FILE" ]] || return 0
+    step "Restoring your backup"
+    if "$HOME/.local/bin/lennox-backup" restore "$RESTORE_FILE" --no-apply; then
+        ok "Restored from ${RESTORE_FILE##*/}"
+    else
+        warn "Couldn't restore ${RESTORE_FILE##*/}: Lennox Settings > Backup can try again"
+    fi
+}
+
 # The version in the files being installed (lennox/__init__.py)
 lennox_version() {
     sed -n 's/^VERSION = "\(.*\)"$/\1/p' "$DOTFILES/.local/share/lennox/python/lennox/__init__.py"
@@ -610,6 +626,7 @@ if [[ "$MODE" == "update" ]]; then
     install_system_files
     $HAS_NVIDIA && setup_nvidia
     install_dotfiles
+    restore_backup
     dir="$HOME/.config/lennox/wallpapers"
     [[ -d "$dir/lennox" ]] || { step "Painting the Lennox wallpaper pack"; paint_wallpapers; }
     personalize
@@ -635,6 +652,7 @@ setup_snapshots
 setup_sddm
 enable_services
 install_dotfiles
+restore_backup
 download_wallpapers
 setup_shell
 personalize

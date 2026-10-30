@@ -80,6 +80,7 @@ All shortcuts: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 | Focus | Focus mode (`SUPER + F12`): timed sessions that close distracting apps, block sites and hold notifications, with a break and daily stats (`lennox-focus`) |
 | Sleep | Wind-down at bedtime (warmer, dimmer, quiet, reminders) and weekly sleep stats (`lennox-winddown`), smart bedtime that adapts to when you really stop (`lennox-bedtime`) |
 | Apps & phone | App Store page (Arch, AUR and Flathub in one search; `lennox-apps`), phone link with KDE Connect (`lennox-phone`) |
+| Backup | Settings, tweaks, alarms, stats and wallpaper backed up weekly to a drive of your choice; `./install.sh --restore FILE` after a reinstall (`lennox-backup`) |
 | Cleanup | One button and a weekly run free old downloads, unused packages, logs and trash (`lennox-cleanup`) |
 | Passwords | Bitwarden (app, Zen add-on, phone), `SUPER + P` filler with rbw + rofi-rbw |
 | Settings app | Python + GTK4 / libadwaita |

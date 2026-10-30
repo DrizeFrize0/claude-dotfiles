@@ -167,6 +167,11 @@ DEFAULTS = {
         "quiet": True,                 # notifications wait in the panel
         "sound": True,                 # a soft sound at the end of focus and of the break
     },
+    "backup": {
+        "folder": "",                  # where backups go (a drive that survives a reinstall)
+        "weekly": False,               # back up every week (needs a folder)
+        "keep": 5,                     # how many backups to keep
+    },
     "cleanup": {
         "weekly": True,                # every week: old trash, thumbnails, AUR build files
         "trash_days": 30,              # trash older than this goes (0 = empty it all)
@@ -247,6 +252,7 @@ RANGES = {
     ("ai", "monthly_budget"): (0, 100000),
     ("clips", "seconds"): (10, 600),
     ("cleanup", "trash_days"): (0, 365),
+    ("backup", "keep"): (1, 50),
     ("focus", "minutes"): (5, 240),
     ("sounds", "volume"): (0, 100),
     ("focus", "break_minutes"): (0, 60),
@@ -329,6 +335,7 @@ APPLY_PARTS = {
     "ai": ["aispend"],
     "games": ["games"],
     "cleanup": ["cleanup"],
+    "backup": ["backup"],
 }
 THEME_KEYS = {"appearance.color_mode", "appearance.color_scheme", "appearance.theme"}
 
