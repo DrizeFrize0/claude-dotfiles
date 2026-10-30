@@ -83,6 +83,8 @@ fi
 
 # Tell you about updates a minute after login (installs happen automatically)
 (sleep 60 && lennox-updates notify) &
+# After an upgrade: what's new, once
+(sleep 20 && lennox-whatsnew check) >/dev/null 2>&1 &
 disown
 
 echo ":: done"

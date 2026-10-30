@@ -427,7 +427,7 @@ install_dotfiles() {
     fi
     chmod +x "$HOME"/.local/bin/lennox* 2>/dev/null
     echo "$REPO" > "$HOME/.config/lennox/repo"
-    git -C "$REPO" describe --tags --always 2>/dev/null > "$HOME/.config/lennox/version" || echo "1.0.0" > "$HOME/.config/lennox/version"
+    lennox_version > "$HOME/.config/lennox/version"
     ok "Configs and lennox-* commands installed"
 }
 
@@ -597,7 +597,13 @@ echo "${reset}${dim}  Hyprland for Arch, in the spirit of ML4W   ·   log: $LOGF
 preflight
 detect_hardware
 
+# The version in the files being installed (lennox/__init__.py)
+lennox_version() {
+    sed -n 's/^VERSION = "\(.*\)"$/\1/p' "$DOTFILES/.local/share/lennox/python/lennox/__init__.py"
+}
+
 if [[ "$MODE" == "update" ]]; then
+    old_version="$(cat "$HOME/.config/lennox/version" 2>/dev/null)"
     install_new_packages
     install_system_files
     $HAS_NVIDIA && setup_nvidia
@@ -607,6 +613,12 @@ if [[ "$MODE" == "update" ]]; then
     personalize
     first_theme
     summary
+    if [[ "$old_version" != "$(lennox_version)" ]]; then
+        step "What's new (Lennox ${old_version:-?} → $(lennox_version))"
+        "$HOME/.local/bin/lennox-whatsnew" show --since "$old_version"
+        # In a desktop session the notification comes now, otherwise at the next login
+        [[ -n "${WAYLAND_DISPLAY:-}" ]] && (setsid -f "$HOME/.local/bin/lennox-whatsnew" check >/dev/null 2>&1 &)
+    fi
     exit 0
 fi
 
@@ -625,4 +637,5 @@ download_wallpapers
 setup_shell
 personalize
 first_theme
+"$HOME/.local/bin/lennox-whatsnew" seen       # a fresh install has nothing "new" to announce
 summary

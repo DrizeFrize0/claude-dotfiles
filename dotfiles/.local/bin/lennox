@@ -20,6 +20,8 @@ case "$cmd" in
     cleanup)   exec lennox-cleanup "$@" ;;
     apps)      exec lennox-apps "$@" ;;
     phone)     exec lennox-phone "$@" ;;
+    version)   exec lennox-whatsnew version ;;
+    news)      exec lennox-whatsnew show "$@" ;;
     passwords) exec lennox-passwords "$@" ;;
     bar)       exec lennox-bar "$@" ;;
     dock)      exec lennox-dock "$@" ;;
@@ -31,7 +33,6 @@ case "$cmd" in
     apply)     exec lennox-apply "$@" ;;
     keys)      exec lennox-menu keybinds ;;
     upgrade)   exec lennox-update-dotfiles "$@" ;;
-    version)   cat "$HOME/.config/lennox/version" 2>/dev/null || echo unknown ;;
     help|-h|--help)
         cat <<'HELP'
 Lennox - Hyprland for Arch, in the spirit of ML4W
@@ -59,7 +60,7 @@ Lennox - Hyprland for Arch, in the spirit of ML4W
   lennox get KEY / set KEY V read or change a setting, e.g. lennox set bar.style glass
   lennox keys                searchable list of all keybindings
   lennox upgrade             update Lennox itself from its git repository
-  lennox version
+  lennox version             which Lennox this is (lennox news: what changed)
 HELP
         ;;
     *) echo "lennox: unknown command '$cmd' (try: lennox help)" >&2; exit 2 ;;

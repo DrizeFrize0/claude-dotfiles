@@ -269,6 +269,8 @@ lennox update      # system, drivers, AUR apps, Flatpaks
 lennox upgrade     # Lennox itself (new features and fixes)
 ```
 
+After `lennox upgrade` a notification lists what's new; click it, or open `SUPER + I` → **About**, to see every change. `lennox version` shows which Lennox you have.
+
 ### 5.3 If an update breaks something
 
 1. Restart. In the GRUB menu (the list you see while booting), pick **Arch Linux snapshots**.

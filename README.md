@@ -89,6 +89,12 @@ Your files:
 - `~/.config/zshrc/90-custom`, `~/.config/kitty/custom.conf`: your own shell and terminal tweaks.
 - `~/.claude/CLAUDE.md`: your Claude Code rules (token-saving defaults). Installed once; your edits are never overwritten.
 
+## Versions
+
+`lennox version` shows yours. After `lennox upgrade` a notification lists what's new, and
+Lennox Settings > About shows every change ([changelog](dotfiles/.local/share/lennox/CHANGELOG.md),
+also `lennox news`).
+
 ## Something wrong?
 
 Run `lennox doctor` (or Lennox Settings > Health Check). It checks the NVIDIA and Intel drivers, sound and microphone, touchpad, network, updates and the desktop, and tells you how to fix anything it finds. More in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).

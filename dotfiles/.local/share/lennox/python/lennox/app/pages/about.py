@@ -3,9 +3,9 @@
 import os
 import platform
 
-from gi.repository import Adw, Gtk
+from gi.repository import Adw, GLib, Gtk
 
-from ... import VERSION
+from ... import VERSION, whatsnew
 from .. import rows
 from ..util import ASSETS, HOME, launch, read_file, run_async
 
@@ -31,6 +31,26 @@ class Page:
         box.append(sub)
         hero.add(box)
         page.add(hero)
+
+        # What's new: the latest version open, older ones folded away
+        entries = whatsnew.load()
+        if entries:
+            latest = entries[0]
+            news = Adw.PreferencesGroup(
+                title=f"What's new in {latest['version']}",
+                description=" · ".join(x for x in (latest["title"], latest["date"]) if x))
+            for item in latest["items"]:
+                row = Adw.ActionRow(title=GLib.markup_escape_text(item), title_lines=3)
+                row.add_prefix(Gtk.Image.new_from_icon_name("starred-symbolic"))
+                news.add(row)
+            for entry in entries[1:]:
+                older = Adw.ExpanderRow(title=f"Lennox {entry['version']}",
+                                        subtitle=" · ".join(x for x in (entry["title"], entry["date"]) if x))
+                for item in entry["items"]:
+                    older.add_row(Adw.ActionRow(title=GLib.markup_escape_text(item), title_lines=3))
+                news.add(older)
+            page.add(news)
+            whatsnew.mark_seen()            # read here, so no notification for it later
 
         system = Adw.PreferencesGroup(title="This computer")
         self.hyprland_row = rows.info_row("Hyprland", "…")

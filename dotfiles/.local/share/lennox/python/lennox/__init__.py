@@ -1,3 +1,4 @@
 """Shared code for the Lennox command line tools and Lennox Settings."""
 
-VERSION = "1.0.0"
+# Bump this with a new "## X.Y.Z" entry at the top of ~/.local/share/lennox/CHANGELOG.md
+VERSION = "1.4.0"

@@ -1,6 +1,9 @@
 # Lennox roadmap
 
-Planned releases, in order. Each one is built, tested and pushed on its own.
+Planned releases, in order. Each one is built, tested and pushed on its own,
+bumps the version (`lennox/__init__.py`) and adds an entry at the top of
+[the changelog](../dotfiles/.local/share/lennox/CHANGELOG.md), which users
+see after `lennox upgrade`.
 
 ## Release 1: Panels & health (done)
 
