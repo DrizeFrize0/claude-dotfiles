@@ -354,11 +354,11 @@ class EqBars(Gtk.Box):
     """Four little bars that dance while music plays (low and still when paused).
     Plain boxes whose height changes ~30 times a second: no cairo needed."""
 
-    HEIGHT = 16
+    HEIGHT = 12
 
     def __init__(self):
-        super().__init__(spacing=2, valign=Gtk.Align.CENTER, css_classes=["island-bars"])
-        self.set_size_request(18, self.HEIGHT)
+        super().__init__(spacing=1, valign=Gtk.Align.CENTER, css_classes=["island-bars"])
+        self.set_size_request(14, self.HEIGHT)
         self.bars = []
         for _ in range(4):
             bar = Gtk.Box(css_classes=["island-bar"], valign=Gtk.Align.CENTER)
@@ -429,13 +429,13 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.pill = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, css_classes=["lennox-island"],
                             halign=Gtk.Align.CENTER)
         # Compact row
-        self.compact = Gtk.Box(spacing=10, css_classes=["island-compact"])
+        self.compact = Gtk.Box(spacing=7, css_classes=["island-compact"])
         self.compact.set_size_request(-1, self.compact_height)
-        self.art_image = Gtk.Image(pixel_size=22)          # an Image is drawn exactly this big
+        self.art_image = Gtk.Image(pixel_size=18)          # an Image is drawn exactly this big
         self.art = Gtk.Box(css_classes=["island-art"], valign=Gtk.Align.CENTER, overflow=Gtk.Overflow.HIDDEN)
         self.art.append(self.art_image)
-        self.icon = Gtk.Image(pixel_size=16, valign=Gtk.Align.CENTER)
-        self.label = Gtk.Label(ellipsize=Pango.EllipsizeMode.END, max_width_chars=30, hexpand=True,
+        self.icon = Gtk.Image(pixel_size=14, valign=Gtk.Align.CENTER)
+        self.label = Gtk.Label(ellipsize=Pango.EllipsizeMode.END, max_width_chars=18, hexpand=True,
                                xalign=0, css_classes=["island-text"])
         self.detail = Gtk.Label(css_classes=["island-detail"])
         self.bars = EqBars()
@@ -445,7 +445,7 @@ class IslandWindow(Gtk.ApplicationWindow):
         # Expanded card
         self.reveal = Gtk.Revealer(transition_type=Gtk.RevealerTransitionType.SLIDE_DOWN,
                                    transition_duration=260)
-        self.card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, css_classes=["island-card"])
+        self.card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7, css_classes=["island-card"])
         self.reveal.set_child(self.card)
         self.pill.append(self.reveal)
         self.set_child(self.pill)
@@ -530,7 +530,7 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.set_visible(True)
 
     def _compact(self, icon=None, text="", detail="", art=None, bars=False):
-        texture = scaled_texture(art, 22) if art else None      # its pixel size is its shown size
+        texture = scaled_texture(art, 18) if art else None      # its pixel size is its shown size
         self.art.set_visible(texture is not None)
         if texture is not None:
             self.art_image.set_from_paintable(texture)
@@ -578,10 +578,10 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.bars.set_playing(True)
         if rebuild:
             self._clear_card()
-            top = Gtk.Box(spacing=12)
+            top = Gtk.Box(spacing=10)
             cover = Gtk.Box(css_classes=["island-cover"], valign=Gtk.Align.CENTER, overflow=Gtk.Overflow.HIDDEN)
-            image = Gtk.Image(pixel_size=64)
-            texture = scaled_texture(art, 64) if art else None
+            image = Gtk.Image(pixel_size=44)
+            texture = scaled_texture(art, 44) if art else None
             if texture is not None:
                 image.set_from_paintable(texture)
             else:
@@ -590,7 +590,7 @@ class IslandWindow(Gtk.ApplicationWindow):
             top.append(cover)
             words = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER, hexpand=True)
             words.append(Gtk.Label(label=info["title"], xalign=0, css_classes=["island-title"],
-                                   ellipsize=Pango.EllipsizeMode.END, max_width_chars=26))
+                                   ellipsize=Pango.EllipsizeMode.END, max_width_chars=22))
             words.append(Gtk.Label(label=artist, xalign=0, css_classes=["island-sub"],
                                    ellipsize=Pango.EllipsizeMode.END, max_width_chars=30))
             top.append(words)
@@ -602,7 +602,7 @@ class IslandWindow(Gtk.ApplicationWindow):
             for w in (self.pos_label, self.progress, self.len_label):
                 self.progress_row.append(w)
             self.card.append(self.progress_row)
-            controls = Gtk.Box(spacing=18, halign=Gtk.Align.CENTER)
+            controls = Gtk.Box(spacing=14, halign=Gtk.Align.CENTER)
             player = info["player"]
             controls.append(self._button("media-skip-backward-symbolic", "Previous",
                                          lambda: self.app.mpris.command(player, "Previous")))

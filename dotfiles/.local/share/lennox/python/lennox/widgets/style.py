@@ -172,28 +172,28 @@ window.lennox-island-window { background: transparent; }
     background-color: #000000;
     color: #ffffff;
     border-radius: 22px;
-    padding: 0 14px;
-    min-width: 150px;
+    padding: 0 11px;
+    min-width: 96px;
     /* No drop shadow: the window is exactly the pill's size, so a shadow
        would be cut off into grey corners behind the round ends */
     border: 1px solid alpha(white, 0.08);
     transition: all 300ms cubic-bezier(0.2, 0.9, 0.3, 1.0);
 }
-.lennox-island.music, .lennox-island.timer, .lennox-island.event, .lennox-island.call { min-width: 260px; }
-.lennox-island.expanded { border-radius: 30px; padding: 0 16px 16px 16px; min-width: 360px; }
-.lennox-island.ringing { min-width: 330px; padding-bottom: 14px; border-radius: 30px; }
+.lennox-island.music, .lennox-island.timer, .lennox-island.event, .lennox-island.call { min-width: 180px; }
+.lennox-island.expanded { border-radius: 24px; padding: 0 12px 12px 12px; min-width: 280px; }
+.lennox-island.ringing { min-width: 280px; padding-bottom: 12px; border-radius: 24px; }
 .lennox-island image { color: @primary; }
-.lennox-island .island-text { font-weight: 600; font-size: 13px; }
-.lennox-island.clock .island-text { font-weight: 700; font-size: 14px; font-feature-settings: "tnum"; }
-.lennox-island .island-detail { font-feature-settings: "tnum"; color: @primary; font-weight: 700; font-size: 13px; }
-.lennox-island .island-art { border-radius: 7px; }
+.lennox-island .island-text { font-weight: 600; font-size: 12px; }
+.lennox-island.clock .island-text { font-weight: 700; font-size: 13px; font-feature-settings: "tnum"; }
+.lennox-island .island-detail { font-feature-settings: "tnum"; color: @primary; font-weight: 700; font-size: 12px; }
+.lennox-island .island-art { border-radius: 5px; }
 .island-bar { background-color: @primary; border-radius: 2px; min-width: 3px; }
-.island-card { padding-top: 8px; }
-.island-cover { border-radius: 14px; }
-.island-title { font-weight: 700; font-size: 15px; }
-.island-sub { color: alpha(white, 0.65); font-size: 13px; }
-.island-big { font-size: 40px; font-weight: 300; font-feature-settings: "tnum"; }
-.island-time { font-size: 11px; color: alpha(white, 0.6); font-feature-settings: "tnum"; }
+.island-card { padding-top: 4px; }
+.island-cover { border-radius: 10px; }
+.island-title { font-weight: 700; font-size: 13px; }
+.island-sub { color: alpha(white, 0.6); font-size: 12px; }
+.island-big { font-size: 30px; font-weight: 300; font-feature-settings: "tnum"; }
+.island-time { font-size: 10px; color: alpha(white, 0.6); font-feature-settings: "tnum"; }
 .lennox-island progressbar.island-progress > trough {
     min-height: 4px; border-radius: 99px; border: none; box-shadow: none;
     background-image: none; background-color: alpha(white, 0.22);
@@ -202,10 +202,10 @@ window.lennox-island-window { background: transparent; }
     min-height: 4px; border-radius: 99px; border: none; box-shadow: none;
     background-image: none; background-color: white;
 }
-.island-button { min-width: 34px; min-height: 34px; padding: 0; border-radius: 99px; border: none; box-shadow: none; background: alpha(white, 0.12); color: white; }
+.island-button { min-width: 28px; min-height: 28px; padding: 0; border-radius: 99px; border: none; box-shadow: none; background: alpha(white, 0.12); color: white; }
 .island-button:hover { background: alpha(white, 0.24); }
-.island-button.big { min-width: 44px; min-height: 44px; background: white; color: black; }
-.island-pill-button { border-radius: 99px; padding: 6px 16px; background: alpha(white, 0.14); color: white; font-weight: 600; }
+.island-button.big { min-width: 34px; min-height: 34px; background: white; color: black; }
+.island-pill-button { border-radius: 99px; padding: 3px 12px; background: alpha(white, 0.14); color: white; font-weight: 600; font-size: 12px; min-height: 0; }
 .island-pill-button:hover { background: alpha(white, 0.26); }
 .island-pill-button.stop { background: #ff9f0a; color: black; }
 .lennox-island.ringing image { color: #ff9f0a; }
