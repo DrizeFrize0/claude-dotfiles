@@ -39,10 +39,29 @@ wind-down at 23:00 with weekly sleep stats.
   200 MB, AUR build files, unused Flatpak runtimes, old trash and
   thumbnails; one button with the space freed, plus a weekly run.
 
-## Release 4: Looks & polish
+## Release 4: Focus, looks & polish
 
-Animated wallpapers (pause in games, fullscreen and on battery), lock
-screen widgets, window overview, UI sounds.
+- **Focus mode (new):** one key (SUPER + F12) or the quick panel starts a
+  focus session (25 / 50 / 90 min or until stopped). It blocks chosen apps
+  and sites (Discord, TikTok, YouTube…), mutes notifications (saved for
+  later), shows a countdown in the island, and plays a soft sound at the
+  end with a 5-minute break. Focus stats per day / week on the Night page,
+  and it turns itself off in game mode.
+- **Animated wallpapers:** video / live wallpapers that pause in games,
+  fullscreen and on battery; colors still follow the wallpaper.
+- **Lock screen widgets:** music with controls, weather, next alarm, phone
+  battery and Minecraft server players on the lock screen.
+- **Window overview:** SUPER + TAB shows every window on every workspace
+  with live previews; type to search, click to jump.
+- **UI sounds:** soft sounds for notifications, volume, screenshots,
+  plugging in and the lock screen, with a volume and an off switch.
+- **Gym log (recommended):** a widget to log sets in two taps, showing last
+  session's numbers to beat and the bodyweight trend (progressive overload
+  plus the calorie surplus check).
+- **Smart bedtime (recommended):** the wind-down learns when you actually
+  fall asleep and suggests a better bedtime.
+- **Settings backup (recommended):** one switch keeps settings, keybinds,
+  wallpapers and clips' list backed up, restored by the installer.
 
 ## Ideas offered, not yet asked for
 
