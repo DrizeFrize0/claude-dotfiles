@@ -26,6 +26,7 @@ from gi.repository import Gio, GLib, Gtk, Pango
 
 from .. import clock as C
 from . import data
+from .cards import scaled_texture
 
 EVENT_SECONDS = 4
 SOON = 10 * 60            # reminders / alarms show this long before they're due
@@ -430,9 +431,9 @@ class IslandWindow(Gtk.ApplicationWindow):
         # Compact row
         self.compact = Gtk.Box(spacing=10, css_classes=["island-compact"])
         self.compact.set_size_request(-1, self.compact_height)
-        self.art = Gtk.Picture(content_fit=Gtk.ContentFit.COVER, css_classes=["island-art"],
-                               valign=Gtk.Align.CENTER)
-        self.art.set_size_request(22, 22)
+        self.art_image = Gtk.Image(pixel_size=22)          # an Image is drawn exactly this big
+        self.art = Gtk.Box(css_classes=["island-art"], valign=Gtk.Align.CENTER, overflow=Gtk.Overflow.HIDDEN)
+        self.art.append(self.art_image)
         self.icon = Gtk.Image(pixel_size=16, valign=Gtk.Align.CENTER)
         self.label = Gtk.Label(ellipsize=Pango.EllipsizeMode.END, max_width_chars=30, hexpand=True,
                                xalign=0, css_classes=["island-text"])
@@ -529,10 +530,11 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.set_visible(True)
 
     def _compact(self, icon=None, text="", detail="", art=None, bars=False):
-        self.art.set_visible(bool(art))
-        if art:
-            self.art.set_filename(art)
-        self.icon.set_visible(bool(icon) and not art)
+        texture = scaled_texture(art, 22) if art else None      # its pixel size is its shown size
+        self.art.set_visible(texture is not None)
+        if texture is not None:
+            self.art_image.set_from_paintable(texture)
+        self.icon.set_visible(bool(icon) and texture is None)
         if icon:
             self.icon.set_from_icon_name(icon)
         self.label.set_label(text)
@@ -577,10 +579,14 @@ class IslandWindow(Gtk.ApplicationWindow):
         if rebuild:
             self._clear_card()
             top = Gtk.Box(spacing=12)
-            cover = Gtk.Picture(content_fit=Gtk.ContentFit.COVER, css_classes=["island-cover"])
-            cover.set_size_request(64, 64)
-            if art:
-                cover.set_filename(art)
+            cover = Gtk.Box(css_classes=["island-cover"], valign=Gtk.Align.CENTER, overflow=Gtk.Overflow.HIDDEN)
+            image = Gtk.Image(pixel_size=64)
+            texture = scaled_texture(art, 64) if art else None
+            if texture is not None:
+                image.set_from_paintable(texture)
+            else:
+                image.set_from_icon_name("audio-x-generic-symbolic")
+            cover.append(image)
             top.append(cover)
             words = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER, hexpand=True)
             words.append(Gtk.Label(label=info["title"], xalign=0, css_classes=["island-title"],

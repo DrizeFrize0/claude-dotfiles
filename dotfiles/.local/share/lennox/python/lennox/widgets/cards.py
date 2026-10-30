@@ -31,6 +31,39 @@ def in_thread(work, done):
     threading.Thread(target=runner, daemon=True).start()
 
 
+_COVERS = {}
+
+
+def scaled_texture(path, size):
+    """A texture of the image at `size` px (cropped square), or None.
+
+    A Gtk.Picture asks for its image's full size, so a 3000 px album cover
+    would blow the card up: decode it small instead. Cached, because the
+    island shows the same cover every second."""
+    try:
+        key = (path, size, os.path.getmtime(path))
+    except OSError:
+        return None
+    if key in _COVERS:
+        return _COVERS[key]
+    try:
+        import gi
+        gi.require_version("GdkPixbuf", "2.0")
+        from gi.repository import GdkPixbuf
+        src = GdkPixbuf.Pixbuf.new_from_file(path)
+        side = min(src.get_width(), src.get_height())
+        src = src.new_subpixbuf((src.get_width() - side) // 2, (src.get_height() - side) // 2, side, side)
+        small = src.scale_simple(size, size, GdkPixbuf.InterpType.BILINEAR)
+        ok, png = small.save_to_bufferv("png", [], [])
+        texture = Gdk.Texture.new_from_bytes(GLib.Bytes.new(png)) if ok else None
+    except (GLib.Error, ValueError, ImportError, TypeError):
+        texture = None
+    if len(_COVERS) > 40:
+        _COVERS.clear()
+    _COVERS[key] = texture
+    return texture
+
+
 def launch(command, delay=0.0):
     """Start a command detached from the widgets (lennox-* commands by name)."""
     env = dict(os.environ, PATH=f"{BIN}:{os.environ.get('PATH', '')}")
@@ -296,10 +329,7 @@ class MediaCard(Card):
         if url != self._art_url:
             return  # the song changed while the cover downloaded
         if isinstance(path, str):
-            try:
-                texture = Gdk.Texture.new_from_filename(path)
-            except GLib.Error:
-                texture = None
+            texture = scaled_texture(path, self.ART * 2)   # 2x: sharp on HiDPI
             if texture is not None:
                 self.art.set_paintable(texture)
                 self.art_stack.set_visible_child_name("art")
@@ -423,10 +453,7 @@ class HeaderCard(Card):
         path = data.avatar_path()
         texture = None
         if path:
-            try:
-                texture = Gdk.Texture.new_from_filename(path)
-            except GLib.Error:
-                texture = None
+            texture = scaled_texture(path, 104)   # shown at 52 px
         if texture is not None:
             self.picture.set_paintable(texture)
             self.avatar.set_visible_child_name("picture")
