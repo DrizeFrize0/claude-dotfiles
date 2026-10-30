@@ -299,6 +299,45 @@ def apply_wallpaper_timer(s, reload=True):
         run(["systemctl", "--user", "disable", "--now", "lennox-wallpaper.timer"])
 
 
+# ---------------------------------------------------------------- weekly cleanup
+
+CLEANUP_SERVICE = """[Unit]
+Description=Lennox weekly cleanup
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+ExecStart=%h/.local/bin/lennox-cleanup auto
+"""
+
+CLEANUP_TIMER = """[Unit]
+Description=Lennox weekly cleanup
+
+[Timer]
+OnCalendar=weekly
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+"""
+
+
+def apply_cleanup(s, reload=True):
+    units = os.path.join(CONFIG, "systemd", "user")
+    changed = write_file(os.path.join(units, "lennox-cleanup.service"), CLEANUP_SERVICE)
+    changed |= write_file(os.path.join(units, "lennox-cleanup.timer"), CLEANUP_TIMER)
+    if not have("systemctl"):
+        return
+    if changed:
+        run(["systemctl", "--user", "daemon-reload"])
+    if s["cleanup"]["weekly"]:
+        run(["systemctl", "--user", "enable", "--now", "lennox-cleanup.timer"])
+    else:
+        run(["systemctl", "--user", "disable", "--now", "lennox-cleanup.timer"])
+
+
 # ---------------------------------------------------------------- gtk / qt / kitty
 
 def button_layout(s):
@@ -478,6 +517,7 @@ PARTS = {
     "bar": apply_bar,
     "aispend": apply_aispend,
     "games": apply_games,
+    "cleanup": apply_cleanup,
     "dock": apply_dock,
     "widgets": apply_widgets,
     "theme": apply_theme,
@@ -491,7 +531,7 @@ def main(argv=None):
         argv.remove("--no-reload")
         reload = False
     if not argv or argv == ["all"]:
-        parts = ["hypr", "idle", "night", "wallpaper", "gtk", "bar", "dock", "widgets", "games"]
+        parts = ["hypr", "idle", "night", "wallpaper", "gtk", "bar", "dock", "widgets", "games", "cleanup"]
     else:
         parts = argv
     unknown = [p for p in parts if p not in PARTS]

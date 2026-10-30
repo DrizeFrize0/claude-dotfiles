@@ -146,6 +146,10 @@ DEFAULTS = {
         "spend_widget": True,          # AI coding spend in the bar (CodeBurn)
         "monthly_budget": 200,         # warn at 80% and 100%; 0 = no warnings
     },
+    "cleanup": {
+        "weekly": True,                # every week: old trash, thumbnails, AUR build files
+        "trash_days": 30,              # trash older than this goes (0 = empty it all)
+    },
     "power": {
         "saver_on_battery": True,
         "low_battery_warning": 20,
@@ -221,6 +225,7 @@ RANGES = {
     ("night", "temperature"): (2500, 6000),
     ("ai", "monthly_budget"): (0, 100000),
     ("clips", "seconds"): (10, 600),
+    ("cleanup", "trash_days"): (0, 365),
     ("power", "low_battery_warning"): (5, 50),
     ("power", "critical_battery"): (2, 20),
 }
@@ -299,6 +304,7 @@ APPLY_PARTS = {
     "widgets": ["widgets"],
     "ai": ["aispend"],
     "games": ["games"],
+    "cleanup": ["cleanup"],
 }
 THEME_KEYS = {"appearance.color_mode", "appearance.color_scheme", "appearance.theme"}
 
