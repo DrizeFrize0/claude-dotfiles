@@ -52,6 +52,8 @@ lennox-dock start
 start hypridle
 start hyprsunset
 start lennox-battery
+# Game clips: the recorder runs while a game is open
+setsid -f lennox-clips watch >/dev/null 2>&1
 
 # Desktop widgets and the dashboard (one process; it refuses to run twice)
 setsid -f lennox-widgets >/dev/null 2>&1 </dev/null

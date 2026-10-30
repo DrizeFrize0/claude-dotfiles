@@ -265,6 +265,24 @@
     "on-click": "~/.local/bin/lennox-clock timers",
     "hide-empty-text": true
   },
+  "custom/perf": {
+    "exec": "~/.local/bin/lennox-perf waybar",
+    "return-type": "json",
+    "interval": 30,
+    "signal": 15,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-perf cycle",
+    "hide-empty-text": true
+  },
+  "custom/mcserver": {
+    "exec": "~/.local/bin/lennox-mcserver waybar",
+    "return-type": "json",
+    "interval": 60,
+    "signal": 16,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-mcserver open",
+    "hide-empty-text": true
+  },
   "custom/sysmon": {
     "exec": "~/.local/bin/lennox-sysmon waybar",
     "return-type": "json",
@@ -360,7 +378,7 @@
       "custom/idle",
       "custom/nightlight",
       "custom/gamemode",
-      "power-profiles-daemon"
+      "custom/perf"
     ]
   },
   "tray": {

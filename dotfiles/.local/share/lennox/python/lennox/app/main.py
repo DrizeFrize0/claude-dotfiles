@@ -31,6 +31,7 @@ PAGES = [
     ("connections", "Wi-Fi & Bluetooth", "network-wireless-symbolic", "connections"),
     ("power", "Power & Battery", "battery-good-symbolic", "power"),
     ("night", "Night", "weather-clear-night-symbolic", "night"),
+    ("games", "Game Center", "input-gaming-symbolic", "games"),
     ("graphics", "Graphics", "applications-games-symbolic", "graphics"),
     ("apps", "Default Apps", "applications-system-symbolic", "apps"),
     ("updates", "Updates", "software-update-available-symbolic", "updates"),

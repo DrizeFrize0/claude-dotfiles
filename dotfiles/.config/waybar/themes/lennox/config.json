@@ -24,6 +24,7 @@
   ],
   "modules-right": [
     "custom/updates",
+    "custom/mcserver",
     "custom/aispend",
     "custom/sysmon",
     "group/hardware",

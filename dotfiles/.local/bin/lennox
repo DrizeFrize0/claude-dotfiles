@@ -14,6 +14,9 @@ case "$cmd" in
     windows)   exec lennox-windows "$@" ;;
     sound)     exec lennox-sound "$@" ;;
     clock)     exec lennox-clock "$@" ;;
+    clips)     exec lennox-clips "$@" ;;
+    perf)      exec lennox-perf "$@" ;;
+    server)    exec lennox-mcserver "$@" ;;
     passwords) exec lennox-passwords "$@" ;;
     bar)       exec lennox-bar "$@" ;;
     dock)      exec lennox-dock "$@" ;;
@@ -44,6 +47,7 @@ Lennox - Hyprland for Arch, in the spirit of ML4W
   lennox update              update system, drivers, AUR apps and Flatpaks now
   lennox doctor              check drivers, sound, mic, touchpad, updates
   lennox clock timer 20m     timers, alarms, reminders (lennox clock: the app, SUPER + ALT + C)
+  lennox clips save          save the last 2 minutes of gameplay (perf quiet|balanced|max, server)
   lennox sound check         sound drivers and mic quality   (fix | clean-mic on|off | report)
   lennox gpu status          NVIDIA / Intel status   (gpu run APP: run on NVIDIA)
   lennox get KEY / set KEY V read or change a setting, e.g. lennox set bar.style glass

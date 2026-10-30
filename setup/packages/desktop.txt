@@ -30,6 +30,9 @@ satty
 udiskie
 gvfs
 gvfs-mtp
+# Game clips (lennox-clips: replay buffer, vertical TikTok copy)
+gpu-screen-recorder
+ffmpeg
 # Alarm and timer sounds (Lennox Clock)
 sound-theme-freedesktop
 # Windows drives (NTFS) and USB sticks (exFAT) open in Files

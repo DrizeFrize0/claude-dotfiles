@@ -209,3 +209,23 @@ window#waybar.empty .modules-center {
     color: @on_primary;
     background: @primary;
 }
+
+/* Performance mode (lennox-perf) */
+#custom-perf {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @on_surface;
+}
+#custom-perf.max { color: @tertiary; }
+
+/* Minecraft server (lennox-mcserver) */
+#custom-mcserver {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @on_surface;
+    font-size: 13px;
+}
+#custom-mcserver.online { color: @primary; }
+#custom-mcserver.offline { color: @outline; }

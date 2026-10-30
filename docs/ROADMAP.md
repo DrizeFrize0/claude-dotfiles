@@ -7,7 +7,7 @@ Planned releases, in order. Each one is built, tested and pushed on its own.
 System monitor in the bar, AI spend widget with a monthly budget, sleep
 wind-down at 23:00 with weekly sleep stats.
 
-## Release 2: Gaming & clips + island and clock (in progress: clock and island done)
+## Release 2: Gaming & clips + island and clock (done)
 
 - **Dynamic island:** a pill at the top of the screen that grows to show
   what's happening, then shrinks back: music playing, timers counting down,

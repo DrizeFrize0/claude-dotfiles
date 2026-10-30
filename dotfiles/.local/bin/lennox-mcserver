@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Your Minecraft server: online, players, ping; notifies when someone joins.
+#   lennox-mcserver [status] [ADDRESS]   details as JSON
+#   lennox-mcserver waybar               the bar item (every minute)
+#   lennox-mcserver open                 Prism Launcher
+# The address is set in Lennox Settings > Game center.
+export PATH="$HOME/.local/bin:$PATH"
+case "${1:-status}" in
+    open)
+        if command -v prismlauncher >/dev/null; then setsid -f prismlauncher >/dev/null 2>&1
+        else setsid -f lennox-settings --page games >/dev/null 2>&1; fi
+        ;;
+    *) PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.mcserver "${1:-status}" "${@:2}" ;;
+esac

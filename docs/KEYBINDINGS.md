@@ -40,6 +40,8 @@ hl.bind("SUPER + B", hl.dsp.exec_cmd("firefox"), { description = "Open Firefox" 
 | `SUPER + SHIFT + M` | Dark / light mode |
 | `SUPER + SHIFT + H` | Night light on / off |
 | `SUPER + ALT + G` | Game mode on / off |
+| `SUPER + ALT + R` | Save a clip (the last 2 minutes while gaming) |
+| `SUPER + ALT + P` | Performance: Quiet / Balanced / Max |
 | `SUPER + CTRL + B` | Show / hide the bar |
 | `SUPER + SHIFT + B` | Reload the bar |
 | `SUPER + CTRL + D` | Show / hide the dock |

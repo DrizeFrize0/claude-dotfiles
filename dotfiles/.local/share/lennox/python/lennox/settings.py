@@ -130,6 +130,17 @@ DEFAULTS = {
         "winddown_reminders": True,    # at bedtime, again 30 minutes later
         "sleep_stats": True,           # when you really stopped, weekly summary
     },
+    "clips": {
+        "mode": "gaming",              # gaming: only while a game runs | always | off
+        "seconds": 120,                # how much SUPER + ALT + R saves
+        "folder": "~/Videos/Clips",
+        "mic": False,                  # also record your microphone
+    },
+    "games": {
+        "overlay": "hidden",           # FPS overlay (MangoHud): hidden until Shift + F12 | shown
+        "mc_server": "vetosmp.net",    # Minecraft server in the bar ("" = off)
+        "mc_joins": True,              # notify when someone joins
+    },
     "ai": {
         "spend_widget": True,          # AI coding spend in the bar (CodeBurn)
         "monthly_budget": 200,         # warn at 80% and 100%; 0 = no warnings
@@ -174,6 +185,8 @@ CHOICES = {
     ("bar", "style"): ["lennox", "lennox-line", "modern", "glass", "minimal"],
     ("widgets", "position"): ["top-left", "top-center", "top-right", "center", "bottom-left", "bottom-right"],
     ("widgets", "temperature_unit"): ["celsius", "fahrenheit"],
+    ("clips", "mode"): ["gaming", "always", "off"],
+    ("games", "overlay"): ["hidden", "shown"],
     ("input", "accel_profile"): ["", "adaptive", "flat"],
     ("keybinds", "main_mod"): ["SUPER", "ALT"],
     ("gpu", "mode"): ["auto", "integrated", "hybrid"],
@@ -205,6 +218,7 @@ RANGES = {
     ("idle", "suspend_minutes"): (0, 480),
     ("night", "temperature"): (2500, 6000),
     ("ai", "monthly_budget"): (0, 100000),
+    ("clips", "seconds"): (10, 600),
     ("power", "low_battery_warning"): (5, 50),
     ("power", "critical_battery"): (2, 20),
 }
@@ -282,6 +296,7 @@ APPLY_PARTS = {
     "dock": ["dock"],
     "widgets": ["widgets"],
     "ai": ["aispend"],
+    "games": ["games"],
 }
 THEME_KEYS = {"appearance.color_mode", "appearance.color_scheme", "appearance.theme"}
 
