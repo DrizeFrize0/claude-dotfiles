@@ -458,6 +458,8 @@ def apply_widgets(s, reload=True):
     # The running widgets re-read settings.json (and start if not running)
     if reload and in_session():
         spawn([os.path.join(BIN, "lennox-widgets"), "reload"])
+        # The island in the bar replaces the bar's clock: only restarts the bar if that changed
+        spawn([os.path.join(BIN, "lennox-bar"), "refresh"])
 
 
 def apply_theme(s, reload=True):

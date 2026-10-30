@@ -73,6 +73,9 @@ class Mpris:
                 "playing": props.get("PlaybackStatus") == "Playing",
                 "can_next": bool(props.get("CanGoNext", True)),
                 "can_prev": bool(props.get("CanGoPrevious", True)),
+                # Seconds, or None when the player doesn't say (the island hides the progress bar)
+                "length": (meta.get("mpris:length") or 0) / 1e6 or None,
+                "position": props["Position"] / 1e6 if isinstance(props.get("Position"), int) else None,
             })
         if not found:
             self._last = None

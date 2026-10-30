@@ -326,9 +326,14 @@ class App(Gtk.Application):
 
     def apply_island(self):
         if self.settings.get("widgets.island"):
+            place = self.settings.get("widgets.island_place")
+            if self.island is not None and self.island.place != place:
+                self.island.destroy()      # moving between the bar and below it: build it again
+                self.island = None
             if self.island is None:
-                self.island = IslandWindow(self, LS if layer_shell_ready(None) else None)
+                self.island = IslandWindow(self, LS if layer_shell_ready(None) else None, place)
             self.island.state["show_music"] = bool(self.settings.get("widgets.island_music"))
+            self.island.state["h24"] = bool(self.settings.get("bar.clock_24h"))
             self.island.render()
         elif self.island is not None:
             self.island.destroy()

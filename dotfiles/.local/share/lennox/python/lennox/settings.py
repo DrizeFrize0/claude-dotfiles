@@ -71,7 +71,8 @@ DEFAULTS = {
         "name": "",
         "weather_city": "",
         "temperature_unit": "celsius",
-        "island": True,                # dynamic island under the bar
+        "island": True,                # the dynamic island
+        "island_place": "bar",         # bar: in the middle of the bar (it's the clock) | below
         "island_music": True,
         "island_notifications": True,
     },
@@ -186,6 +187,7 @@ CHOICES = {
     ("widgets", "position"): ["top-left", "top-center", "top-right", "center", "bottom-left", "bottom-right"],
     ("widgets", "temperature_unit"): ["celsius", "fahrenheit"],
     ("clips", "mode"): ["gaming", "always", "off"],
+    ("widgets", "island_place"): ["bar", "below"],
     ("games", "overlay"): ["hidden", "shown"],
     ("input", "accel_profile"): ["", "adaptive", "flat"],
     ("keybinds", "main_mod"): ["SUPER", "ALT"],

@@ -61,10 +61,13 @@ class Page:
 
         island = Adw.PreferencesGroup(
             title="Dynamic island",
-            description="A pill under the bar that grows to show what's happening: alarms and timers, "
+            description="A black pill that grows to show what's happening (hover to open it): alarms and timers, "
                         "calls, notifications, charging, Wi-Fi and Bluetooth, and music. Hidden when there's "
                         "nothing to show. Alarms and timers ring even when it's off.")
         island.add(rows.switch_row(store, "widgets.island", "Show the island"))
+        island.add(rows.combo_row(store, "widgets.island_place", "Where",
+                                  [("bar", "In the bar's middle (it's the clock, like an iPhone)"),
+                                   ("below", "Under the bar, only when something happens")]))
         island.add(rows.switch_row(store, "widgets.island_music", "Music", "What's playing, with controls on hover"))
         island.add(rows.switch_row(store, "widgets.island_notifications", "Notifications",
                                    "A few seconds of each new one (not in do not disturb)"))

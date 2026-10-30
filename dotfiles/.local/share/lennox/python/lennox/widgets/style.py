@@ -166,28 +166,47 @@ calendar > grid > label:selected { background-color: alpha(@primary, 0.3); color
 .notes-frame { border-radius: 14px; background-color: alpha(@surface_container_highest, 0.5); padding: 8px; }
 .lennox-dashboard scrolledwindow, .lennox-dashboard viewport { background: transparent; }
 
-/* Dynamic island */
+/* Dynamic island: black like the iPhone's, whatever the wallpaper */
 window.lennox-island-window { background: transparent; }
 .lennox-island {
-    background-color: alpha(@surface, 0.92);
-    color: @on_surface;
-    border-radius: 99px;
-    padding: 5px 14px;
-    min-height: 26px;
-    border: 1px solid alpha(@primary, 0.25);
-    box-shadow: 0 4px 14px alpha(black, 0.35);
-    transition: all 250ms ease;
+    background-color: #000000;
+    color: #ffffff;
+    border-radius: 22px;
+    padding: 0 14px;
+    min-width: 150px;
+    box-shadow: 0 6px 18px alpha(black, 0.45);
+    transition: all 300ms cubic-bezier(0.2, 0.9, 0.3, 1.0);
 }
+.lennox-island.music, .lennox-island.timer, .lennox-island.event, .lennox-island.call { min-width: 260px; }
+.lennox-island.expanded { border-radius: 30px; padding: 0 16px 16px 16px; min-width: 360px; }
+.lennox-island.ringing { min-width: 330px; padding-bottom: 14px; border-radius: 30px; }
 .lennox-island image { color: @primary; }
-.lennox-island .island-text { font-weight: 600; }
-.lennox-island .island-detail { font-feature-settings: "tnum"; color: @primary; font-weight: 600; }
-.lennox-island .island-art { border-radius: 99px; }
-.lennox-island.ringing { background-color: @primary; color: @on_primary; border-color: @primary; }
-.lennox-island.ringing image, .lennox-island.ringing .island-detail { color: @on_primary; }
-.island-button { min-width: 26px; min-height: 26px; padding: 0; border-radius: 99px; background: alpha(@primary, 0.15); }
-.island-button:hover { background: alpha(@primary, 0.35); }
-.lennox-island.ringing .island-button { background: alpha(@on_primary, 0.2); color: @on_primary; }
-.island-button.destructive { background: @error; color: @on_error; }
+.lennox-island .island-text { font-weight: 600; font-size: 13px; }
+.lennox-island.clock .island-text { font-weight: 700; font-size: 14px; font-feature-settings: "tnum"; }
+.lennox-island .island-detail { font-feature-settings: "tnum"; color: @primary; font-weight: 700; font-size: 13px; }
+.lennox-island .island-art { border-radius: 7px; }
+.island-bar { background-color: @primary; border-radius: 2px; min-width: 3px; }
+.island-card { padding-top: 8px; }
+.island-cover { border-radius: 14px; }
+.island-title { font-weight: 700; font-size: 15px; }
+.island-sub { color: alpha(white, 0.65); font-size: 13px; }
+.island-big { font-size: 40px; font-weight: 300; font-feature-settings: "tnum"; }
+.island-time { font-size: 11px; color: alpha(white, 0.6); font-feature-settings: "tnum"; }
+.lennox-island progressbar.island-progress > trough {
+    min-height: 4px; border-radius: 99px; border: none; box-shadow: none;
+    background-image: none; background-color: alpha(white, 0.22);
+}
+.lennox-island progressbar.island-progress > trough > progress {
+    min-height: 4px; border-radius: 99px; border: none; box-shadow: none;
+    background-image: none; background-color: white;
+}
+.island-button { min-width: 34px; min-height: 34px; padding: 0; border-radius: 99px; border: none; box-shadow: none; background: alpha(white, 0.12); color: white; }
+.island-button:hover { background: alpha(white, 0.24); }
+.island-button.big { min-width: 44px; min-height: 44px; background: white; color: black; }
+.island-pill-button { border-radius: 99px; padding: 6px 16px; background: alpha(white, 0.14); color: white; font-weight: 600; }
+.island-pill-button:hover { background: alpha(white, 0.26); }
+.island-pill-button.stop { background: #ff9f0a; color: black; }
+.lennox-island.ringing image { color: #ff9f0a; }
 """
 
 

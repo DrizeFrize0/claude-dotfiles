@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The top bar (Waybar).
 #   lennox-bar start|stop|reload|toggle
+#   lennox-bar refresh   rebuild, restart only if what the bar shows changed
 #   lennox-bar style lennox|lennox-line|modern|glass|minimal
 # Style and visible modules are set in Lennox Settings > Bar.
 export PATH="$HOME/.local/bin:$PATH"
@@ -17,6 +18,12 @@ build_config() {
     [[ "$(lennox-get bar.show_updates)" == "true" ]] || off+=("custom/updates")
     [[ "$(lennox-get bar.show_media)" == "true" ]] && media=true
     [[ "$(lennox-get bar.clock_24h)" == "true" ]] || h24=false
+    # The dynamic island sits in the middle of the bar: it is the clock,
+    # the timer countdown and "now playing" there
+    if [[ "$(lennox-get widgets.island)" == "true" && "$(lennox-get widgets.island_place)" == "bar" ]]; then
+        off+=("clock" "custom/clocknext")
+        media=false
+    fi
     # No battery on desktops: hide the module instead of showing "0%"
     ls /sys/class/power_supply/BAT* >/dev/null 2>&1 || off+=("battery")
 
@@ -86,6 +93,16 @@ case "${1:-reload}" in
     start) start ;;
     stop) stop ;;
     reload|restart) stop; start ;;
+    refresh)
+        # Restart only if the settings change what the bar shows
+        before="$(cat "$RUN/waybar.json" 2>/dev/null)"
+        style="$(lennox-get bar.style)"
+        [[ -f "$WAYBAR/themes/$style/config.json" ]] || style="lennox"
+        build_config "$style"
+        if pgrep -x waybar >/dev/null && [[ "$(cat "$RUN/waybar.json" 2>/dev/null)" != "$before" ]]; then
+            stop; start
+        fi
+        ;;
     toggle) if pgrep -x waybar >/dev/null; then stop; else start force; fi ;;
     style)
         [[ -n "${2:-}" ]] || { echo "usage: lennox-bar style lennox|lennox-line|modern|glass|minimal" >&2; exit 2; }
@@ -93,5 +110,5 @@ case "${1:-reload}" in
         exec 9>&-
         lennox-set bar.style "$2"
         ;;
-    *) echo "usage: lennox-bar start|stop|reload|toggle|style NAME" >&2; exit 2 ;;
+    *) echo "usage: lennox-bar start|stop|reload|refresh|toggle|style NAME" >&2; exit 2 ;;
 esac

@@ -25,7 +25,9 @@ def in_thread(work, done):
             result = work()
         except Exception as e:  # noqa: BLE001 - a card must never take the widgets down
             result = e
-        GLib.idle_add(lambda: (done(result), False)[1])
+        # Normal priority, not idle: animations (the island's music bars) keep
+        # the main loop busy, and idle callbacks would wait behind them forever
+        GLib.idle_add(lambda: (done(result), False)[1], priority=GLib.PRIORITY_DEFAULT)
     threading.Thread(target=runner, daemon=True).start()
 
 
