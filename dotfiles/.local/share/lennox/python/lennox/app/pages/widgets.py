@@ -1,12 +1,14 @@
 """Widgets: the dashboard (SUPER + D) and the widgets on your desktop."""
 
+import json
 import threading
 
 from gi.repository import Adw, GLib
 
+from ... import aispend
 from ...widgets import data as weather_data
 from .. import rows
-from ..util import launch, lennox_bin
+from ..util import launch, lennox_bin, run_async
 
 POSITIONS = [
     ("top-left", "Top left"),
@@ -57,11 +59,45 @@ class Page:
         weather.add(self.weather_row)
         page.add(weather)
 
+        ai = Adw.PreferencesGroup(
+            title="AI spend",
+            description="What you spend on AI coding (Claude Code, Codex, Cursor…), read from CodeBurn. "
+                        "Shows today's cost in the bar; click it for the CodeBurn dashboard.")
+        ai.add(rows.switch_row(store, "ai.spend_widget", "Show in the bar"))
+        ai.add(rows.spin_row(store, "ai.monthly_budget", "Monthly budget",
+                             "Warns at 80% and 100%. 0 turns warnings off", lower=0, upper=100000, step=10))
+        self.ai_row = rows.info_row("This month", "checking…")
+        ai.add(self.ai_row)
+        ai.add(rows.button_row("Read CodeBurn again", "It refreshes by itself every 5 minutes", "Refresh",
+                               self._refresh_ai, "view-refresh-symbolic"))
+        page.add(ai)
+
         extra = Adw.PreferencesGroup(title="Make it yours")
         extra.add(rows.info_row("Your picture", "~/.face (a square image)"))
         extra.add(rows.info_row("Custom style", "~/.config/lennox/widgets.css"))
         page.add(extra)
         self.widget = page
+
+    def refresh(self):
+        def got(ok, out, err):
+            try:
+                spend = json.loads(out) if ok else None
+            except ValueError:
+                spend = None
+            if not spend:
+                self.ai_row.value_label.set_label("Needs CodeBurn's command: yay -S codeburn")
+                return
+            cur = spend["currency"]
+            text = f"{aispend.money(spend['month'], cur)} (today {aispend.money(spend['today'], cur)})"
+            if spend["budget"] > 0:
+                text += f" · {spend['month'] / spend['budget'] * 100:.0f}% of budget"
+            self.ai_row.value_label.set_label(text)
+
+        run_async([lennox_bin("lennox-aispend")], got)
+
+    def _refresh_ai(self):
+        self.ai_row.value_label.set_label("reading CodeBurn…")
+        run_async([lennox_bin("lennox-aispend"), "refresh-bar"], lambda *_: self.refresh())
 
     def _test_weather(self):
         city = self.ctx.store.get("widgets.weather_city")

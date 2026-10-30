@@ -22,6 +22,8 @@
     "network",
     "battery",
     "power-profiles-daemon",
+    "custom/aispend",
+    "custom/sysmon",
     "group/hardware",
     "group/tools",
     "custom/exit",

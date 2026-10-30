@@ -521,6 +521,12 @@ personalize() {
     fi
     # Once: Bluetooth headphones stay in full quality (the laptop mic is used
     # for calls), and HDMI never takes over the sound by itself
+    # Once: the new sleep wind-down starts at 23:00 (was 23:30)
+    marker="$HOME/.config/lennox/.winddown-v2-done"
+    if [[ ! -f "$marker" ]]; then
+        [[ "$(lennox-get night.winddown_time)" == "23:30" ]] && lennox-set night.winddown_time 23:00 --no-apply >/dev/null
+        touch "$marker"
+    fi
     marker="$HOME/.config/lennox/.sound-defaults-done"
     if [[ ! -f "$marker" ]]; then
         "$HOME/.local/bin/lennox-sound" defaults && ok "Bluetooth headphones stay in full quality during calls"

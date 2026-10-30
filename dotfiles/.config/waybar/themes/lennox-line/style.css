@@ -42,3 +42,23 @@ window#waybar {
 #custom-lennox-launcher {
     margin: 5px 4px 5px 1px;
 }
+
+/* System monitor (lennox-sysmon) and AI spend (lennox-aispend) */
+#custom-sysmon,
+#custom-aispend {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @on_surface;
+    font-size: 13px;
+    transition: all 250ms ease;
+}
+#custom-sysmon.warm,
+#custom-aispend.near {
+    color: @tertiary;
+}
+#custom-sysmon.hot,
+#custom-aispend.over {
+    color: @on_error;
+    background: @error;
+}

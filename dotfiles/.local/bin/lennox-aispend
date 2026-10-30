@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# AI coding spend from CodeBurn, with a monthly budget (Lennox Settings > Widgets).
+#   lennox-aispend              today and this month, as JSON
+#   lennox-aispend waybar       bar item (refreshes at most every 5 minutes)
+#   lennox-aispend refresh-bar  read CodeBurn again now and update the bar
+#   lennox-aispend open         the CodeBurn app (or its dashboard in a terminal)
+export PATH="$HOME/.local/bin:$PATH"
+py() { PYTHONPATH="$HOME/.local/share/lennox/python" python3 -m lennox.aispend "$@"; }
+case "${1:-status}" in
+    waybar|status) py "${1:-status}" ;;
+    refresh-bar)
+        py refresh >/dev/null
+        pkill -RTMIN+13 -x waybar
+        ;;
+    open)
+        if command -v codeburn-desktop >/dev/null; then
+            setsid -f codeburn-desktop >/dev/null 2>&1
+        elif command -v codeburn >/dev/null; then
+            setsid -f kitty --class lennox-floating --title CodeBurn codeburn >/dev/null 2>&1
+        else
+            notify-send -a Lennox -i dialog-information "CodeBurn isn't installed" "Install it with: yay -S codeburn"
+        fi
+        ;;
+    *) echo "usage: lennox-aispend [status] | waybar | refresh-bar | open" >&2; exit 2 ;;
+esac

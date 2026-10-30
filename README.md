@@ -73,6 +73,8 @@ All shortcuts: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 | Login | SDDM with the ML4W theme, showing your wallpaper |
 | Terminal | kitty + zsh + Oh My Posh, fastfetch |
 | Apps | Zen Browser, Nautilus, Vesktop, Steam, Prism Launcher, VS Code, IntelliJ |
+| Bar extras | Temperatures with a live tooltip (`lennox-sysmon`), AI coding spend with a monthly budget (`lennox-aispend`, needs `codeburn`) |
+| Sleep | Wind-down at bedtime (warmer, dimmer, quiet, reminders) and weekly sleep stats (`lennox-winddown`) |
 | Passwords | Bitwarden (app, Zen add-on, phone), `SUPER + P` filler with rbw + rofi-rbw |
 | Settings app | Python + GTK4 / libadwaita |
 

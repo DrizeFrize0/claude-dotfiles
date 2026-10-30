@@ -22,6 +22,7 @@ hl.bind("SUPER + B", hl.dsp.exec_cmd("firefox"), { description = "Open Firefox" 
 | `SUPER + P` | Fill a password (Bitwarden): pick a login, Lennox types it |
 | `SUPER + CTRL + E` | Emoji picker |
 | `SUPER + CTRL + K` | All keybindings |
+| `SUPER + CTRL + ESC` | System monitor (like Task Manager) |
 
 ## Lennox
 

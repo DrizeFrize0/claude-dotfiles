@@ -256,6 +256,24 @@
     "path": "/",
     "on-click": "~/.local/bin/lennox-open system_monitor"
   },
+  "custom/sysmon": {
+    "exec": "~/.local/bin/lennox-sysmon waybar",
+    "return-type": "json",
+    "interval": 10,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-open system_monitor",
+    "hide-empty-text": true
+  },
+  "custom/aispend": {
+    "exec": "~/.local/bin/lennox-aispend waybar",
+    "return-type": "json",
+    "interval": 300,
+    "signal": 13,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-aispend open",
+    "on-click-right": "~/.local/bin/lennox-aispend refresh-bar",
+    "hide-empty-text": true
+  },
   "custom/gpu": {
     "exec": "~/.local/bin/lennox-gpu waybar",
     "return-type": "json",

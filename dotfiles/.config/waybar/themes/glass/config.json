@@ -21,6 +21,8 @@
     "bluetooth",
     "network",
     "battery",
+    "custom/aispend",
+    "custom/sysmon",
     "group/hardware",
     "group/tools",
     "tray",

@@ -23,6 +23,8 @@
   ],
   "modules-right": [
     "custom/updates",
+    "custom/aispend",
+    "custom/sysmon",
     "group/hardware",
     "group/tools",
     "tray",

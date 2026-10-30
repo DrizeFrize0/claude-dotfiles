@@ -151,6 +151,8 @@ def render_hypridle(s):
     listener(idle["lock_minutes"], "loginctl lock-session")
     listener(idle["screen_off_minutes"], dpms_off, f"{dpms_on} && brightnessctl -r")
     listener(idle["suspend_minutes"], f"{BIN}/lennox-power idle-suspend")
+    # Sleep stats: 5 idle minutes don't count as still using the laptop
+    listener(5, f"{BIN}/lennox-winddown away", f"{BIN}/lennox-winddown back")
     return "\n".join(out)
 
 
@@ -188,20 +190,29 @@ def render_hyprsunset(s):
     return "\n".join(out) + "\n"
 
 
-WINDDOWN_SERVICE = """[Unit]
-Description=Lennox wind-down reminder
+# Wind-down and sleep stats (lennox-winddown): name -> (what, command, when)
+NIGHT_JOBS = {
+    "lennox-winddown": ("Lennox wind-down", "start", "*-*-* {bedtime}:00"),
+    "lennox-winddown-morning": ("Lennox wind-down: morning", "morning", "*-*-* {morning}:00"),
+    "lennox-sleep-track": ("Lennox sleep stats", "track", "*-*-* 00..05,18..23:00/10:00"),
+    "lennox-sleep-week": ("Lennox weekly sleep summary", "weekly", "Mon *-*-* 12:00:00"),
+}
+
+NIGHT_SERVICE = """[Unit]
+Description={what}
 
 [Service]
 Type=oneshot
-ExecStart=%h/.local/bin/lennox-winddown
+ExecStart=%h/.local/bin/lennox-winddown {command}
 """
 
-WINDDOWN_TIMER = """[Unit]
-Description=Lennox wind-down reminder
+NIGHT_TIMER = """[Unit]
+Description={what}
 
 [Timer]
-OnCalendar=*-*-* {time}:00
+OnCalendar={when}
 AccuracySec=30s
+Persistent={persistent}
 
 [Install]
 WantedBy=timers.target
@@ -220,20 +231,32 @@ def apply_night(s, reload=True):
         restart("hyprsunset")
 
     units = os.path.join(CONFIG, "systemd", "user")
-    service = os.path.join(units, "lennox-winddown.service")
-    timer = os.path.join(units, "lennox-winddown.timer")
-    hh, mm = night["winddown_time"].split(":")
-    units_changed = write_file(service, WINDDOWN_SERVICE)
-    units_changed |= write_file(timer, WINDDOWN_TIMER.format(time=f"{int(hh):02d}:{int(mm):02d}"))
+    times = {"bedtime": night["winddown_time"], "morning": night["end"]}
+    times = {k: "{:02d}:{:02d}".format(*(int(x) for x in v.split(":"))) for k, v in times.items()}
+    wanted = {
+        "lennox-winddown": night["winddown"],
+        "lennox-winddown-morning": night["winddown"],
+        "lennox-sleep-track": night["sleep_stats"],
+        "lennox-sleep-week": night["sleep_stats"],
+    }
+    units_changed = False
+    for name, (what, command, when) in NIGHT_JOBS.items():
+        units_changed |= write_file(os.path.join(units, f"{name}.service"),
+                                    NIGHT_SERVICE.format(what=what, command=command))
+        units_changed |= write_file(os.path.join(units, f"{name}.timer"), NIGHT_TIMER.format(
+            what=what, when=when.format(**times),
+            # The weekly summary still comes if the laptop was off on Monday noon
+            persistent="true" if name == "lennox-sleep-week" else "false"))
     if not have("systemctl"):
         return
     if units_changed:
         run(["systemctl", "--user", "daemon-reload"])
-    if night["winddown"]:
-        run(["systemctl", "--user", "enable", "lennox-winddown.timer"])
-        run(["systemctl", "--user", "restart", "lennox-winddown.timer"])
-    else:
-        run(["systemctl", "--user", "disable", "--now", "lennox-winddown.timer"])
+    for name, on in wanted.items():
+        if on:
+            run(["systemctl", "--user", "enable", f"{name}.timer"])
+            run(["systemctl", "--user", "restart", f"{name}.timer"])
+        else:
+            run(["systemctl", "--user", "disable", "--now", f"{name}.timer"])
 
 
 # ---------------------------------------------------------------- wallpaper timer
@@ -381,6 +404,12 @@ def apply_bar(s, reload=True):
         spawn([os.path.join(BIN, "lennox-bar"), "reload"])
 
 
+def apply_aispend(s, reload=True):
+    # The AI spend bar item re-reads its settings when poked
+    if reload and in_session():
+        run(["pkill", "-RTMIN+13", "-x", "waybar"])
+
+
 def apply_dock(s, reload=True):
     if reload and in_session():
         spawn([os.path.join(BIN, "lennox-dock"), "reload"])
@@ -406,6 +435,7 @@ PARTS = {
     "wallpaper": apply_wallpaper_timer,
     "gtk": apply_gtk,
     "bar": apply_bar,
+    "aispend": apply_aispend,
     "dock": apply_dock,
     "widgets": apply_widgets,
     "theme": apply_theme,

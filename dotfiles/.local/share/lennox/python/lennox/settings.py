@@ -120,8 +120,16 @@ DEFAULTS = {
         "end": "07:00",
         "temperature": 4500,
         "winddown": True,
-        "winddown_time": "23:30",
+        "winddown_time": "23:00",
         "winddown_message": "Wind-down time. Sleep is free gains, so wrap up when you're ready.",
+        "winddown_dim": True,          # warmer, dimmer screen over 30 minutes
+        "winddown_quiet": True,        # do not disturb until the night light ends
+        "winddown_reminders": True,    # at bedtime, again 30 minutes later
+        "sleep_stats": True,           # when you really stopped, weekly summary
+    },
+    "ai": {
+        "spend_widget": True,          # AI coding spend in the bar (CodeBurn)
+        "monthly_budget": 200,         # warn at 80% and 100%; 0 = no warnings
     },
     "power": {
         "saver_on_battery": True,
@@ -193,6 +201,7 @@ RANGES = {
     ("idle", "screen_off_minutes"): (0, 240),
     ("idle", "suspend_minutes"): (0, 480),
     ("night", "temperature"): (2500, 6000),
+    ("ai", "monthly_budget"): (0, 100000),
     ("power", "low_battery_warning"): (5, 50),
     ("power", "critical_battery"): (2, 20),
 }
@@ -269,6 +278,7 @@ APPLY_PARTS = {
     "bar": ["bar"],
     "dock": ["dock"],
     "widgets": ["widgets"],
+    "ai": ["aispend"],
 }
 THEME_KEYS = {"appearance.color_mode", "appearance.color_scheme", "appearance.theme"}
 

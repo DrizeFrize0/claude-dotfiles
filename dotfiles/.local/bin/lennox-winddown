@@ -1,6 +1,190 @@
 #!/usr/bin/env bash
-# The nightly wind-down reminder (a systemd user timer runs this).
-# Time and message: Lennox Settings > Night.
+# Sleep wind-down. Settings: Lennox Settings > Night. Timers run these:
+#   lennox-winddown start     at bedtime: reminder, quiet notifications, a slow warm + dim
+#                             (waits 15 minutes while a game, fullscreen video or call is on)
+#   lennox-winddown remind    the second reminder, 30 minutes later (only if you're still on)
+#   lennox-winddown morning   when the night light ends: notifications and brightness back
+#   lennox-winddown track     every 10 minutes at night: notes when you're still using the laptop
+#   lennox-winddown weekly    the weekly sleep summary
+#   lennox-winddown stats [--json]   the last 7 nights
+#   lennox-winddown away|back        from hypridle (5 idle minutes), so idle time doesn't count
+#   lennox-winddown           show the bedtime reminder now (preview)
 export PATH="$HOME/.local/bin:$PATH"
-message="$(lennox-get night.winddown_message)"
-notify-send -a "Lennox" -i weather-clear-night -t 15000 "🌙 Wind-down time" "$message"
+
+RUNTIME="${XDG_RUNTIME_DIR:-/tmp}/lennox"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/lennox"
+SLEEP_LOG="$STATE/sleep.log"          # one line per night: YYYY-MM-DD HH:MM (last time you were on)
+mkdir -p "$RUNTIME" "$STATE"
+
+get() { lennox-get "night.$1" 2>/dev/null; }
+on() { [[ "$(get "$1")" == "true" ]]; }
+minutes() { local h="${1%%:*}" m="${1##*:}"; echo $((10#$h * 60 + 10#$m)); }
+now_min() { minutes "$(date +%H:%M)"; }
+notify() { notify-send -a Lennox -i weather-clear-night -t 15000 "$@"; }
+
+later() {
+    # later SECONDS ARGS...: run this script again with ARGS (one pending run per job)
+    local delay="$1"; shift
+    local unit="lennox-winddown-$1"
+    systemctl --user stop "$unit.timer" >/dev/null 2>&1
+    systemd-run --user --quiet --collect --unit="$unit" --on-active="$delay" \
+        "$HOME/.local/bin/lennox-winddown" "$@" >/dev/null 2>&1
+}
+
+in_night() {
+    # Between bedtime and the end of the night light
+    local start end now
+    start="$(minutes "$(get winddown_time)")"; end="$(minutes "$(get end)")"; now="$(now_min)"
+    if (( start <= end )); then (( now >= start && now < end )); else (( now >= start || now < end )); fi
+}
+
+busy() {
+    # A game, a fullscreen window, or a call (any app recording the mic,
+    # not counting Lennox's own clean microphone)
+    [[ "$(lennox-mode game status 2>/dev/null)" == on ]] && return 0
+    [[ "$(hyprctl activewindow -j 2>/dev/null | jq -r '.fullscreen // 0' 2>/dev/null)" =~ ^[12]$ ]] && return 0
+    pactl -f json list source-outputs 2>/dev/null | jq -e '[.[] | .properties["node.name"] // ""
+        | select(test("^(lennox_clean_mic|echo-cancel)") | not)] | length > 0' >/dev/null 2>&1
+}
+
+active() {
+    # You're using the laptop: not locked, not idle for 5 minutes
+    [[ -f "$RUNTIME/away" ]] && return 1
+    pidof hyprlock >/dev/null && return 1
+    return 0
+}
+
+ramp() {
+    # 30 minutes: brightness to 70% of now (never below 10%), night light 800 K warmer
+    local from to temp_from temp_to step b t
+    from="$(lennox-panel get brightness 2>/dev/null)"
+    [[ "$from" =~ ^[0-9]+$ ]] || from=""
+    [[ -n "$from" ]] && echo "$from" > "$RUNTIME/winddown-brightness"
+    to=$(( from * 7 / 10 )); (( to < 10 )) && to=10
+    temp_from="$(get temperature)"; [[ "$temp_from" =~ ^[0-9]+$ ]] || temp_from=4500
+    temp_to=$(( temp_from - 800 )); (( temp_to < 2700 )) && temp_to=2700
+    for step in 1 2 3 4 5 6 7 8 9 10; do
+        busy && return 0                      # a game or call started: leave the screen alone
+        [[ -f "$RUNTIME/winddown-active" ]] || return 0
+        if [[ -n "$from" ]] && (( to < from )); then
+            b=$(( from - (from - to) * step / 10 ))
+            lennox-panel set brightness "$b" >/dev/null 2>&1
+        fi
+        t=$(( temp_from - (temp_from - temp_to) * step / 10 ))
+        hyprctl hyprsunset temperature "$t" >/dev/null 2>&1
+        (( step < 10 )) && sleep 180
+    done
+}
+
+night_of() {
+    # The evening a time belongs to: before 06:00 counts as the previous night
+    if (( 10#$(date +%H) < 6 )); then date -d "$(date +%F) -1 day" +%F; else date +%F; fi
+}
+
+stats() {
+    # The last 7 nights (newest first): date<TAB>HH:MM
+    [[ -f "$SLEEP_LOG" ]] || return 0
+    sort -r "$SLEEP_LOG" | awk '!seen[$1]++' | head -n 7 | awk '{ print $1 "\t" $2 }'
+}
+
+late_minutes() {
+    # HH:MM after 18:00, as minutes from 18:00 (so 01:30 > 23:30)
+    local m; m="$(minutes "$1")"
+    (( m < 18 * 60 )) && m=$(( m + 24 * 60 ))
+    echo $(( m - 18 * 60 ))
+}
+
+clock() { local m=$(( ($1 + 18 * 60) % (24 * 60) )); printf '%02d:%02d' $((m / 60)) $((m % 60)); }
+
+case "${1:-preview}" in
+    preview)
+        notify "🌙 Wind-down time" "$(get winddown_message)"
+        ;;
+
+    start)
+        on winddown || exit 0
+        in_night || exit 0                   # a retry that ran into the morning
+        if busy; then
+            later 15min start                # try again when the game or call is over
+            exit 0
+        fi
+        touch "$RUNTIME/winddown-active"
+        if on winddown_reminders; then
+            notify "🌙 Wind-down time" "$(get winddown_message)"
+            later 30min remind
+        fi
+        if on winddown_quiet && [[ "$(swaync-client -D 2>/dev/null)" == false ]]; then
+            swaync-client -dn >/dev/null 2>&1 && touch "$RUNTIME/winddown-dnd"
+        fi
+        on winddown_dim && setsid -f "$0" ramp >/dev/null 2>&1
+        exit 0
+        ;;
+
+    ramp) ramp ;;
+
+    remind)
+        on winddown_reminders || exit 0
+        in_night && active && ! busy || exit 0
+        notify "🌙 Still up?" "It's $(date +%H:%M). Save what you're doing and call it a night."
+        ;;
+
+    morning)
+        rm -f "$RUNTIME/winddown-active"
+        if [[ -f "$RUNTIME/winddown-dnd" ]]; then
+            swaync-client -df >/dev/null 2>&1
+            rm -f "$RUNTIME/winddown-dnd"
+        fi
+        if [[ -f "$RUNTIME/winddown-brightness" ]]; then
+            lennox-panel set brightness "$(cat "$RUNTIME/winddown-brightness")" >/dev/null 2>&1
+            rm -f "$RUNTIME/winddown-brightness"
+        fi
+        ;;
+
+    track)
+        on sleep_stats || exit 0
+        active || exit 0
+        night="$(night_of)"
+        { grep -v "^$night " "$SLEEP_LOG" 2>/dev/null; echo "$night $(date +%H:%M)"; } | sort | tail -n 60 > "$SLEEP_LOG.tmp"
+        mv "$SLEEP_LOG.tmp" "$SLEEP_LOG"
+        ;;
+
+    away) touch "$RUNTIME/away" ;;
+    back) rm -f "$RUNTIME/away" ;;
+
+    stats)
+        if [[ "${2:-}" == --json ]]; then
+            stats | jq -R -s -c 'split("\n") | map(select(length > 0) | split("\t") | {night: .[0], last: .[1]})'
+        else
+            stats | while IFS=$'\t' read -r night last; do
+                printf '%s  %s\n' "$(date -d "$night" '+%a %-d %b')" "$last"
+            done
+        fi
+        ;;
+
+    weekly)
+        on sleep_stats || exit 0
+        mapfile -t rows < <(stats)
+        (( ${#rows[@]} >= 3 )) || exit 0
+        total=0 latest=0 latest_night=""
+        for row in "${rows[@]}"; do
+            m="$(late_minutes "${row#*$'\t'}")"
+            total=$(( total + m ))
+            (( m > latest )) && { latest=$m; latest_night="${row%%$'\t'*}"; }
+        done
+        avg=$(( total / ${#rows[@]} ))
+        goal="$(late_minutes "$(get winddown_time)")"
+        diff=$(( avg - goal ))
+        if (( diff <= 15 )); then
+            verdict="Right on your $(get winddown_time) bedtime. Nice."
+        else
+            verdict="About $(( diff / 60 ))h $(( diff % 60 ))m after your $(get winddown_time) bedtime."
+        fi
+        notify "😴 Your week of sleep" "Usually off by $(clock "$avg"). $verdict
+Latest: $(clock "$latest") on $(date -d "$latest_night" +%A). Details: Lennox Settings > Night."
+        ;;
+
+    *)
+        echo "usage: lennox-winddown [start|remind|morning|track|weekly|stats [--json]|away|back]" >&2
+        exit 2
+        ;;
+esac

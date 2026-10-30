@@ -196,7 +196,13 @@ Slides in from the left:
 
 Press `Escape`, `SUPER + D` again, or click next to it to close it.
 
-### 4.5 Lennox Settings (`SUPER + I`)
+### 4.5 Bar extras and bedtime
+
+- **Temperatures:** the bar shows your CPU temperature (and the NVIDIA GPU's while it's in use). It turns orange when warm and red when hot. Hover for CPU, fans, memory, battery use and the busiest apps; click (or `SUPER + CTRL + ESC`) for the full system monitor.
+- **AI spend:** today's AI coding cost from CodeBurn, with warnings at 80% and 100% of your monthly budget (Settings → Widgets). Needs CodeBurn's command: `yay -S codeburn`.
+- **Bedtime:** at 23:00 the screen slowly gets warmer and dimmer, notifications go quiet until morning, and you get a reminder (and one more 30 minutes later if you're still on). It waits while you're gaming or in a call. Every Monday you get a summary of when you really stopped each night. All in Settings → Night.
+
+### 4.6 Lennox Settings (`SUPER + I`)
 
 Everything is here. You never need to edit a config file:
 
@@ -218,14 +224,14 @@ Everything is here. You never need to edit a config file:
 | Keybindings | See every shortcut |
 | Health Check | Finds and explains driver or system problems |
 
-### 4.6 Gaming
+### 4.7 Gaming
 
 - **Steam games** use the GTX 1650 automatically.
 - For a native Linux game that runs slowly, open Steam → right-click the game → Properties → Launch options and type `prime-run %command%`.
 - **Game mode:** `SUPER + ALT + G` (or the quick panel tile) turns off animations and blur and switches to performance mode. Turn it off afterwards to save battery.
 - Plug in the charger for gaming. The GTX draws a lot of power.
 
-### 4.7 A second monitor
+### 4.8 A second monitor
 
 1. Plug the monitor in **before** logging in (or log out and in again).
 2. `SUPER + I` → **Display** → *Arrange displays* to place it left/right and set its resolution.
