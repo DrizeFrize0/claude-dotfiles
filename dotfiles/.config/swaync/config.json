@@ -24,7 +24,14 @@
   "transition-time": 200,
   "hide-on-clear": false,
   "hide-on-action": true,
-  "script-fail-notify": true,
+  "script-fail-notify": false,
+  "scripts": {
+    "lennox-sound": {
+      "exec": "~/.local/bin/lennox-sound-fx notification",
+      "app-name": ".*",
+      "run-on": "receive"
+    }
+  },
   "relative-timestamps": true,
   "notification-grouping": true,
   "text-empty": "No notifications",

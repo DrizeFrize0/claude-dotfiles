@@ -151,6 +151,22 @@ class Page:
         self.driver_rows = []
         page.add(self.drivers)
 
+        fx = Adw.PreferencesGroup(
+            title="Sound effects",
+            description="Soft sounds for things that happen. Notification sounds stay quiet in Do not "
+                        "disturb, focus and game mode.")
+        fx.add(rows.switch_row(ctx.store, "sounds.enabled", "Sound effects"))
+        fx.add(rows.spin_row(ctx.store, "sounds.volume", "Effects volume", "Percent of your volume",
+                             lower=0, upper=100, step=10))
+        for key, title in (("notifications", "Notifications"), ("volume_keys", "Volume keys"),
+                           ("screenshots", "Screenshots"), ("power", "Plugging in and unplugging"),
+                           ("devices", "Bluetooth devices connecting"), ("lock", "Locking the screen"),
+                           ("login", "Logging in")):
+            fx.add(rows.switch_row(ctx.store, f"sounds.{key}", title))
+        fx.add(rows.button_row("Try it", None, "Play", lambda: run_async([lennox_bin("lennox-sound-fx"), "notification"]),
+                               "audio-volume-high-symbolic"))
+        page.add(fx)
+
         more = Adw.PreferencesGroup(title="More")
         more.add(rows.link_row("Per-app volume and advanced options", "Opens the audio mixer",
                                lambda: launch([lennox_bin("lennox-open"), "audio_mixer"]), "multimedia-volume-control-symbolic"))

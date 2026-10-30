@@ -25,6 +25,7 @@ import time
 from gi.repository import Gio, GLib, Gtk, Pango
 
 from .. import clock as C
+from .. import sounds
 from . import data
 from .cards import scaled_texture
 
@@ -300,22 +301,24 @@ class StatusWatcher:
         if s["ac"] is not None and old.get("ac") is not None and s["ac"] != old["ac"]:
             bat = data.battery()
             level = f" · {bat[0]}%" if bat else ""
-            events.append(("battery-full-charging-symbolic", "Charging" + level) if s["ac"]
-                          else ("battery-good-symbolic", "On battery" + level))
+            events.append(("battery-full-charging-symbolic", "Charging" + level, "plug") if s["ac"]
+                          else ("battery-good-symbolic", "On battery" + level, "unplug"))
         if s["wifi"] is not None and old.get("wifi") is not None and s["wifi"] != old["wifi"]:
-            events.append(("network-wireless-symbolic", f"Connected to {s['wifi']}") if s["wifi"]
-                          else ("network-wireless-offline-symbolic", "Wi-Fi disconnected"))
+            events.append(("network-wireless-symbolic", f"Connected to {s['wifi']}", None) if s["wifi"]
+                          else ("network-wireless-offline-symbolic", "Wi-Fi disconnected", None))
         if s["bt"] is not None and old.get("bt") is not None:
             for name in sorted(s["bt"] - old["bt"]):
-                events.append(("bluetooth-active-symbolic", f"{name} connected"))
+                events.append(("bluetooth-active-symbolic", f"{name} connected", "connect"))
             for name in sorted(old["bt"] - s["bt"]):
-                events.append(("bluetooth-disabled-symbolic", f"{name} disconnected"))
+                events.append(("bluetooth-disabled-symbolic", f"{name} disconnected", "disconnect"))
         return events
 
     def _deliver(self, status, events):
         self.on_update(status)
-        for icon, text in events:
+        for icon, text, sound in events:
             self.on_event(icon, text)
+            if sound:
+                sounds.play(sound)
         return GLib.SOURCE_REMOVE
 
 

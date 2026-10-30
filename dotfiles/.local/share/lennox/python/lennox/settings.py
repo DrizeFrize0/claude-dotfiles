@@ -146,6 +146,17 @@ DEFAULTS = {
         "spend_widget": True,          # AI coding spend in the bar (CodeBurn)
         "monthly_budget": 200,         # warn at 80% and 100%; 0 = no warnings
     },
+    "sounds": {
+        "enabled": True,               # UI sounds (Lennox Settings > Sound > Sound effects)
+        "volume": 60,
+        "notifications": True,         # not in Do not disturb, focus or game mode
+        "volume_keys": True,
+        "screenshots": True,
+        "power": True,                 # plugging in / unplugging the charger
+        "devices": True,               # Bluetooth devices connecting
+        "lock": True,
+        "login": False,
+    },
     "focus": {
         "minutes": 50,                 # a focus session
         "break_minutes": 5,            # the break after it (0 = none)
@@ -235,6 +246,7 @@ RANGES = {
     ("clips", "seconds"): (10, 600),
     ("cleanup", "trash_days"): (0, 365),
     ("focus", "minutes"): (5, 240),
+    ("sounds", "volume"): (0, 100),
     ("focus", "break_minutes"): (0, 60),
     ("power", "low_battery_warning"): (5, 50),
     ("power", "critical_battery"): (2, 20),

@@ -40,6 +40,7 @@ capture_screen() {
 finish() {
     [[ -s "$file" ]] || { notify-send -a Lennox -i dialog-error "Screenshot failed"; exit 1; }
     wl-copy --type image/png < "$file"
+    lennox-sound-fx screenshot &
     (
         action="$(notify-send -a "Screenshot" -i "$file" -t 6000 \
             -A edit=Edit -A open=Folder \

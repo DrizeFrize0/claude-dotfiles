@@ -83,6 +83,8 @@ fi
 
 # Tell you about updates a minute after login (installs happen automatically)
 (sleep 60 && lennox-updates notify) &
+# The login sound (off unless turned on in Lennox Settings > Sound)
+lennox-sound-fx login >/dev/null 2>&1 &
 # Focus mode: a session that was running before a restart picks up again
 lennox-focus restore >/dev/null 2>&1
 # After an upgrade: what's new, once

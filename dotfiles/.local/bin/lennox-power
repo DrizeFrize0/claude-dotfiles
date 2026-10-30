@@ -15,7 +15,10 @@ case "${1:-}" in
     lock)
         # Lock the password vault together with the screen
         command -v rbw >/dev/null && rbw unlocked >/dev/null 2>&1 && rbw lock >/dev/null 2>&1
-        pidof hyprlock >/dev/null || setsid -f hyprlock >/dev/null 2>&1
+        if ! pidof hyprlock >/dev/null; then
+            lennox-sound-fx lock &
+            setsid -f hyprlock >/dev/null 2>&1
+        fi
         ;;
     suspend)
         systemctl suspend

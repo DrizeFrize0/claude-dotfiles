@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.6.0 · 2026-10-30 · Sound effects
+
+- Soft UI sounds for notifications, volume keys, screenshots, plugging in, Bluetooth devices and locking
+- Notification sounds stay quiet in Do not disturb, focus and game mode
+- Lennox Settings > Sound > Sound effects: a volume, a switch for each kind, and a login sound if you like
+
 ## 1.5.0 · 2026-10-30 · Focus mode
 
 - Focus mode (SUPER + F12, the quick panel or the island): 25, 50 or 90 minute sessions, then a short break

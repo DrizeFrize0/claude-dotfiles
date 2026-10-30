@@ -76,6 +76,7 @@ All shortcuts: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 | Bar extras | Temperatures with a live tooltip (`lennox-sysmon`), AI coding spend with a monthly budget (`lennox-aispend`, needs `codeburn`) |
 | Clock & island | Clock app (timers, alarms, stopwatch, reminders, world clock) and a dynamic island under the bar (`lennox-clock`) |
 | Gaming | Game Center in Settings: clips with a vertical TikTok copy (`lennox-clips`, `SUPER + ALT + R`), performance modes (`lennox-perf`), FPS overlay (MangoHud), Minecraft server in the bar (`lennox-mcserver`) |
+| Sound effects | Soft UI sounds for notifications, volume, screenshots, charging, devices and locking (`lennox-sound-fx`) |
 | Focus | Focus mode (`SUPER + F12`): timed sessions that close distracting apps, block sites and hold notifications, with a break and daily stats (`lennox-focus`) |
 | Sleep | Wind-down at bedtime (warmer, dimmer, quiet, reminders) and weekly sleep stats (`lennox-winddown`) |
 | Apps & phone | App Store page (Arch, AUR and Flathub in one search; `lennox-apps`), phone link with KDE Connect (`lennox-phone`) |
