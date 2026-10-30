@@ -86,8 +86,8 @@ def entry_row(store, path, title, validate=None, on_applied=None):
 
 
 def time_choices():
-    """Every half hour of the day, for time pickers."""
-    return [(f"{h:02d}:{m:02d}", f"{h:02d}:{m:02d}") for h in range(24) for m in (0, 30)]
+    """Every quarter hour of the day, for time pickers (smart bedtime moves in 15 minutes)."""
+    return [(f"{h:02d}:{m:02d}", f"{h:02d}:{m:02d}") for h in range(24) for m in (0, 15, 30, 45)]
 
 
 def time_row(store, path, title, subtitle=None):

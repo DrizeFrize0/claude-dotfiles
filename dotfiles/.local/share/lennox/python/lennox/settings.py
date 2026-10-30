@@ -130,6 +130,8 @@ DEFAULTS = {
         "winddown_quiet": True,        # do not disturb until the night light ends
         "winddown_reminders": True,    # at bedtime, again 30 minutes later
         "sleep_stats": True,           # when you really stopped, weekly summary
+        "smart_bedtime": False,        # move the bedtime by itself each week (toward the goal)
+        "bedtime_goal": "23:00",       # the bedtime smart bedtime works toward
     },
     "clips": {
         "mode": "gaming",              # gaming: only while a game runs | always | off
@@ -309,7 +311,7 @@ LOOKS = {
         "appearance.blur_size": 4, "bar.style": "modern"})),
 }
 
-TIME_KEYS = {("night", "start"), ("night", "end"), ("night", "winddown_time")}
+TIME_KEYS = {("night", "start"), ("night", "end"), ("night", "winddown_time"), ("night", "bedtime_goal")}
 
 # Which `lennox-apply` part(s) must run after a setting in a section changes
 APPLY_PARTS = {

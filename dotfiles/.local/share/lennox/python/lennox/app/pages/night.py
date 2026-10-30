@@ -3,7 +3,7 @@
 import datetime
 import json
 
-from gi.repository import Adw
+from gi.repository import Adw, GLib, Gtk
 
 from .. import rows
 from ..util import lennox_bin, run_async
@@ -35,6 +35,17 @@ class Page:
                         "video or a call, and everything goes back to normal when the night light ends.")
         winddown.add(rows.switch_row(store, "night.winddown", "Wind down at bedtime"))
         winddown.add(rows.time_row(store, "night.winddown_time", "Bedtime"))
+        winddown.add(rows.switch_row(store, "night.smart_bedtime", "Smart bedtime",
+                                     "Each week, fits the bedtime to when you really stop, then moves it "
+                                     "15 minutes earlier while you keep to it"))
+        winddown.add(rows.time_row(store, "night.bedtime_goal", "Bedtime goal",
+                                   "Smart bedtime never goes earlier than this"))
+        self.suggestion = None
+        self.suggest_row = Adw.ActionRow(title="Suggested bedtime", subtitle="…", subtitle_lines=4)
+        self.use_button = Gtk.Button(label="Use it", valign=Gtk.Align.CENTER, visible=False)
+        self.use_button.connect("clicked", lambda _b: self._use_suggestion())
+        self.suggest_row.add_suffix(self.use_button)
+        winddown.add(self.suggest_row)
         winddown.add(rows.switch_row(store, "night.winddown_dim", "Warmer, dimmer screen",
                                      "Eases in over 30 minutes, so it never feels sudden"))
         winddown.add(rows.switch_row(store, "night.winddown_quiet", "Quiet notifications",
@@ -86,6 +97,28 @@ class Page:
                 self.stat_rows.append(row)
 
         run_async([lennox_bin("lennox-winddown"), "stats", "--json"], got_stats)
+        run_async([lennox_bin("lennox-bedtime"), "suggest", "--json"], self._got_suggestion)
+
+    def _got_suggestion(self, ok, out, _err):
+        try:
+            result = json.loads(out) if ok else None
+        except ValueError:
+            result = None
+        if not isinstance(result, dict):
+            self.suggest_row.set_subtitle("Not available yet")
+            self.use_button.set_visible(False)
+            return
+        changes = result.get("suggestion") != result.get("current") and result.get("kind") != "learning"
+        self.suggest_row.set_title(f"Suggested bedtime: {result['suggestion']}" if changes else "Suggested bedtime")
+        self.suggest_row.set_subtitle(GLib.markup_escape_text(result.get("text", "")))
+        self.use_button.set_visible(changes)
+        self.suggestion = result["suggestion"] if changes else None
+
+    def _use_suggestion(self):
+        if self.suggestion:
+            self.ctx.store.set("night.winddown_time", self.suggestion)
+            self.ctx.toast(f"Bedtime is now {self.suggestion}")
+            self.refresh()
 
     def _on_now(self, row, _param):
         if not self.updating:

@@ -78,7 +78,7 @@ All shortcuts: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 | Gaming | Game Center in Settings: clips with a vertical TikTok copy (`lennox-clips`, `SUPER + ALT + R`), performance modes (`lennox-perf`), FPS overlay (MangoHud), Minecraft server in the bar (`lennox-mcserver`) |
 | Sound effects | Soft UI sounds for notifications, volume, screenshots, charging, devices and locking (`lennox-sound-fx`) |
 | Focus | Focus mode (`SUPER + F12`): timed sessions that close distracting apps, block sites and hold notifications, with a break and daily stats (`lennox-focus`) |
-| Sleep | Wind-down at bedtime (warmer, dimmer, quiet, reminders) and weekly sleep stats (`lennox-winddown`) |
+| Sleep | Wind-down at bedtime (warmer, dimmer, quiet, reminders) and weekly sleep stats (`lennox-winddown`), smart bedtime that adapts to when you really stop (`lennox-bedtime`) |
 | Apps & phone | App Store page (Arch, AUR and Flathub in one search; `lennox-apps`), phone link with KDE Connect (`lennox-phone`) |
 | Cleanup | One button and a weekly run free old downloads, unused packages, logs and trash (`lennox-cleanup`) |
 | Passwords | Bitwarden (app, Zen add-on, phone), `SUPER + P` filler with rbw + rofi-rbw |

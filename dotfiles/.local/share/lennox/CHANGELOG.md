@@ -3,6 +3,13 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.7.0 · 2026-10-30 · Smart bedtime
+
+- Smart bedtime learns when you really stop at night and suggests a bedtime that actually catches you
+- Turn it on and it moves the bedtime by itself, 15 minutes earlier each week you keep to it, until your goal
+- The weekly sleep summary includes the suggestion; Lennox Settings > Night has a Use it button
+- Time pickers now go in 15-minute steps
+
 ## 1.6.0 · 2026-10-30 · Sound effects
 
 - Soft UI sounds for notifications, volume keys, screenshots, plugging in, Bluetooth devices and locking

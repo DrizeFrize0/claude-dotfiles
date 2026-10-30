@@ -179,8 +179,16 @@ case "${1:-preview}" in
         else
             verdict="About $(( diff / 60 ))h $(( diff % 60 ))m after your $(get winddown_time) bedtime."
         fi
+        # Smart bedtime: use the suggestion, or just mention it
+        if on smart_bedtime; then
+            advice="$(lennox-bedtime apply)"
+        else
+            advice="$(lennox-bedtime suggest --json | jq -r 'select(.kind == "later" or .kind == "earlier")
+                | "Suggested bedtime: \(.suggestion) (Lennox Settings > Night)."')"
+        fi
         notify "😴 Your week of sleep" "Usually off by $(clock "$avg"). $verdict
-Latest: $(clock "$latest") on $(date -d "$latest_night" +%A). Details: Lennox Settings > Night."
+Latest: $(clock "$latest") on $(date -d "$latest_night" +%A).${advice:+
+$advice} Details: Lennox Settings > Night."
         ;;
 
     *)
