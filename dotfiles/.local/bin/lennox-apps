@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# App store: Arch, AUR and Flathub in one search (Lennox Settings > App Store).
+#   lennox-apps search WORDS...
+#   lennox-apps install|update|remove arch|aur|flathub ID
+#   lennox-apps installed
+#   lennox-apps                    open the App Store page
+export PATH="$HOME/.local/bin:$PATH"
+[[ $# -eq 0 ]] && exec lennox-settings --page store
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.appstore "$@"

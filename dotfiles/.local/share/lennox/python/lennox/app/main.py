@@ -33,6 +33,7 @@ PAGES = [
     ("night", "Night", "weather-clear-night-symbolic", "night"),
     ("games", "Game Center", "input-gaming-symbolic", "games"),
     ("graphics", "Graphics", "applications-games-symbolic", "graphics"),
+    ("store", "App Store", "system-software-install-symbolic", "store"),
     ("apps", "Default Apps", "applications-system-symbolic", "apps"),
     ("updates", "Updates", "software-update-available-symbolic", "updates"),
     ("cleanup", "Cleanup", "user-trash-symbolic", "cleanup"),
