@@ -8,7 +8,7 @@
 #   lennox-panel backlight             the screen's backlight device (brightnessctl name)
 # swaync runs these as /bin/sh -c "COMMAND", so its config only calls this
 # script with plain words: quotes inside a command would break.
-# NAME: wifi bluetooth mic nightlight game awake saver dark
+# NAME: wifi bluetooth mic nightlight game awake saver dark focus
 export PATH="$HOME/.local/bin:$PATH"
 
 backlight() {
@@ -40,6 +40,7 @@ state() {
         nightlight) [[ "$(lennox-nightlight status)" == on ]] ;;
         game)       [[ "$(lennox-mode game status)" == on ]] ;;
         awake)      [[ "$(lennox-idle status)" == off ]] ;;
+        focus)      lennox-focus status | grep -q '"phase": "focus"' ;;
         saver)      [[ "$(powerprofilesctl get 2>/dev/null)" == power-saver ]] ;;
         dark)       [[ "$(lennox-get appearance.color_mode)" == dark ]] ;;
         *)          return 2 ;;
@@ -57,6 +58,7 @@ switch() {
         nightlight) if $on; then lennox-nightlight on; else lennox-nightlight off; fi ;;
         game)       if $on; then lennox-mode game on; else lennox-mode game off; fi ;;
         awake)      if $on; then lennox-idle off; else lennox-idle on; fi ;;
+        focus)      if $on; then lennox-focus start; else lennox-focus stop; fi ;;
         saver)      if $on; then powerprofilesctl set power-saver; else powerprofilesctl set balanced; fi ;;
         dark)       if $on; then lennox-theme dark; else lennox-theme light; fi ;;
         *)          return 2 ;;

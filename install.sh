@@ -348,6 +348,8 @@ install_system_files() {
     install_system_file usr/local/bin/lennox-autoupdate 755
     install_system_file etc/systemd/system/lennox-autoupdate.service 644
     install_system_file etc/systemd/system/lennox-autoupdate.timer 644
+    install_system_file usr/local/bin/lennox-focus-hosts 755
+    install_system_file etc/polkit-1/rules.d/50-lennox-focus.rules 644
     if [[ ! -f /etc/lennox/autoupdate.conf ]]; then
         install_system_file etc/lennox/autoupdate.conf 644
     fi

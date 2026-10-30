@@ -32,6 +32,7 @@ PAGES = [
     ("phone", "Phone", "phone-symbolic", "phone"),
     ("power", "Power & Battery", "battery-good-symbolic", "power"),
     ("night", "Night", "weather-clear-night-symbolic", "night"),
+    ("focus", "Focus", "find-location-symbolic", "focus"),
     ("games", "Game Center", "input-gaming-symbolic", "games"),
     ("graphics", "Graphics", "applications-games-symbolic", "graphics"),
     ("store", "App Store", "system-software-install-symbolic", "store"),

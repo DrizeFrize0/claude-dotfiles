@@ -37,6 +37,7 @@ case "$action" in
         if [[ "$name" == "game" ]]; then
             have_ppd && powerprofilesctl get > "$MODES/game" && powerprofilesctl set performance
             touch "$MODES/game"
+            lennox-focus stop --quiet >/dev/null 2>&1    # games and focus don't mix
             notify-send -a Lennox -i input-gaming -t 2500 "Game mode on" \
                 "Effects off, performance profile, notifications paused. SUPER + ALT + G to turn off."
             sleep 0.3

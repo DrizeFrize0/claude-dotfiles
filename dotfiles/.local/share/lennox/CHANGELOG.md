@@ -3,6 +3,13 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.5.0 · 2026-10-30 · Focus mode
+
+- Focus mode (SUPER + F12, the quick panel or the island): 25, 50 or 90 minute sessions, then a short break
+- While focusing, Discord, Vesktop and Steam close, YouTube, TikTok and other distracting sites don't load, and notifications wait
+- The island counts down, with +5 min and Stop
+- Lennox Settings > Focus: what gets blocked, session and break length, and your focus today, this week and your streak
+
 ## 1.4.0 · 2026-10-30 · Easy apps & phone
 
 - App Store in Lennox Settings: Arch, the AUR and Flathub in one search, with Install, Update and Remove

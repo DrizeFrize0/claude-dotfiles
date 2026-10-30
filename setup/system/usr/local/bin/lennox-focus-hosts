@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Focus mode's site blocker (root, through pkexec without a password: see
+# /etc/polkit-1/rules.d/50-lennox-focus.rules). It only adds or removes
+# Lennox's own block in /etc/hosts, so it can't be used for anything else.
+#   lennox-focus-hosts on DOMAIN...    block these sites (and their www.)
+#   lennox-focus-hosts off             unblock
+set -euo pipefail
+HOSTS="${LENNOX_HOSTS_FILE:-/etc/hosts}"
+BEGIN="# >>> lennox focus (sites blocked while focusing) >>>"
+END="# <<< lennox focus <<<"
+
+without_block() { sed "/^$BEGIN\$/,/^$END\$/d" "$HOSTS"; }
+
+write() {
+    local tmp
+    tmp="$(mktemp "${HOSTS}.XXXXXX")"
+    cat > "$tmp"
+    chmod 644 "$tmp"
+    mv -f "$tmp" "$HOSTS"
+}
+
+case "${1:-}" in
+    on)
+        shift
+        {
+            without_block
+            echo "$BEGIN"
+            for d in "$@"; do
+                d="${d,,}"; d="${d#http://}"; d="${d#https://}"; d="${d#www.}"; d="${d%%/*}"
+                # Plain domain names only: nothing that could change other lines
+                [[ "$d" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]] || continue
+                [[ "$d" == localhost* ]] && continue
+                for host in "$d" "www.$d" "m.$d"; do
+                    printf '0.0.0.0 %s\n:: %s\n' "$host" "$host"
+                done
+            done
+            echo "$END"
+        } | write
+        ;;
+    off) without_block | write ;;
+    *) echo "usage: lennox-focus-hosts on DOMAIN... | off" >&2; exit 2 ;;
+esac

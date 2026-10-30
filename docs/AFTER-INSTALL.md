@@ -239,7 +239,11 @@ Everything is here. You never need to edit a config file:
 - **Your phone:** install **KDE Connect** on the phone (Android: Play Store / F-Droid, iPhone: App Store), same Wi-Fi as the laptop. `SUPER + I` → **Phone** → **Pair**, then accept on the phone. You get phone notifications on the desktop, its battery, files both ways, a shared clipboard and **Ring** to find it.
 - **Free space:** `SUPER + I` → **Cleanup** shows what takes space for nothing (old downloads, unused packages, logs, old trash) and **Clean now** frees it, showing how much. A quiet weekly run cleans your own files on its own.
 
-### 4.9 A second monitor
+### 4.9 Focus mode (`SUPER + F12`)
+
+Press `SUPER + F12` (or **Focus** in the quick panel) to start a 50-minute session. While it runs, Discord / Vesktop / Steam close if you open them, YouTube, TikTok, Instagram, Reddit, X and Twitch don't load, notifications wait in the quick panel, and the island counts down. Then a sound and a 5-minute break. Change the length and the lists in `SUPER + I` → **Focus**, which also shows today, the last 7 days and your streak. Starting game mode ends a session.
+
+### 4.10 A second monitor
 
 1. Plug the monitor in **before** logging in (or log out and in again).
 2. `SUPER + I` → **Display** → *Arrange displays* to place it left/right and set its resolution.

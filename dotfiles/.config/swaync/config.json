@@ -95,6 +95,12 @@
           "type": "toggle",
           "command": "~/.local/bin/lennox-panel switch dark",
           "update-command": "~/.local/bin/lennox-panel state dark"
+        },
+        {
+          "label": "󰀘  Focus",
+          "type": "toggle",
+          "command": "~/.local/bin/lennox-panel switch focus",
+          "update-command": "~/.local/bin/lennox-panel state focus"
         }
       ]
     },

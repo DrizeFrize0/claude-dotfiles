@@ -68,6 +68,9 @@ def choose(state, now):
         return "event", event
     if state.get("call_since"):
         return "call", {"since": state["call_since"]}
+    focus = state.get("focus")
+    if focus and focus.get("active"):
+        return "focus", focus
     up = state.get("next_up")
     if up:
         kind, item, left = up
@@ -98,6 +101,8 @@ def show_key(kind, info):
         return info.get("since")
     if kind == "clock":
         return "clock"
+    if kind == "focus":
+        return info.get("phase")
     return None
 
 
@@ -467,6 +472,9 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.state["stopwatch_running"] = sw["start"] is not None
         self.state["stopwatch_elapsed"] = C.stopwatch_elapsed(sw, now)
 
+    def set_focus(self, info):
+        self.state["focus"] = info
+
     def set_status(self, status):
         music = status.get("music")
         old = self.state.get("music")
@@ -523,7 +531,7 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.shown = key
         self.kind = kind
         getattr(self, f"_show_{kind}")(info, now, rebuild)
-        expanded = kind == "ringing" or ((self.hovering or self.pinned) and kind in ("music", "timer", "clock"))
+        expanded = kind == "ringing" or ((self.hovering or self.pinned) and kind in ("music", "timer", "clock", "focus"))
         if expanded:
             self.pill.add_css_class("expanded")
         self.reveal.set_reveal_child(expanded)
@@ -669,6 +677,29 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.label.set_xalign(0)
         self.bars.set_playing(False)
 
+    def _show_focus(self, info, now, rebuild):
+        focusing = info["phase"] == "focus"
+        left = C.countdown(max(0, info["end"] - now))
+        self._compact(icon="find-location-symbolic" if focusing else "face-smile-symbolic",
+                      text="Focus" if focusing else "Break", detail=left)
+        self.label.set_xalign(0)
+        self.bars.set_playing(False)
+        if rebuild:
+            self._clear_card()
+            self.big = Gtk.Label(css_classes=["island-big"])
+            self.card.append(self.big)
+            self.card.append(Gtk.Label(label="Distractions are blocked, notifications wait" if focusing
+                                       else "Stand up, stretch, drink some water", css_classes=["island-sub"]))
+            row = Gtk.Box(spacing=10, homogeneous=True)
+            more = Gtk.Button(label="+5 min", css_classes=["island-pill-button"])
+            more.connect("clicked", lambda _b: self._focus("more", "5"))
+            stop = Gtk.Button(label="Stop" if focusing else "Skip break", css_classes=["island-pill-button", "stop"])
+            stop.connect("clicked", lambda _b: self._focus("stop"))
+            row.append(more)
+            row.append(stop)
+            self.card.append(row)
+        self.big.set_label(left)
+
     def _show_stopwatch(self, info, now, rebuild):
         self._compact(icon="stopwatch-symbolic", text="Stopwatch", detail=C.countdown(info["elapsed"]))
         self.label.set_xalign(0)
@@ -691,11 +722,18 @@ class IslandWindow(Gtk.ApplicationWindow):
         return GLib.SOURCE_REMOVE
 
     def _clicked(self, *_args):
-        if self.kind in ("music", "timer", "clock"):
+        if self.kind in ("music", "timer", "clock", "focus"):
             self.pinned = not self.pinned
             self.render()
         elif self.kind == "stopwatch":
             self._open_clock("stopwatch")
+
+    def _focus(self, *args):
+        try:
+            subprocess.Popen([os.path.expanduser("~/.local/bin/lennox-focus"), *args], start_new_session=True,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except OSError:
+            pass
 
     def _open_clock(self, tab):
         try:

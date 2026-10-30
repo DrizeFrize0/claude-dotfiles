@@ -39,6 +39,7 @@ if LAYER_SHELL:
     except (ValueError, ImportError):
         LAYER_SHELL = False
 
+from .. import focus  # noqa: E402
 from .. import settings as S  # noqa: E402
 from . import cards, style  # noqa: E402
 from .island import ClockEngine, IslandWindow, NotificationWatcher, StatusWatcher  # noqa: E402
@@ -351,6 +352,7 @@ class App(Gtk.Application):
             return GLib.SOURCE_CONTINUE
         if self.island is not None:
             self.island.set_clock(data, now)
+            self.island.set_focus(focus.status(focus.load_state(), now))
             self.island.render(now)
         return GLib.SOURCE_CONTINUE
 

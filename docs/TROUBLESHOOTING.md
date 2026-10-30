@@ -86,3 +86,9 @@ On many GTX 1650 laptops the HDMI port is wired to the NVIDIA GPU. Lennox Settin
 
 - An install failed: the small window shows why. Running `lennox update` first fixes most "not found" errors.
 - `lennox cleanup` lists what can be freed; `lennox cleanup now` cleans from a terminal.
+
+## Focus mode
+
+- A blocked site still loads: the browser may remember it for a minute, or use "secure DNS" (DNS over HTTPS), which skips the block. Zen / Firefox: Settings → Privacy & Security → DNS over HTTPS → Off.
+- Sites stay blocked after a crash: `lennox focus stop` (or log out and in) unblocks them.
+- `lennox focus status` shows the session; `lennox focus stats` your totals.

@@ -58,6 +58,7 @@ hl.bind(key("ESCAPE"),         run("lennox-menu power"),        { description = 
 hl.bind(key("ALT + R"),        run("lennox-clips save"),        { description = "Save the last 2 minutes of gameplay (clip)" })
 hl.bind(key("ALT + P"),        run("lennox-perf cycle"),        { description = "Performance: Quiet / Balanced / Max" })
 hl.bind(key("ALT + C"),        run("lennox-clock"),             { description = "Clock: timers, alarms, reminders" })
+hl.bind(key("F12"),            run("lennox-focus toggle"),      { description = "Focus mode on / off (blocks distractions)" })
 hl.bind(key("CTRL + ESCAPE"),  run("lennox-open system_monitor"), { description = "System monitor (like Task Manager)" })
 hl.bind(key("CTRL + P"),       run("lennox-menu power"),        { description = "Power menu" })
 
