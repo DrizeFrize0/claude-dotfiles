@@ -36,6 +36,16 @@ C=$SP/csscheck.py; P=$R/dotfiles/.config
 out=$(xvfb-run -a /usr/bin/python3.12 $C 3.0 $P/waybar/themes/*/style.css $P/nwg-dock-hyprland/style.css $P/gtk-3.0/gtk.css 2>&1; xvfb-run -a /usr/bin/python3.12 $C 4.0 $P/swaync/style.css $P/gtk-4.0/gtk.css $CSS4_EXTRA 2>&1)
 out=$(echo "$out" | grep -v "libEGL\|^$"); echo "$out"; echo "$out" | grep -qv "^OK " && fail=1
 
+hdr "bar styles"
+python3 -c "
+import os, sys; sys.path.insert(0,'dotfiles/.local/share/lennox/python')
+from lennox import settings as S
+styles = S.CHOICES[('bar', 'style')]
+assert styles, 'no bar style list'
+miss = [s for s in styles for f in ('config.json', 'style.css') if not os.path.exists(f'dotfiles/.config/waybar/themes/{s}/{f}')]
+assert not miss, miss
+print('ok', len(styles), 'styles')" || fail=1
+
 hdr "version matches the changelog"
 python3 -c "
 import sys; sys.path.insert(0,'dotfiles/.local/share/lennox/python')

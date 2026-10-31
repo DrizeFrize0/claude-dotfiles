@@ -8,6 +8,7 @@ from ..util import launch, lennox_bin
 STYLES = [
     ("lennox", "Lennox Islands: three floating glass islands"),
     ("lennox-line", "Lennox Line: one slim glass strip"),
+    ("lennox-aurora", "Lennox Aurora: frosted strip with a glowing gradient edge"),
     ("modern", "ML4W Modern (classic)"),
     ("glass", "ML4W Glass (classic)"),
     ("minimal", "ML4W Minimal (classic)"),

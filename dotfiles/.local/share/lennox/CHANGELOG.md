@@ -3,6 +3,14 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.18.0 · 2026-10-31 · Aurora bar
+
+- New bar style, Lennox Aurora: one frosted strip with a soft glowing edge that blends your wallpaper's colors, and a thin highlight along the top
+- In Aurora, the workspace you are on is a long gradient pill that slides between the dots when you switch
+- The Lennox button glows when you point at it
+- Pick it in Settings > Bar & Dock, the bar style menu, or with lennox bar style lennox-aurora
+- Same height as the Line style, so the island still sits exactly in the bar
+
 ## 1.17.0 · 2026-10-31 · Island redesign, part 2
 
 - Two things at once, the iPhone way: when music plays and a timer runs (or focus, a call, the stopwatch), the island splits into the pill and a small linked bubble beside it, each with its own icon, color and time

@@ -2,7 +2,7 @@
 # The top bar (Waybar).
 #   lennox-bar start|stop|reload|toggle
 #   lennox-bar refresh   rebuild, restart only if what the bar shows changed
-#   lennox-bar style lennox|lennox-line|modern|glass|minimal
+#   lennox-bar style lennox|lennox-line|lennox-aurora|modern|glass|minimal
 # Style and visible modules are set in Lennox Settings > Bar.
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -105,7 +105,7 @@ case "${1:-reload}" in
         ;;
     toggle) if pgrep -x waybar >/dev/null; then stop; else start force; fi ;;
     style)
-        [[ -n "${2:-}" ]] || { echo "usage: lennox-bar style lennox|lennox-line|modern|glass|minimal" >&2; exit 2; }
+        [[ -n "${2:-}" ]] || { echo "usage: lennox-bar style lennox|lennox-line|lennox-aurora|modern|glass|minimal" >&2; exit 2; }
         flock -u 9
         exec 9>&-
         lennox-set bar.style "$2"

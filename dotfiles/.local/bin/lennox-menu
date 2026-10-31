@@ -153,13 +153,15 @@ case "${1:-apps}" in
         case "$style" in
             lennox) current="Lennox Islands" ;;
             lennox-line) current="Lennox Line" ;;
+            lennox-aurora) current="Lennox Aurora" ;;
             *) current="ML4W ${style^}" ;;
         esac
-        choice="$(printf 'Lennox Islands\nLennox Line\nML4W Modern\nML4W Glass\nML4W Minimal\n' \
+        choice="$(printf 'Lennox Islands\nLennox Line\nLennox Aurora\nML4W Modern\nML4W Glass\nML4W Minimal\n' \
             | menu "󰕰 Bar style" -no-custom -mesg "Current: $current")" || exit 0
         case "$choice" in
             "Lennox Islands") lennox-bar style lennox ;;
             "Lennox Line") lennox-bar style lennox-line ;;
+            "Lennox Aurora") lennox-bar style lennox-aurora ;;
             "ML4W "*) lennox-bar style "$(tr '[:upper:]' '[:lower:]' <<<"${choice#ML4W }")" ;;
         esac
         ;;
