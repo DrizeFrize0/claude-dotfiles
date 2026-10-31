@@ -86,6 +86,18 @@ wind-down at 23:00 with weekly sleep stats.
 - **Fan and noise profiles + controller:** a Silent profile that caps power so
   the fans stay quiet at night, with a page to see temperatures and fan
   speeds and pick a profile (where the laptop allows fan control).
+- **Mood and sleep diary:** one tap each night for how the day was, then a
+  weekly graph next to the sleep stats.
+- **"Why am I tired" report:** weekly tips from your own data (like "you slept
+  late on gym days").
+- **Screensaver:** a calm animation (stars, rain on glass) after a few idle
+  minutes, before the lock screen.
+- **Startup greeting:** a short friendly message at login with the weather,
+  next prayer, your streaks and what's coming up.
+- **Easter eggs:** hidden key combos that do something silly (a cat jumping
+  across the screen).
+- **Theme of the season:** automatic colors and wallpaper for Ramadan, Eid and
+  other occasions you pick.
 
 ## Ideas offered, not yet asked for
 
