@@ -37,6 +37,7 @@ from . import data  # noqa: E402
 from .cards import scaled_texture  # noqa: E402
 
 EVENT_SECONDS = 4
+ART = 16                  # the cover in the compact pill (inside its progress ring)
 SOON = 10 * 60            # reminders / alarms show this long before they're due
 RING_LIMIT = 2 * 60       # an unanswered alarm stops ringing after 2 minutes
 SOUNDS = ["/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga",
@@ -71,6 +72,8 @@ def choose(state, now):
         return "ringing", ringing[0]
     if state.get("fullscreen"):
         return None            # games and videos: only an alarm interrupts
+    if state.get("hidden_until", 0) > now:
+        return None            # "Hide for an hour" (right-click menu): only an alarm interrupts
     event = state.get("event")
     if event and event["until"] > now:
         return "event", event
@@ -420,6 +423,7 @@ ICON_GLOW = {"record": "red", "panic": "red", "mic": "blue", "mic-off": "blue", 
              "alarm": "amber", "timer": "amber", "reminder": "amber", "stopwatch": "amber"}
 KIND_GLOW = {"music": "accent", "timer": "amber", "stopwatch": "amber", "ringing": "amber",
              "focus": "green", "call": "blue"}
+VOLUME_STEP = "5%"
 KINDS = ("ringing", "event", "call", "focus", "timer", "stopwatch", "music", "clock")
 GLOWS = ("glow-accent", "glow-amber", "glow-green", "glow-red", "glow-blue")
 
@@ -482,6 +486,11 @@ class SpringBin(Gtk.Widget):
         if self.child is not None:
             self.child.unparent()
             self.child = None
+        child = self.get_first_child()
+        while child is not None:          # the right-click menu
+            nxt = child.get_next_sibling()
+            child.unparent()
+            child = nxt
         super().do_dispose()
 
     def content_size(self):
@@ -539,6 +548,11 @@ class SpringBin(Gtk.Widget):
         ch = max(ch, self.child.measure(Gtk.Orientation.VERTICAL, cw)[0])
         point = Graphene.Point().init((width - cw) / 2, 0)      # centred, grows from the top
         self.child.allocate(cw, ch, -1, Gsk.Transform.new().translate(point))
+        child = self.get_first_child()
+        while child is not None:          # popovers attached here (the right-click menu)
+            if isinstance(child, Gtk.Popover):
+                child.present()
+            child = child.get_next_sibling()
 
 
 class Ring(Gtk.Widget):
@@ -584,6 +598,73 @@ class Ring(Gtk.Widget):
             snapshot.append_stroke(self._arc(cx, cy, r, self.fraction), stroke, color)
 
 
+class Marquee(Gtk.Widget):
+    """A label at most `width` px wide. A longer text slides slowly back and forth
+    instead of being cut (an Adw animation that runs only while the text doesn't
+    fit and is on screen)."""
+
+    def __init__(self, label, width):
+        super().__init__(overflow=Gtk.Overflow.HIDDEN, hexpand=True)
+        self.label = label
+        label.set_parent(self)
+        self.max = width
+        self.offset = 0.0
+        self.span = 0
+        self.anim = None
+        self.connect("map", lambda _w: self._restart())      # slides only while on screen
+        self.connect("unmap", lambda _w: self._stop())
+
+    def do_dispose(self):
+        if self.label is not None:
+            self.label.unparent()
+            self.label = None
+        super().do_dispose()
+
+    def do_measure(self, orientation, for_size):
+        if not self.label.get_visible():
+            return 0, 0, -1, -1
+        if orientation == Gtk.Orientation.HORIZONTAL:
+            width = min(self.label.measure(orientation, -1)[1], self.max)
+            return width, width, -1, -1
+        return self.label.measure(orientation, -1)
+
+    def do_size_allocate(self, width, height, baseline):
+        if not self.label.get_visible():
+            return
+        natural = self.label.measure(Gtk.Orientation.HORIZONTAL, -1)[1]
+        span = max(0, natural - width)
+        if span != self.span:
+            self.span = span
+            self._restart()
+        point = Graphene.Point().init(-self.offset, 0)
+        self.label.allocate(max(natural, width), height, baseline, Gsk.Transform.new().translate(point))
+
+    def moving(self):
+        return self.anim is not None
+
+    def _restart(self):
+        self._stop()
+        if self.span <= 0 or not self.get_mapped():
+            return
+        self.anim = Adw.TimedAnimation.new(self, 0.0, 1.0, int(max(4000, self.span * 45)),
+                                           Adw.CallbackAnimationTarget.new(self._step))
+        self.anim.set_repeat_count(0)          # forever, while shown
+        self.anim.set_alternate(True)
+        self.anim.set_easing(Adw.Easing.EASE_IN_OUT_CUBIC)   # lingers at both ends
+        self.anim.play()
+
+    def _stop(self):
+        if self.anim is not None:
+            self.anim.pause()
+            self.anim = None
+        self.offset = 0.0
+
+    def _step(self, value):
+        self.offset = value * self.span
+        self.queue_allocate()
+
+
+
 class EqBars(Gtk.Box):
     """Four little bars that dance while music plays (low and still when paused).
     Plain boxes whose height changes ~20 times a second: no cairo needed."""
@@ -624,15 +705,20 @@ class Page:
     """One activity's look: its compact row and the card it grows into. Built once
     and then only updated; switching activity cross-fades to another page."""
 
-    def __init__(self, win, kind, height, ring=False, art=False, bars=False):
+    def __init__(self, win, kind, height, ring=False, art=False, bars=False, marquee=0):
         self.kind = kind
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, css_classes=["island-page", kind])
         self.compact = Gtk.Box(spacing=7, css_classes=["island-compact"])
         self.compact.set_size_request(-1, height)
-        self.art_image = Gtk.Image(pixel_size=18)          # an Image is drawn exactly this big
-        self.art = Gtk.Box(css_classes=["island-art"], valign=Gtk.Align.CENTER, overflow=Gtk.Overflow.HIDDEN,
-                           visible=False)
+        self.art_image = Gtk.Image(pixel_size=ART)         # an Image is drawn exactly this big
+        self.art = Gtk.Box(css_classes=["island-art"], valign=Gtk.Align.CENTER, halign=Gtk.Align.CENTER,
+                           overflow=Gtk.Overflow.HIDDEN)
         self.art.append(self.art_image)
+        # The cover sits in a thin ring that fills up as the song plays
+        self.art_ring = Ring(ART + 10, 2)
+        self.art_box = Gtk.Overlay(valign=Gtk.Align.CENTER, visible=False)
+        self.art_box.set_child(self.art_ring)
+        self.art_box.add_overlay(self.art)
         self.icon = Gtk.Image(pixel_size=11 if ring else 14, valign=Gtk.Align.CENTER, halign=Gtk.Align.CENTER)
         self.ring = Ring(22) if ring else None
         lead = self.icon
@@ -640,11 +726,14 @@ class Page:
             lead = Gtk.Overlay(valign=Gtk.Align.CENTER)
             lead.set_child(self.ring)
             lead.add_overlay(self.icon)
-        self.label = Gtk.Label(ellipsize=Pango.EllipsizeMode.END, max_width_chars=18, hexpand=True,
+        self.label = Gtk.Label(ellipsize=Pango.EllipsizeMode.NONE if marquee else Pango.EllipsizeMode.END,
+                               max_width_chars=-1 if marquee else 18, hexpand=True,
                                xalign=0.5 if kind == "clock" else 0, css_classes=["island-text"])
+        self.marquee = Marquee(self.label, marquee) if marquee else None
         self.detail = Gtk.Label(css_classes=["island-detail"], visible=False)
         self.bars = EqBars() if bars else None
-        for w in ((self.art,) if art else ()) + (lead, self.label, self.detail) + ((self.bars,) if bars else ()):
+        text = self.marquee or self.label
+        for w in ((self.art_box,) if art else ()) + (lead, text, self.detail) + ((self.bars,) if bars else ()):
             self.compact.append(w)
         self.box.append(self.compact)
         self.reveal = Gtk.Revealer(transition_type=Gtk.RevealerTransitionType.SLIDE_DOWN,
@@ -657,8 +746,8 @@ class Page:
         self.compact.add_controller(click)
 
     def set(self, icon=None, text="", detail="", art=None):
-        texture = scaled_texture(art, 18) if art else None      # its pixel size is its shown size
-        self.art.set_visible(texture is not None)
+        texture = scaled_texture(art, ART) if art else None     # its pixel size is its shown size
+        self.art_box.set_visible(texture is not None)
         if texture is not None and self.art_image.get_paintable() is not texture:
             self.art_image.set_from_paintable(texture)
         self.icon.set_visible(bool(icon) and texture is None)
@@ -667,6 +756,8 @@ class Page:
         if self.label.get_label() != text:
             self.label.set_label(text)
         self.label.set_visible(bool(text))
+        if self.marquee is not None:
+            self.marquee.set_visible(bool(text))
         if self.detail.get_label() != detail:
             self.detail.set_label(detail)
         self.detail.set_visible(bool(detail))
@@ -728,7 +819,7 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, transition_duration=220,
                                hhomogeneous=False, vhomogeneous=False)
         h = self.compact_height
-        self.pages = {"clock": Page(self, "clock", h), "music": Page(self, "music", h, art=True, bars=True),
+        self.pages = {"clock": Page(self, "clock", h), "music": Page(self, "music", h, art=True, bars=True, marquee=150),
                       "timer": Page(self, "timer", h, ring=True), "focus": Page(self, "focus", h, ring=True),
                       "ringing": Page(self, "ringing", h), "event": Page(self, "event", h),
                       "call": Page(self, "call", h), "stopwatch": Page(self, "stopwatch", h)}
@@ -770,6 +861,23 @@ class IslandWindow(Gtk.ApplicationWindow):
         hover.connect("enter", lambda *_: self._hover(True))
         hover.connect("leave", lambda *_: self._hover(False))
         self.pill.add_controller(hover)
+        # Gestures: scroll on music = volume, middle click = next song, right click = a small menu
+        scroll = Gtk.EventControllerScroll(flags=Gtk.EventControllerScrollFlags.VERTICAL
+                                           | Gtk.EventControllerScrollFlags.DISCRETE)
+        scroll.connect("scroll", lambda _c, _dx, dy: self._scrolled(dy))
+        self.pill.add_controller(scroll)
+        buttons = Gtk.GestureClick(button=0)
+        buttons.connect("pressed", lambda g, *_: self._button_action(g.get_current_button()))
+        self.pill.add_controller(buttons)
+        self.menu = Gtk.Popover(has_arrow=False, position=Gtk.PositionType.BOTTOM)
+        items = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        for label, action in (("Hide for an hour", self._hide_hour), ("Island settings", self._open_settings)):
+            item = Gtk.Button(label=label, css_classes=["flat"])
+            item.get_child().set_xalign(0)
+            item.connect("clicked", lambda _b, a=action: (self.menu.popdown(), a()))
+            items.append(item)
+        self.menu.set_child(items)
+        self.menu.set_parent(self.pill)
 
     # What the tests and older callers look at: the page on show
     @property
@@ -779,7 +887,7 @@ class IslandWindow(Gtk.ApplicationWindow):
     label = property(lambda self: self.page.label)
     detail = property(lambda self: self.page.detail)
     icon = property(lambda self: self.page.icon)
-    art = property(lambda self: self.page.art)
+    art = property(lambda self: self.page.art_box)
     reveal = property(lambda self: self.page.reveal)
     bars = property(lambda self: self.pages["music"].bars)
 
@@ -847,9 +955,11 @@ class IslandWindow(Gtk.ApplicationWindow):
         kind, info = chosen
         if self.ls and self.place != "bar":
             self.ls.set_layer(self, self.ls.Layer.OVERLAY if kind == "ringing" else self.ls.Layer.TOP)
-        for cls in KINDS + GLOWS + ("expanded",):
+        for cls in KINDS + GLOWS + ("expanded", "recording"):
             self.pill.remove_css_class(cls)
         self.pill.add_css_class(kind)
+        if kind == "event" and icon_key(info.get("icon")) == "record":
+            self.pill.add_css_class("recording")       # the red dot pulses
         glow = glow_for(kind, info)
         if glow:
             self.pill.add_css_class(f"glow-{glow}")
@@ -962,11 +1072,14 @@ class IslandWindow(Gtk.ApplicationWindow):
             seen_at, pos = self.music_seen
             pos = min(length, pos + (now - seen_at))
             self.progress.set_fraction(pos / length)
+            page.art_ring.set_fraction(pos / length)
             self.pos_label.set_label(C.countdown(pos))
             self.len_label.set_label(C.countdown(length))
             self.progress_row.set_visible(True)
+            page.art_ring.set_visible(True)
         else:
             self.progress_row.set_visible(False)
+            page.art_ring.set_visible(False)
 
     # timers ----------------------------------------------------------------
 
@@ -1125,6 +1238,37 @@ class IslandWindow(Gtk.ApplicationWindow):
             self.pinned = False
         self.render()
         return GLib.SOURCE_REMOVE
+
+    def _scrolled(self, dy):
+        """Scroll on music: volume up / down (shown in the island like the volume keys)."""
+        if self.kind != "music" or not dy:
+            return False
+        direction = "up" if dy < 0 else "down"
+        osd = os.path.expanduser("~/.local/bin/lennox-osd")
+        command = [osd, "volume", direction] if os.access(osd, os.X_OK) else \
+            ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", VOLUME_STEP + ("+" if direction == "up" else "-")]
+        try:
+            subprocess.Popen(command, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except OSError:
+            pass
+        return True
+
+    def _button_action(self, button):
+        if button == 2 and self.kind == "music":
+            self._player("Next")
+        elif button == 3:
+            self.menu.popup()
+
+    def _hide_hour(self):
+        self.state["hidden_until"] = time.time() + 3600
+        self.render()
+
+    def _open_settings(self):
+        try:
+            subprocess.Popen([os.path.expanduser("~/.local/bin/lennox-settings"), "--page", "widgets"],
+                             start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except OSError:
+            pass
 
     def _clicked(self, *_args):
         if self.kind in ("music", "timer", "clock", "focus"):

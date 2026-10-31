@@ -190,6 +190,16 @@ window.lennox-island-window { background: transparent; }
     to { box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 16px alpha(#ff9f0a, 0.55); }
 }
 .lennox-island.ringing { animation: island-pulse 900ms ease-in-out infinite alternate; }
+/* Ringing: the bell shakes now and then */
+@keyframes island-shake {
+    0% { transform: rotate(0deg); } 8% { transform: rotate(-16deg); } 16% { transform: rotate(14deg); }
+    24% { transform: rotate(-10deg); } 32% { transform: rotate(6deg); } 40% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
+}
+.island-page.ringing .island-compact image { animation: island-shake 1400ms ease-in-out infinite; }
+/* Recording (a clip saved, clips turned on): the red dot pulses */
+@keyframes island-blink { from { opacity: 1; } to { opacity: 0.3; } }
+.lennox-island.recording .island-compact image { color: #ff453a; animation: island-blink 800ms ease-in-out infinite alternate; }
 .island-page { padding: 0 11px; min-width: 96px; }
 .island-page.music, .island-page.timer, .island-page.event, .island-page.call,
 .island-page.focus, .island-page.stopwatch { min-width: 180px; }
@@ -211,7 +221,7 @@ window.lennox-island-window { background: transparent; }
 .lennox-island .island-text { font-weight: 600; font-size: 12px; }
 .lennox-island.clock .island-text { font-weight: 700; font-size: 13px; font-feature-settings: "tnum"; }
 .lennox-island .island-detail { font-feature-settings: "tnum"; color: @primary; font-weight: 700; font-size: 12px; }
-.lennox-island .island-art { border-radius: 5px; }
+.lennox-island .island-art { border-radius: 4px; }
 .island-bar { background-color: @primary; border-radius: 2px; min-width: 3px; }
 .island-card { padding-top: 4px; }
 .island-cover { border-radius: 10px; }

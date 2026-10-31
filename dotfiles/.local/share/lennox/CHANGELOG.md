@@ -3,6 +3,14 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.21.0 · 2026-10-31 · Island gestures and details
+
+- Scroll on the island while music plays to change the volume; middle-click it for the next song
+- Right-click the island for a small menu: hide it for an hour (alarms still come through) or open its settings
+- Long song titles slide slowly across instead of being cut off (only while they don't fit)
+- The album cover in the pill sits in a thin ring that fills up as the song plays
+- A ringing alarm's bell shakes, and the recording dot pulses red when a clip is saved
+
 ## 1.20.0 · 2026-10-31 · Bar style gallery
 
 - Settings > Bar & Dock now shows every bar style as a small live preview, drawn in your wallpaper's colors, instead of a plain list
