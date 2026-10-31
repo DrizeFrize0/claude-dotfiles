@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.12.0 · 2026-10-31 · Arabic keyboard
+
+- An Arabic keyboard switch in Lennox Settings > Keyboard & Touchpad: adds Arabic next to your layout
+- Switch with Alt + Shift (or the shortcut you chose); the bar shows which layout is on
+
 ## 1.11.1 · 2026-10-30 · Fixes
 
 - Fixed: the mouse cursor was missing when screen sharing on Discord (and in recordings)

@@ -20,6 +20,24 @@ def _layout_ok(text):
     return None
 
 
+def with_layout(layout, variant, code, on):
+    """Adds or removes a layout (and its variant slot): ("us", "intl", "ara", True) -> ("us,ara", "intl,")."""
+    layouts = [x for x in layout.split(",") if x] or ["us"]
+    variants = variant.split(",") if variant else []
+    variants += [""] * (len(layouts) - len(variants))
+    if on and code not in layouts:
+        layouts.append(code)
+        variants.append("")
+    elif not on and code in layouts and len(layouts) > 1:
+        i = layouts.index(code)
+        layouts.pop(i)
+        variants.pop(i)
+    variants = variants[:len(layouts)]
+    while variants and not variants[-1]:
+        variants.pop()
+    return ",".join(layouts), ",".join(variants)
+
+
 def _variant_ok(text):
     if text and not re.fullmatch(r"[A-Za-z0-9_-]*(,[A-Za-z0-9_-]*)*", text):
         return "Variants look like: intl, nodeadkeys, colemak"
@@ -36,6 +54,21 @@ class Page:
 
         keyboard = Adw.PreferencesGroup(title="Keyboard",
                                         description="With several layouts, switch between them with the shortcut below.")
+        arabic = Adw.SwitchRow(title="Arabic keyboard", subtitle="Adds Arabic next to your layout; switch with the "
+                                                              "shortcut below. The bar shows which one is on.")
+        arabic.set_active("ara" in store.get("input.kb_layout").split(","))
+
+        def toggle_arabic(row, _param):
+            layout, variant = with_layout(store.get("input.kb_layout"), store.get("input.kb_variant"), "ara",
+                                          row.get_active())
+            store.set("input.kb_variant", variant)
+            store.set("input.kb_layout", layout)
+            ctx.toast(f"Keyboard set to {layout}")
+
+        arabic.connect("notify::active", toggle_arabic)
+        store.connect("changed", lambda _s, path: path == "input.kb_layout" and arabic.set_active(
+            "ara" in store.get("input.kb_layout").split(",")))
+        keyboard.add(arabic)
         keyboard.add(rows.entry_row(store, "input.kb_layout", "Layout (e.g. us, gb, de, fr or us,de)",
                                     _layout_ok, applied))
         keyboard.add(rows.entry_row(store, "input.kb_variant", "Variant (optional, e.g. intl)", _variant_ok, applied))

@@ -254,7 +254,11 @@ Press `SUPER + F12` (or **Focus** in the quick panel) to start a 50-minute sessi
 - `SUPER + I` → **Wallpaper** → *Live wallpaper* → **Choose a video…** plays a video behind your windows (no sound). It pauses in games, fullscreen, on the lock screen and on battery. **Stop** goes back to a still picture.
 - Sounds: `SUPER + I` → **Sound** → *Sound effects*.
 
-### 4.12 A second monitor
+### 4.12 Arabic keyboard
+
+`SUPER + I` → **Keyboard & Touchpad** → turn on **Arabic keyboard**. Press `Alt + Shift` to switch between English and Arabic; the bar shows which one is active (change the shortcut on the same page). From a terminal: `lennox set input.kb_layout us,ara`.
+
+### 4.13 A second monitor
 
 1. Plug the monitor in **before** logging in (or log out and in again).
 2. `SUPER + I` → **Display** → *Arrange displays* to place it left/right and set its resolution.
