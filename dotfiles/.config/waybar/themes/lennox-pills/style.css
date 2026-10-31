@@ -1,0 +1,95 @@
+/*
+ * Lennox bar: Pills
+ *
+ * No strip at all: every module is its own chunky rounded pill floating
+ * over the wallpaper. Modules with a value (volume, network, battery,
+ * CPU...) start with a colored chip behind their icon; icon-only buttons
+ * are a round chip. Same modules, dots and pill as Islands (imported).
+ */
+
+@import "../lennox/style.css";
+
+@define-color pill alpha(@surface_container, 0.80);
+@define-color pill_border alpha(@outline_variant, 0.50);
+
+/* The three islands become invisible holders: the pills are the modules */
+#lennox-start,
+.modules-center,
+.modules-right {
+    background: transparent;
+    border-color: transparent;
+    padding: 0;
+}
+
+#lennox-start,
+#clock,
+#mpris,
+#window,
+#custom-clocknext,
+#custom-updates,
+#custom-mcserver,
+#custom-aispend,
+#custom-sysmon,
+#custom-perf,
+#hardware,
+#tools,
+#tray,
+#network,
+#bluetooth,
+#pulseaudio,
+#battery,
+#custom-notification,
+#custom-exit {
+    background-color: @pill;
+    border: 1px solid @pill_border;
+    border-radius: 99px;
+    margin: 4px 3px;
+    box-shadow: inset 0 1px alpha(@on_surface, 0.06);
+}
+
+#lennox-start { padding: 0 4px; margin: 0 3px 0 0; }   /* no vertical margin: its dots already fill the height */
+#window { padding: 0 14px; text-shadow: none; }
+window#waybar.empty #window { background-color: transparent; border-color: transparent; }
+#tray { padding: 0 8px; }
+
+/* Icon chips: a hard-stop gradient puts a tinted, rounded segment behind
+   the icon (Waybar draws a module as one text, so the chip is painted, not
+   a separate box). Icon first, then two spaces, then the value. */
+#network,
+#pulseaudio,
+#battery,
+#custom-updates,
+#custom-sysmon {
+    padding: 0 11px 0 9px;
+    background-image: none;
+}
+
+#pulseaudio { background-image: linear-gradient(90deg, alpha(@primary, 0.30) 0, alpha(@primary, 0.30) 31px, transparent 31px); }
+#network { background-image: linear-gradient(90deg, alpha(@tertiary, 0.30) 0, alpha(@tertiary, 0.30) 31px, transparent 31px); }
+#battery { background-image: linear-gradient(90deg, alpha(@secondary, 0.32) 0, alpha(@secondary, 0.32) 31px, transparent 31px); }
+#battery.warning, #battery.critical { background-image: linear-gradient(90deg, alpha(@error, 0.45) 0, alpha(@error, 0.45) 31px, transparent 31px); }
+#custom-updates { background-image: linear-gradient(90deg, alpha(@tertiary, 0.30) 0, alpha(@tertiary, 0.30) 31px, transparent 31px); }
+#custom-sysmon { background-image: linear-gradient(90deg, alpha(@secondary, 0.30) 0, alpha(@secondary, 0.30) 31px, transparent 31px); }
+
+/* Icon-only buttons: the whole pill is the chip */
+#bluetooth { background-color: alpha(@tertiary, 0.24); min-width: 16px; }
+#custom-notification { background-color: alpha(@primary, 0.24); min-width: 16px; }
+#custom-exit { background-color: alpha(@error, 0.22); min-width: 16px; }
+
+/* Hover: the pill lights up with a soft glow */
+#network:hover,
+#bluetooth:hover,
+#pulseaudio:hover,
+#battery:hover,
+#custom-notification:hover,
+#custom-exit:hover,
+#clock:hover {
+    border-color: alpha(@primary, 0.70);
+    box-shadow: inset 0 1px alpha(@on_surface, 0.06), 0 0 8px alpha(@primary, 0.35);
+}
+
+tooltip {
+    background: alpha(@surface_container_high, 0.97);
+    border: 1px solid @pill_border;
+    border-radius: 16px;
+}

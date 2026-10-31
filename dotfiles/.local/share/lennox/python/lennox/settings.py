@@ -231,7 +231,7 @@ CHOICES = {
     ("appearance", "layout"): ["dwindle", "master"],
     ("appearance", "window_mode"): ["tiling", "stacking"],
     ("wallpaper", "transition"): ["grow", "fade", "wipe", "wave", "outer", "center", "any", "simple", "none"],
-    ("bar", "style"): ["lennox", "lennox-line", "lennox-aurora", "modern", "glass", "minimal"],
+    ("bar", "style"): ["lennox", "lennox-line", "lennox-aurora", "lennox-pills", "lennox-dots", "modern", "glass", "minimal"],
     ("widgets", "position"): ["top-left", "top-center", "top-right", "center", "bottom-left", "bottom-right"],
     ("widgets", "temperature_unit"): ["celsius", "fahrenheit"],
     ("clips", "mode"): ["gaming", "always", "off"],

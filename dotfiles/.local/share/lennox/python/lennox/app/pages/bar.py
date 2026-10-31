@@ -9,6 +9,8 @@ STYLES = [
     ("lennox", "Lennox Islands: three floating glass islands"),
     ("lennox-line", "Lennox Line: one slim glass strip"),
     ("lennox-aurora", "Lennox Aurora: frosted strip with a glowing gradient edge"),
+    ("lennox-pills", "Lennox Pills: chunky floating pills with colored icon chips"),
+    ("lennox-dots", "Lennox Minimal Dots: tiny, quiet, see-through"),
     ("modern", "ML4W Modern (classic)"),
     ("glass", "ML4W Glass (classic)"),
     ("minimal", "ML4W Minimal (classic)"),

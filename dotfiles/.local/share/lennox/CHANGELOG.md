@@ -3,6 +3,14 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.19.0 · 2026-10-31 · Pills and Minimal Dots bars
+
+- New bar style, Lennox Pills: no strip, every part of the bar is its own chunky rounded pill floating over the wallpaper
+- In Pills, volume, network, battery, updates and the system monitor start with a colored chip behind their icon; notifications and power are round colored buttons; pills glow softly when you point at them
+- New bar style, Lennox Minimal Dots: a thin, nearly see-through strip with small dimmed text that brightens when you point at it, and workspaces as small dots (no numbers)
+- Both keep the island sitting exactly in the bar
+- Pick them in Settings > Bar & Dock or the bar style menu
+
 ## 1.18.0 · 2026-10-31 · Aurora bar
 
 - New bar style, Lennox Aurora: one frosted strip with a soft glowing edge that blends your wallpaper's colors, and a thin highlight along the top
