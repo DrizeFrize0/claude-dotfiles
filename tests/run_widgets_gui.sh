@@ -4,6 +4,7 @@ R="$(cd "$SP/.." && pwd)"
 H=$SP/whome; rm -rf $H $SP/wshots; mkdir -p $H/.config $H/.cache/lennox $H/run
 rsync -a $R/dotfiles/.config/lennox $H/.config/
 rsync -a $R/dotfiles/.local $H/
+bash $SP/make_fixtures.sh
 /usr/bin/python3.12 - "$H" <<'PY'
 import json, sys, time
 h = sys.argv[1]

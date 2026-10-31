@@ -3,6 +3,15 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.16.0 · 2026-10-31 · Island redesign, part 1
+
+- The island now springs smoothly between sizes instead of jumping, and fades between what it shows (music, timer, focus, a message) instead of redrawing
+- Each activity has its own soft glow ring: music in your theme color, timers amber, focus green, calls blue, recording red; a ringing alarm pulses
+- New messages land with a small bounce
+- Timers and focus rounds show a circular countdown ring, small in the pill and big when it opens
+- A new matching icon set for everything in the island (Phosphor icons, MIT license, kept next to them)
+- Nothing animates while the island is idle, so it costs no battery when nothing is happening
+
 ## 1.15.0 · 2026-10-31 · Per-game settings, panic key, clipboard
 
 - Per-game settings (Settings > Game Center): each game gets its own performance mode, held notifications and no night light while it's open, and everything goes back when you close it

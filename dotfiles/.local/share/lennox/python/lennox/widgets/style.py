@@ -172,16 +172,38 @@ window.lennox-island-window { background: transparent; }
     background-color: #000000;
     color: #ffffff;
     border-radius: 22px;
-    padding: 0 11px;
-    min-width: 96px;
     /* No drop shadow: the window is exactly the pill's size, so a shadow
-       would be cut off into grey corners behind the round ends */
+       would be cut off into grey corners behind the round ends. The glow
+       ring is drawn inside: a colored hairline and a soft inner glow */
     border: 1px solid alpha(white, 0.08);
-    transition: all 300ms cubic-bezier(0.2, 0.9, 0.3, 1.0);
+    box-shadow: inset 0 1px alpha(white, 0.10);
+    transition: border-radius 300ms cubic-bezier(0.2, 0.9, 0.3, 1.0), border-color 400ms ease, box-shadow 400ms ease;
 }
-.lennox-island.music, .lennox-island.timer, .lennox-island.event, .lennox-island.call { min-width: 180px; }
-.lennox-island.expanded { border-radius: 24px; padding: 0 12px 12px 12px; min-width: 280px; }
-.lennox-island.ringing { min-width: 280px; padding-bottom: 12px; border-radius: 24px; }
+.lennox-island.glow-accent { border-color: alpha(@primary, 0.55); box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 9px alpha(@primary, 0.30); }
+.lennox-island.glow-amber { border-color: alpha(#ff9f0a, 0.60); box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 9px alpha(#ff9f0a, 0.30); }
+.lennox-island.glow-green { border-color: alpha(#30d158, 0.60); box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 9px alpha(#30d158, 0.28); }
+.lennox-island.glow-red { border-color: alpha(#ff453a, 0.65); box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 9px alpha(#ff453a, 0.32); }
+.lennox-island.glow-blue { border-color: alpha(#0a84ff, 0.65); box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 9px alpha(#0a84ff, 0.32); }
+/* Ringing: the amber ring pulses (only while ringing) */
+@keyframes island-pulse {
+    from { box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 4px alpha(#ff9f0a, 0.20); }
+    to { box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 16px alpha(#ff9f0a, 0.55); }
+}
+.lennox-island.ringing { animation: island-pulse 900ms ease-in-out infinite alternate; }
+.island-page { padding: 0 11px; min-width: 96px; }
+.island-page.music, .island-page.timer, .island-page.event, .island-page.call,
+.island-page.focus, .island-page.stopwatch { min-width: 180px; }
+.island-page.expanded { padding: 0 12px 12px 12px; min-width: 280px; }
+.lennox-island.expanded { border-radius: 24px; }
+.island-page.ringing { min-width: 280px; padding-bottom: 12px; }
+.lennox-island.ringing { border-radius: 24px; }
+.island-ring { color: @primary; }
+.lennox-island.timer .island-ring, .lennox-island.timer image { color: #ff9f0a; }
+.lennox-island.focus .island-ring, .lennox-island.focus image { color: #30d158; }
+.lennox-island.timer .island-detail, .lennox-island.stopwatch .island-detail { color: #ff9f0a; }
+.lennox-island.focus .island-detail { color: #30d158; }
+.lennox-island.call image, .lennox-island.call .island-detail { color: #0a84ff; }
+.lennox-island.glow-red image { color: #ff453a; }
 .lennox-island image { color: @primary; }
 .lennox-island .island-text { font-weight: 600; font-size: 12px; }
 .lennox-island.clock .island-text { font-weight: 700; font-size: 13px; font-feature-settings: "tnum"; }
@@ -205,6 +227,7 @@ window.lennox-island-window { background: transparent; }
 .island-button { min-width: 28px; min-height: 28px; padding: 0; border-radius: 99px; border: none; box-shadow: none; background: alpha(white, 0.12); color: white; }
 .island-button:hover { background: alpha(white, 0.24); }
 .island-button.big { min-width: 34px; min-height: 34px; background: white; color: black; }
+.lennox-island .island-button.big image { color: black; }
 .island-pill-button { border-radius: 99px; padding: 3px 12px; background: alpha(white, 0.14); color: white; font-weight: 600; font-size: 12px; min-height: 0; }
 .island-pill-button:hover { background: alpha(white, 0.26); }
 .island-pill-button.stop { background: #ff9f0a; color: black; }

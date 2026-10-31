@@ -14,6 +14,21 @@ def pump(s):
     end = time.time() + s; ctx = GLib.MainContext.default()
     while time.time() < end:
         ctx.iteration(False); time.sleep(0.01)
+def pump_widths(s):
+    """Pump, noting the pill's width every frame: proves it springs, not jumps."""
+    seen = []; end = time.time() + s; ctx = GLib.MainContext.default()
+    while time.time() < end:
+        ctx.iteration(False); time.sleep(0.005); seen.append(isl.pill.get_width())
+    return seen
+def settled(what):
+    """The spring finishes (within 2 s), at exactly the content's size, and stops (no timer left)."""
+    end = time.time() + 2
+    while isl.pill.moving() and time.time() < end:
+        pump(0.05)
+    pump(0.05)
+    size = (isl.pill.get_width(), isl.pill.get_height())
+    check(not isl.pill.moving() and isl.pill.size is None and size == isl.pill.content_size(),
+          f"{what}: spring ends at the right size {size} = {isl.pill.content_size()}")
 def shot(n):
     subprocess.run(["import", "-window", "root", "-crop", "560x330+0+0", f"{SP}/isl-{n}.png"])
 I.SOUNDS = [f"{SP}/alarm.oga"]; open(I.SOUNDS[0], "w").close()
@@ -28,20 +43,29 @@ app._command([], None)
 isl = app.island
 pump(5)
 check(isl is not None and isl.place == "bar", "island in the bar")
+check(all(isinstance(I.island_icon(n), Gio.Icon) for n in ("alarm-symbolic", "timer-symbolic", "audio-x-generic-symbolic",
+      "find-location-symbolic", "media-record-symbolic", "audio-volume-high-symbolic", "battery-full-charging-symbolic")),
+      "island activities use the bundled icon set")
 check(isl.kind == "music" and isl.get_visible(), f"music showing (kind={isl.kind})")
 check(isl.label.get_label() == "Blinding Lights", f"compact title: {isl.label.get_label()}")
 check(isl.bars.get_visible() and isl.bars.tick is not None, "music bars dancing"); h1=[b.get_size_request()[1] for b in isl.bars.bars]; pump(0.3); h2=[b.get_size_request()[1] for b in isl.bars.bars]; check(h1 != h2, f"bars move {h1} -> {h2}")
 shot("music")
-isl._hover(True); pump(1.0)
+check(isl.get_height() == isl.compact_height + 2, f"compact pill = the bar's height ({isl.get_height()})")
+seen = pump_widths(1.0)
+isl._hover(True); seen = pump_widths(1.2)
+check(len(set(seen)) > 4 and max(seen) > seen[-1], f"hover springs open ({len(set(seen))} sizes, peak {max(seen)} -> {seen[-1]})")
+settled("open")
 check(isl.reveal.get_reveal_child() and isl.pill.has_css_class("expanded"), "hover grows it into the card")
 check(isl.progress_row.get_visible() and 0.3 < isl.progress.get_fraction() < 0.5, f"progress {isl.progress.get_fraction():.2f} (1:13 of 3:20)")
 shot("music-open")
 isl._hover(False); pump(1.0)
 check(not isl.reveal.get_reveal_child(), "leaving closes it")
+settled("closed"); check(isl.get_height() == isl.compact_height + 2, f"closed: back to the bar's height ({isl.get_height()})")
 # nothing happening: the clock
 S.set_value("widgets.island_music", False); app.reload(); pump(1.5)
 check(isl.kind == "clock" and isl.label.get_label().count(":") == 1, f"idle = clock ({isl.kind}: {isl.label.get_label()})")
 shot("clock")
+check(not isl.pill.moving() and isl.bars.tick is None, "idle clock: no animation or timer running")
 isl._clicked(); pump(0.6)
 check(isl.reveal.get_reveal_child(), "click opens the clock card")
 shot("clock-open")
@@ -59,6 +83,7 @@ for args in (GLib.Variant("(ss)", ("bad", "x")),
         pass
 pump(1.5)
 check(isl.kind == "event" and "Sam" in isl.label.get_label(), f"notification ({isl.kind}: {isl.label.get_label()})")
+settled("notification bounce")
 shot("notification")
 pump(4.5)
 with C.edit() as d: C.add_timer(d, 4, "Pizza", time.time())
@@ -67,7 +92,7 @@ check(isl.kind == "timer" and isl.label.get_label() == "Pizza", f"timer ({isl.ki
 shot("timer")
 pump(3.5)
 check(isl.kind == "ringing" and isl.reveal.get_reveal_child() and app.engine.sound is not None, f"ringing opens with Snooze / Stop ({isl.kind})")
-shot("ringing")
+settled("ringing"); shot("ringing")
 isl._clock(lambda d, n: C.stop_ringing(d)); pump(1.2)
 check(isl.kind == "clock" and app.engine.sound is None, "Stop silences, back to the clock")
 from lennox import focus as F

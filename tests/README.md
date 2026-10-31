@@ -11,6 +11,10 @@ are git-ignored.
 - `bash tests/run_island_big.sh`, `bash tests/run_wi_big.sh`: huge album covers stay small.
 - `bash tests/run_widgets_interact.sh`: desktop widgets and the dashboard.
 
+Fixtures that git doesn't keep (album covers, `wstubs/` stand-ins for wpctl and
+brightnessctl) are made by `make_fixtures.sh`, which the GUI harnesses run.
+In a container without an accessibility bus, run with `NO_AT_BRIDGE=1`.
+
 Needs: xvfb-run, dbus-run-session, ImageMagick (`import`), lua5.4,
 shellcheck, jq, rsync, python3.12 with PyGObject + GTK4 + libadwaita, and
 pyflakes (`pip install pyflakes`, or point `PYFLAKES="/path/python -m pyflakes"`).
