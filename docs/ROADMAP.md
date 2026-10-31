@@ -69,6 +69,12 @@ wind-down at 23:00 with weekly sleep stats.
   screen, sleeps when you're idle or focusing, and can be turned off.
 - **Study timer with a subject:** pick a subject (Math, Physics...) before a
   focus session, then see the hours per subject this week. Builds on Focus.
+- **Auto profiles by place or time:** one rule per Wi-Fi network or time of
+  day (school: quiet, no sounds; home: music up; night: dim).
+- **Download manager in the bar:** progress of browser downloads, and a click
+  opens the finished file.
+- **Wallpaper of the day:** a fresh wallpaper each morning from a collection
+  you choose.
 
 ## Ideas offered, not yet asked for
 
