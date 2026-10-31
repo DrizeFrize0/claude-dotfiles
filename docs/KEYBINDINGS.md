@@ -26,6 +26,7 @@ hl.bind("SUPER + B", hl.dsp.exec_cmd("firefox"), { description = "Open Firefox" 
 | `SUPER + CTRL + ESC` | System monitor (like Task Manager) |
 | `SUPER + ALT + C` | Clock: timers, alarms, stopwatch, reminders, world clock |
 | `SUPER + SHIFT + O` | Copy text from the screen: drag a box around it (English and Arabic) |
+| `SUPER + CTRL + BACKSPACE` | Panic: hide every window, mute and lock (unlock and it all comes back) |
 | `SUPER + F12` | Focus mode on / off: distracting apps and sites blocked, then a break |
 
 ## Lennox

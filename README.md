@@ -80,6 +80,8 @@ All shortcuts: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 | Live wallpapers | Videos as wallpaper (mpvpaper), paused in games, fullscreen, on the lock screen and on battery (`lennox-livewall`) |
 | Lock screen | Music, next alarm, weather, phone battery and server players on the lock screen (`lennox-lockinfo`) |
 | Copy text | `SUPER + SHIFT + O`: drag a box around any text on screen and it lands in your clipboard, English and Arabic (`lennox-ocr`) |
+| Panic key | `SUPER + CTRL + BACKSPACE`: hides every window, mutes and locks; unlock and it all returns (`lennox-panic`) |
+| Per-game settings | Each game gets its own performance mode, quiet notifications and night light, undone when it closes (`lennox-gameprofile`) |
 | Window overview | `SUPER + TAB`: every window with a preview, type to search (`lennox-overview`) |
 | Focus | Focus mode (`SUPER + F12`): timed sessions that close distracting apps, block sites and hold notifications, with a break and daily stats (`lennox-focus`) |
 | Sleep | Wind-down at bedtime (warmer, dimmer, quiet, reminders) and weekly sleep stats (`lennox-winddown`), smart bedtime that adapts to when you really stop (`lennox-bedtime`) |

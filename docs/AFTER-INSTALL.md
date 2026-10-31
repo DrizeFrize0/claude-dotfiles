@@ -262,7 +262,14 @@ Press `SUPER + F12` (or **Focus** in the quick panel) to start a 50-minute sessi
 
 Press `SUPER + SHIFT + O` and drag a box around any text on the screen: a video, a picture, a game, a PDF that won't let you select. The text is in your clipboard, ready to paste. It reads English and Arabic. Bigger text reads better, so zoom in first if it's tiny.
 
-### 4.14 A second monitor
+### 4.14 Games, the panic key and the clipboard
+
+- **Per-game settings:** open a game, then `SUPER + I` → **Game Center** → *Per-game settings* → pick its window → **Add**. While it's open it gets max performance, held notifications and no night light (change any of it), and everything goes back when you close it.
+- **Panic key:** `SUPER + CTRL + BACKSPACE` hides every window, pauses and mutes the sound and locks the screen. Unlock and your windows return to their workspaces. Choose what it does in **Power & Battery**.
+- **Clipboard:** `SUPER + V` shows what you copied anywhere; `SUPER + I` → **Clipboard** also lets you search, pin things you paste often and remove entries.
+- Volume and brightness changes show in the island; turn that off in **Widgets** if you prefer the pop-up.
+
+### 4.15 A second monitor
 
 1. Plug the monitor in **before** logging in (or log out and in again).
 2. `SUPER + I` → **Display** → *Arrange displays* to place it left/right and set its resolution.

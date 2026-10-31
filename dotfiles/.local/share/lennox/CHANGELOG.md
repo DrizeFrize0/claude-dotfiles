@@ -3,6 +3,13 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.15.0 · 2026-10-31 · Per-game settings, panic key, clipboard
+
+- Per-game settings (Settings > Game Center): each game gets its own performance mode, held notifications and no night light while it's open, and everything goes back when you close it
+- Panic key (SUPER + CTRL + BACKSPACE): hides every window, pauses and mutes the sound and locks the screen; unlock and it all comes back where it was
+- Volume and brightness changes show in the island instead of a separate pop-up (fullscreen games still get the pop-up)
+- Clipboard page (Settings > Clipboard): search what you copied, copy it again, pin snippets you paste often, remove entries; Arabic text works
+
 ## 1.14.0 · 2026-10-31 · Pomodoro and a tidier Settings
 
 - Pomodoro: set Rounds in Lennox Settings > Focus (say 4) and focus, break, focus, break repeat by themselves, with a long break at the end

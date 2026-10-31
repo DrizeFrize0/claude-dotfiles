@@ -45,6 +45,16 @@ class Page:
         self.awake_row.connect("notify::active", self._on_awake)
         idle.add(self.awake_row)
         page.add(idle)
+
+        panic = Adw.PreferencesGroup(
+            title="Panic key",
+            description="SUPER + CTRL + BACKSPACE when somebody walks in. After you unlock, your windows "
+                        "come back where they were and the sound returns.")
+        panic.add(rows.switch_row(ctx.store, "panic.hide", "Hide every window"))
+        panic.add(rows.switch_row(ctx.store, "panic.mute", "Pause the music and mute the sound"))
+        panic.add(rows.switch_row(ctx.store, "panic.lock", "Lock the screen",
+                                  "Off: press it again to bring everything back"))
+        page.add(panic)
         self.widget = page
 
     def refresh(self):

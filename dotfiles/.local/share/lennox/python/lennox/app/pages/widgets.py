@@ -73,6 +73,8 @@ class Page:
                                    "A few seconds of each new one (not in do not disturb)"))
         island.add(rows.link_row("Clock", "Timers, alarms, stopwatch, reminders and world clock (SUPER + ALT + C)",
                                  lambda: launch([lennox_bin("lennox-clock")]), "alarm-symbolic"))
+        island.add(rows.switch_row(store, "widgets.island_osd", "Volume and brightness in the island",
+                                   "Instead of the separate pop-up (games in fullscreen still get the pop-up)"))
         page.add(island)
 
         lock = Adw.PreferencesGroup(

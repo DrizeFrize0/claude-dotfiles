@@ -76,6 +76,7 @@ DEFAULTS = {
         "island_place": "bar",         # bar: in the middle of the bar (it's the clock) | below
         "island_music": True,
         "island_notifications": True,
+        "island_osd": True,            # volume / brightness changes show in the island
     },
     "dock": {
         "enabled": True,
@@ -144,6 +145,7 @@ DEFAULTS = {
         "overlay": "hidden",           # FPS overlay (MangoHud): hidden until Shift + F12 | shown
         "mc_server": "vetosmp.net",    # Minecraft server in the bar ("" = off)
         "mc_joins": True,              # notify when someone joins
+        "profiles": True,              # per-game settings (performance, notifications, night light)
     },
     "ai": {
         "spend_widget": True,          # AI coding spend in the bar (CodeBurn)
@@ -167,6 +169,11 @@ DEFAULTS = {
         "devices": True,               # Bluetooth devices connecting
         "lock": True,
         "login": False,
+    },
+    "panic": {
+        "hide": True,                  # hide every window (they come back after unlocking)
+        "mute": True,                  # pause the music and mute the sound
+        "lock": True,                  # lock the screen
     },
     "focus": {
         "minutes": 50,                 # a focus session

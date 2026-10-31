@@ -3,8 +3,9 @@
 import json
 import os
 
-from gi.repository import Adw, Gdk, Gtk
+from gi.repository import Adw, Gdk, GLib, Gtk
 
+from ... import gameprofiles as GP
 from .. import rows
 from ..util import have, launch, lennox_bin, run_async
 
@@ -73,6 +74,24 @@ class Page:
                                     self._copy_option, "edit-copy-symbolic"))
         page.add(overlay)
 
+        self.profiles_group = Adw.PreferencesGroup(
+            title="Per-game settings",
+            description="Each game can have its own performance mode, quiet notifications and no night light "
+                        "while it's open. Everything goes back when you close it.")
+        self.profiles_group.add(rows.switch_row(store, "games.profiles", "Use per-game settings"))
+        self.profile_rows = []
+        self.open_windows = []
+        self.add_row = Adw.ComboRow(title="Add an open game", subtitle="Open the game first, then pick its window")
+        add_button = Gtk.Button(label="Add", valign=Gtk.Align.CENTER, css_classes=["suggested-action"])
+        add_button.connect("clicked", lambda _b: self._add_open())
+        self.add_row.add_suffix(add_button)
+        self.profiles_group.add(self.add_row)
+        self.type_row = Adw.EntryRow(title="Or type its name (as it appears in the window)")
+        self.type_row.set_show_apply_button(True)
+        self.type_row.connect("apply", lambda r: self._add_named(r.get_text()))
+        self.profiles_group.add(self.type_row)
+        page.add(self.profiles_group)
+
         server = Adw.PreferencesGroup(
             title="Minecraft server",
             description="Players online in the bar (click it to open Prism Launcher), and a notification "
@@ -85,7 +104,94 @@ class Page:
         self.page = page
         self.widget = page
 
+    # ------------------------------------------------------------ per-game settings
+
+    def _refresh_profiles(self):
+        for row in self.profile_rows:
+            self.profiles_group.remove(row)
+        self.profile_rows = []
+        for profile in GP.load():
+            row = Adw.ExpanderRow(title=GLib.markup_escape_text(profile["name"]),
+                                  subtitle=self._summary(profile))
+            row.add_prefix(Gtk.Image.new_from_icon_name("input-gaming-symbolic"))
+            perf = Adw.ComboRow(title="Performance")
+            labels = ["Leave as it is", "Quiet", "Balanced", "Max performance"]
+            perf.set_model(Gtk.StringList.new(labels))
+            perf.set_selected(GP.PERF_MODES.index(profile["perf"]))
+            perf.connect("notify::selected", lambda r, _p, m=profile["match"]: self._edit(
+                m, perf=GP.PERF_MODES[r.get_selected()]))
+            row.add_row(perf)
+            for key, title in (("dnd", "Hold notifications"), ("nightlight_off", "Turn the night light off")):
+                switch = Adw.SwitchRow(title=title, active=profile[key])
+                switch.connect("notify::active", lambda r, _p, m=profile["match"], k=key: self._edit(
+                    m, **{k: r.get_active()}))
+                row.add_row(switch)
+            remove = rows.button_row("Remove this game", f"Matches windows containing “{profile['match']}”",
+                                     "Remove", lambda m=profile["match"]: self._remove(m), "edit-delete-symbolic")
+            row.add_row(remove)
+            self.profiles_group.add(row)
+            self.profile_rows.append(row)
+        run_async(["hyprctl", "clients", "-j"], self._got_windows)
+
+    @staticmethod
+    def _summary(profile):
+        parts = [{"": "performance unchanged", "quiet": "quiet", "balanced": "balanced",
+                  "max": "max performance"}[profile["perf"]]]
+        if profile["dnd"]:
+            parts.append("notifications held")
+        if profile["nightlight_off"]:
+            parts.append("no night light")
+        return ", ".join(parts)
+
+    def _got_windows(self, ok, out, _err):
+        try:
+            clients = json.loads(out) if ok else []
+        except ValueError:
+            clients = []
+        classes = sorted({c.get("class") for c in clients if c.get("class") and not c["class"].startswith(
+            ("dev.lennox", "lennox", "kitty", "rofi", "waybar"))})
+        self.open_windows = classes
+        self.add_row.set_model(Gtk.StringList.new(classes or ["(no windows open)"]))
+        self.add_row.set_sensitive(bool(classes))
+
+    def _changed(self, message=None):
+        if message:
+            self.ctx.toast(message)
+        run_async([lennox_bin("lennox-gameprofile"), "check"])
+        self._refresh_profiles()
+
+    def _add_open(self):
+        index = self.add_row.get_selected()
+        if 0 <= index < len(self.open_windows):
+            self._add_named(self.open_windows[index])
+
+    def _add_named(self, name):
+        name = name.strip()
+        profiles = GP.load()
+        updated = GP.add(profiles, name)
+        if len(updated) == len(profiles):
+            self.ctx.toast("That game is already added" if name else "Type the game's name first")
+            return
+        GP.save(updated)
+        self.type_row.set_text("")
+        self._changed(f"{name}: max performance, notifications held, no night light. Change it below")
+
+    def _edit(self, match, **changes):
+        profiles = GP.load()
+        for profile in profiles:
+            if profile["match"] == match:
+                profile.update(changes)
+        GP.save(profiles)
+        for row, profile in zip(self.profile_rows, profiles):
+            row.set_subtitle(self._summary(profile))
+        run_async([lennox_bin("lennox-gameprofile"), "check"])
+
+    def _remove(self, match):
+        GP.save([p for p in GP.load() if p["match"] != match])
+        self._changed("Removed")
+
     def refresh(self):
+        self._refresh_profiles()
         run_async([lennox_bin("lennox-clips"), "status"],
                   lambda ok, out, _e: self.clip_status.value_label.set_label(
                       "Recording now (SUPER + ALT + R saves)" if out.strip() == "on"

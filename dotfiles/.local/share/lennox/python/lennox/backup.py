@@ -33,6 +33,7 @@ FILES = [
     ".config/kitty/custom.conf",
     ".config/zshrc/90-custom",
     ".claude/CLAUDE.md",
+    ".config/lennox/clipboard-pins.json",
     ".local/state/lennox/clock.json",
     ".local/state/lennox/focus_log.json",
     ".local/state/lennox/sleep.log",
