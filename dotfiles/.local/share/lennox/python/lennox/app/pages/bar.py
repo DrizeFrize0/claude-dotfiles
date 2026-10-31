@@ -3,6 +3,7 @@
 from gi.repository import Adw
 
 from .. import rows
+from ..bargallery import Gallery
 from ..util import launch, lennox_bin
 
 STYLES = [
@@ -25,9 +26,13 @@ class Page:
         bar = Adw.PreferencesGroup(title="Top bar", description="Click the star for apps (right-click: dashboard), the clock for the dashboard. "
                                    "Shortcuts: SUPER + CTRL + T style, SUPER + CTRL + B hide, SUPER + SHIFT + B reload.")
         bar.add(rows.switch_row(store, "bar.enabled", "Show the bar"))
-        bar.add(rows.combo_row(store, "bar.style", "Style", STYLES))
         bar.add(rows.switch_row(store, "bar.clock_24h", "24-hour clock"))
         page.add(bar)
+
+        gallery = Adw.PreferencesGroup(title="Bar style", description="Live previews in your wallpaper's colors. Click one to use it.")
+        self.gallery = Gallery(store, STYLES)
+        gallery.add(self.gallery.widget)
+        page.add(gallery)
 
         modules = Adw.PreferencesGroup(title="What the bar shows")
         modules.add(rows.switch_row(store, "bar.show_window_title", "Window title"))

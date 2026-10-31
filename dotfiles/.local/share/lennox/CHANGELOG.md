@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.20.0 · 2026-10-31 · Bar style gallery
+
+- Settings > Bar & Dock now shows every bar style as a small live preview, drawn in your wallpaper's colors, instead of a plain list
+- Click a preview to switch the bar to it; the one you use is outlined
+- The previews show what makes each style different: Islands, Line, Aurora's glowing edge, Pills with colored icon chips, Minimal Dots and the classic ML4W styles
+
 ## 1.19.0 · 2026-10-31 · Pills and Minimal Dots bars
 
 - New bar style, Lennox Pills: no strip, every part of the bar is its own chunky rounded pill floating over the wallpaper

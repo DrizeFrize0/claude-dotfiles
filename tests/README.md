@@ -10,6 +10,8 @@ are git-ignored.
   fake MPRIS player (screenshots `tests/isl-*.png`).
 - `bash tests/run_island_big.sh`, `bash tests/run_wi_big.sh`: huge album covers stay small.
 - `bash tests/run_widgets_interact.sh`: desktop widgets and the dashboard.
+- `tests/gallery_shot.py` (run by the sweep): the bar style gallery, clicked,
+  screenshot in `tests/gallery.png`.
 - `bash tests/bar_heights.sh`: every Lennox bar style draws at exactly its config
   height (the island sits in it). Needs sway, waybar, grim and Symbols Nerd Font.
 
