@@ -60,6 +60,22 @@ wind-down at 23:00 with weekly sleep stats.
 - **Settings backup (recommended):** one switch keeps settings, keybinds,
   wallpapers and clips' list backed up, restored by the installer.
 
+## Release 5: Queued (next up)
+
+- **Storage view:** a simple map of what's using the disk (folders sized
+  as bars, biggest first), with a safe delete button and "open in Files".
+  Builds on the Cleanup page.
+
+## Later (queued ideas, not started)
+
+- **Quick math and conversions in the launcher:** "20 usd to jod", "5 miles in km".
+- **Screen recorder:** one key records a region or the whole screen as an mp4.
+- **Server tools for AstralNetwork:** restart, backup, player-count graph.
+- **Travel clocks:** other cities' times in the bar.
+- **Auto dark mode:** dark at sunset, light at sunrise.
+- **Quick replies:** reply to Discord / phone notifications from the notification.
+- **Reopen closed window:** a key that brings back the app you just closed.
+
 ## Ideas offered, not yet asked for
 
 - Date & time page in Lennox Settings (time zone picker, 12/24 hour,
