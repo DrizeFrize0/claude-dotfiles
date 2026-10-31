@@ -12,7 +12,15 @@ RUNTIME="${XDG_RUNTIME_DIR:-/tmp}/lennox"
 PIDFILE="$RUNTIME/clips.pid"
 mkdir -p "$RUNTIME"
 
-get() { lennox-get "clips.$1" 2>/dev/null; }
+SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/lennox/settings.json"
+get() {
+    # jq is ~20x lighter than starting Python (lennox-get): the watcher asks every 5 s
+    if [[ -r "$SETTINGS" ]] && command -v jq >/dev/null; then
+        jq -r --arg k "$1" '.clips[$k] // empty' "$SETTINGS" 2>/dev/null
+    else
+        lennox-get "clips.$1" 2>/dev/null
+    fi
+}
 folder() { local f; f="$(get folder)"; f="${f/#\~/$HOME}"; echo "${f:-$HOME/Videos/Clips}"; }
 island() { lennox-widgets island event "$1" "$2" >/dev/null 2>&1 & }
 

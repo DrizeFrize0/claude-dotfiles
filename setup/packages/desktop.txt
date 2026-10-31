@@ -60,6 +60,11 @@ btop
 fastfetch
 flatpak
 
+# Copy text from the screen (SUPER + SHIFT + O): English and Arabic
+tesseract
+tesseract-data-eng
+tesseract-data-ara
+
 # Live wallpapers play with mpv (through mpvpaper, from the AUR)
 mpv
 

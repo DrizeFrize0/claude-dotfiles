@@ -32,6 +32,15 @@ set_profile() {
     powerprofilesctl set "$1" >/dev/null 2>&1
 }
 
+SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/lennox/settings.json"
+power_setting() {
+    # jq, not Python: this loop asks every 20 s while on battery
+    local v=""
+    [[ -r "$SETTINGS" ]] && v="$(jq -r --arg k "$1" '.power[$k] // empty' "$SETTINGS" 2>/dev/null)"
+    [[ -n "$v" ]] || v="$(lennox-get "power.$1" 2>/dev/null)"
+    echo "$v"
+}
+
 warned_low=false
 warned_critical=false
 last_power=""
@@ -60,8 +69,8 @@ while true; do
     fi
 
     if [[ "$power" == "battery" ]]; then
-        low="$(lennox-get power.low_battery_warning)"
-        critical="$(lennox-get power.critical_battery)"
+        low="$(power_setting low_battery_warning)"
+        critical="$(power_setting critical_battery)"
         if (( capacity <= critical )) && ! $warned_critical; then
             notify-send -a Lennox -u critical -i battery-caution "Battery almost empty" \
                 "${capacity}% left. Plug in now, or your laptop will turn off."

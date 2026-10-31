@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.13.0 · 2026-10-31 · Copy text, lighter in the background
+
+- SUPER + SHIFT + O: drag a box around any text on the screen (a video, an image, a game) and it lands in your clipboard, in English and Arabic
+- Lighter in the background: the island checks Wi-Fi, Bluetooth, mic and Do not disturb every 6 seconds instead of every 2, and the clip, battery and live wallpaper watchers no longer start Python each time. Less battery used while idle
+
 ## 1.12.1 · 2026-10-31 · Fixes
 
 - Laggy or cutting-out Bluetooth headphones: Lennox Settings > Sound > Check finds the cause (2.4 GHz Wi-Fi, Wi-Fi power saving, call mode), and Smooth it fixes the rest

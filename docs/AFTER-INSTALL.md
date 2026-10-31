@@ -258,7 +258,11 @@ Press `SUPER + F12` (or **Focus** in the quick panel) to start a 50-minute sessi
 
 `SUPER + I` → **Keyboard & Touchpad** → turn on **Arabic keyboard**. Press `Alt + Shift` to switch between English and Arabic; the bar shows which one is active (change the shortcut on the same page). From a terminal: `lennox set input.kb_layout us,ara`.
 
-### 4.13 A second monitor
+### 4.13 Copy text from the screen
+
+Press `SUPER + SHIFT + O` and drag a box around any text on the screen: a video, a picture, a game, a PDF that won't let you select. The text is in your clipboard, ready to paste. It reads English and Arabic. Bigger text reads better, so zoom in first if it's tiny.
+
+### 4.14 A second monitor
 
 1. Plug the monitor in **before** logging in (or log out and in again).
 2. `SUPER + I` → **Display** → *Arrange displays* to place it left/right and set its resolution.

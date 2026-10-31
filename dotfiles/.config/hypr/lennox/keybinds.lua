@@ -68,6 +68,7 @@ hl.bind("PRINT",               run("lennox-screenshot area"),   { description = 
 hl.bind(key("PRINT"),          run("lennox-screenshot menu"),   { description = "Screenshot menu" })
 hl.bind(key("ALT + F"),        run("lennox-screenshot screen"), { description = "Screenshot the whole screen" })
 hl.bind(key("ALT + S"),        run("lennox-screenshot area"),   { description = "Screenshot an area" })
+hl.bind(key("SHIFT + O"),      run("lennox-ocr"),               { description = "Copy text from the screen (English + Arabic)" })
 hl.bind(key("ALT + W"),        run("lennox-screenshot window"), { description = "Screenshot the active window" })
 
 -- Windows ---------------------------------------------

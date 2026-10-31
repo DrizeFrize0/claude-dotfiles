@@ -68,7 +68,8 @@ on_battery() {
 should_pause() {
     pidof hyprlock >/dev/null && return 0
     [[ "$(lennox-mode game status 2>/dev/null)" == on ]] && return 0
-    [[ "$(lennox-get wallpaper.live_pause_battery 2>/dev/null)" == true ]] && on_battery && return 0
+    [[ "$(jq -r '.wallpaper.live_pause_battery' "${XDG_CONFIG_HOME:-$HOME/.config}/lennox/settings.json" 2>/dev/null)" != false ]] \
+        && on_battery && return 0
     # A fullscreen window covers it anyway
     hyprctl activewindow -j 2>/dev/null | jq -e '(.fullscreen // 0) as $f | ($f == true) or (($f | type) == "number" and $f > 0)' >/dev/null 2>&1
 }
@@ -113,7 +114,7 @@ case "${1:-status}" in
             else
                 $paused && { kill -CONT "$pid" 2>/dev/null; paused=false; }
             fi
-            sleep 3
+            sleep 5
         done
         ;;
     *) echo "usage: lennox-livewall set VIDEO | stop | restore | status" >&2; exit 2 ;;

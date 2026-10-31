@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Copy text from anywhere on the screen (SUPER + SHIFT + O): drag a box around
+# it, the text lands in your clipboard. English and Arabic (if installed).
+#   lennox-ocr            pick an area on the screen
+#   lennox-ocr FILE       read text from an image file instead
+export PATH="$HOME/.local/bin:$PATH"
+
+command -v tesseract >/dev/null || {
+    notify-send -a Lennox -i dialog-error "Text copy isn't installed" "Run: lennox upgrade"
+    exit 1
+}
+
+langs() {
+    # Every language that is installed among the ones you use (+ = read together)
+    local have want=() l
+    have="$(tesseract --list-langs 2>/dev/null)"
+    for l in eng ara; do grep -qx "$l" <<<"$have" && want+=("$l"); done
+    local IFS=+
+    echo "${want[*]:-eng}"
+}
+
+image="${1:-}"
+tmp=""
+if [[ -z "$image" ]]; then
+    region="$(slurp 2>/dev/null)" || exit 0                  # Esc: cancelled
+    tmp="$(mktemp --suffix=.png)"
+    trap 'rm -f "$tmp"' EXIT
+    grim -g "$region" "$tmp" || { notify-send -a Lennox -i dialog-error "Couldn't read the screen"; exit 1; }
+    image="$tmp"
+fi
+[[ -r "$image" ]] || { echo "lennox-ocr: can't read $image" >&2; exit 1; }
+
+# Small text reads badly: scale tiny pictures up first
+if command -v magick >/dev/null; then
+    scaled="$(mktemp --suffix=.png)"
+    trap 'rm -f "$tmp" "$scaled"' EXIT
+    magick "$image" -resize '200%' -colorspace Gray "$scaled" 2>/dev/null && image="$scaled"
+fi
+
+text="$(tesseract "$image" - -l "$(langs)" --psm 6 2>/dev/null | sed 's/[[:space:]]*$//' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')"
+if [[ -z "${text//[[:space:]]/}" ]]; then
+    notify-send -a Lennox -i dialog-information "No text found" "Try a bigger area, or text that's larger."
+    exit 1
+fi
+if [[ -z "${1:-}" ]]; then
+    printf '%s' "$text" | wl-copy
+    first="$(head -n1 <<<"$text" | cut -c1-80)"
+    notify-send -a Lennox -i edit-copy "Text copied" "$first"
+else
+    printf '%s\n' "$text"
+fi

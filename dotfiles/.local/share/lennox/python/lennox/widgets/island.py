@@ -261,8 +261,12 @@ class StatusWatcher:
         self.on_update = on_update
         self.on_event = on_event
         self.last = {}
+        self.slow = {}
+        self.rounds = 0
         self.running = True
         threading.Thread(target=self._loop, daemon=True).start()
+
+    SLOW_EVERY = 3
 
     def _loop(self):
         first = True
@@ -290,8 +294,13 @@ class StatusWatcher:
         music = self._music()
         if music and music.get("art"):
             music["art_file"] = data.art_file(music["art"])
-        status = {"music": music, "call": mic_in_use(), "ac": on_ac(), "wifi": wifi_name(),
-                  "bt": bluetooth_devices(), "dnd": dnd_on(), "fullscreen": fullscreen_active()}
+        # Every 2 s: what changes fast (music over D-Bus, power in sysfs, fullscreen). The
+        # programs that cost a process each (mic, Wi-Fi, Bluetooth, Do not disturb) every
+        # 3rd round, in between the last answer stands: ~3x fewer wake-ups on battery
+        self.rounds += 1
+        if first or self.rounds % self.SLOW_EVERY == 0:
+            self.slow = {"call": mic_in_use(), "wifi": wifi_name(), "bt": bluetooth_devices(), "dnd": dnd_on()}
+        status = {"music": music, "ac": on_ac(), "fullscreen": fullscreen_active(), **self.slow}
         events = [] if first else self._changes(status)
         self.last = status
         GLib.idle_add(self._deliver, status, events, priority=GLib.PRIORITY_DEFAULT)
