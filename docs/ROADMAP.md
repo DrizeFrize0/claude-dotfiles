@@ -98,6 +98,18 @@ wind-down at 23:00 with weekly sleep stats.
   across the screen).
 - **Theme of the season:** automatic colors and wallpaper for Ramadan, Eid and
   other occasions you pick.
+- **Music visualizer wallpaper:** the wallpaper pulses and flows with what's
+  playing, in your theme colors.
+- **Lyrics in the island:** synced lyrics scroll in the island while a song
+  plays; Arabic shows right-to-left.
+- **Cursor effects:** a glowing trail, click ripples, or a spotlight for
+  screen sharing.
+- **Boot and login animation:** a custom Lennox startup animation.
+- **Mini-games in the island:** a tiny snake or flappy-bird for a quick break.
+- **Achievements:** silly badges for using Lennox ("Night owl", "Used
+  SUPER + TAB 100 times") on a trophy page.
+- **Ask Claude from anywhere:** a launcher box that sends a question to Claude
+  and shows the answer in a small window.
 
 ## Ideas offered, not yet asked for
 
