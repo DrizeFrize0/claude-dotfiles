@@ -3,6 +3,14 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.22.0 · 2026-10-31 · Bar density, texture and island look
+
+- Bar density in Settings > Bar & Dock: Compact makes the Lennox bar styles a few pixels slimmer (the island shrinks with it)
+- Subtle texture: an optional faint grain on the bar for the Lennox styles
+- The Islands and Line bars get a hairline highlight along the top, and status icons glow softly when you point at them
+- Settings > Widgets shows how each island activity looks: its icon and its glow color
+- The bar style gallery explains that the bar moves with smooth transitions because Waybar can't run looping animations
+
 ## 1.21.0 · 2026-10-31 · Island gestures and details
 
 - Scroll on the island while music plays to change the volume; middle-click it for the next song

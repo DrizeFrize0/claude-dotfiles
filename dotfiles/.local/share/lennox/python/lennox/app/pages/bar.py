@@ -27,9 +27,15 @@ class Page:
                                    "Shortcuts: SUPER + CTRL + T style, SUPER + CTRL + B hide, SUPER + SHIFT + B reload.")
         bar.add(rows.switch_row(store, "bar.enabled", "Show the bar"))
         bar.add(rows.switch_row(store, "bar.clock_24h", "24-hour clock"))
+        bar.add(rows.combo_row(store, "bar.density", "Density",
+                               [("comfortable", "Comfortable"), ("compact", "Compact: a few pixels slimmer")],
+                               "Lennox styles only (Minimal Dots is already compact)"))
+        bar.add(rows.switch_row(store, "bar.texture", "Subtle texture", "A faint grain on the bar (Lennox styles)"))
         page.add(bar)
 
-        gallery = Adw.PreferencesGroup(title="Bar style", description="Live previews in your wallpaper's colors. Click one to use it.")
+        gallery = Adw.PreferencesGroup(title="Bar style", description="Live previews in your wallpaper's colors. Click one to use it. "
+                                     "The bar can't run looping animations (Waybar's styling doesn't allow "
+                                     "them), so it moves with smooth transitions instead.")
         self.gallery = Gallery(store, STYLES)
         gallery.add(self.gallery.widget)
         page.add(gallery)

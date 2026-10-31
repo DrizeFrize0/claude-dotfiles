@@ -1,0 +1,13 @@
+/* Compact density (Settings > Bar & Dock): the bar is 34 px instead of the
+   usual height. Every vertical margin gives 3 px back; sizes stay the same. */
+#workspaces .ws { margin-top: 12px; margin-bottom: 12px; }
+#workspaces .ws.active, #workspaces .ws.urgent { margin-top: 6px; margin-bottom: 6px; }
+#custom-lennox-launcher { margin-top: 3px; margin-bottom: 3px; }
+#custom-updates, #custom-system, #custom-tools, #cpu, #memory, #disk, #custom-gpu, #language,
+#custom-cliphist, #custom-idle, #custom-nightlight, #custom-gamemode, #power-profiles-daemon,
+#network, #bluetooth, #pulseaudio, #battery, #custom-notification, #custom-exit,
+#custom-sysmon, #custom-aispend, #custom-clocknext, #custom-perf, #custom-mcserver {
+    margin-top: 2px; margin-bottom: 2px;
+}
+#clock, #mpris { margin-top: 1px; margin-bottom: 1px; }
+#custom-minimized { margin-top: 4px; margin-bottom: 4px; }

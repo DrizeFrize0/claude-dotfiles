@@ -1,0 +1,2 @@
+/* Subtle texture (Settings > Bar & Dock): a faint grain on the islands */
+#lennox-start, .modules-center, .modules-right { background-image: url("../../assets/noise.png"); }

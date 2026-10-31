@@ -7,7 +7,7 @@ from gi.repository import Adw, GLib
 
 from ... import aispend
 from ...widgets import data as weather_data
-from .. import rows
+from .. import islandlook, rows
 from ..util import launch, lennox_bin, run_async
 
 POSITIONS = [
@@ -76,6 +76,11 @@ class Page:
         island.add(rows.switch_row(store, "widgets.island_osd", "Volume and brightness in the island",
                                    "Instead of the separate pop-up (games in fullscreen still get the pop-up)"))
         page.add(island)
+
+        look = Adw.PreferencesGroup(title="Island look",
+                                    description="Each activity has its own icon and glow ring color.")
+        look.add(islandlook.preview())
+        page.add(look)
 
         lock = Adw.PreferencesGroup(
             title="Lock screen",

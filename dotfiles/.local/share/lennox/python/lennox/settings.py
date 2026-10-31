@@ -54,6 +54,8 @@ DEFAULTS = {
     "bar": {
         "enabled": True,
         "style": "lennox",
+        "density": "comfortable",      # or "compact": a few px slimmer (Lennox styles)
+        "texture": False,              # a faint grain on the bar (Lennox styles)
         "show_window_title": True,
         "show_hardware": True,
         "show_tray": True,
@@ -231,6 +233,7 @@ CHOICES = {
     ("appearance", "layout"): ["dwindle", "master"],
     ("appearance", "window_mode"): ["tiling", "stacking"],
     ("wallpaper", "transition"): ["grow", "fade", "wipe", "wave", "outer", "center", "any", "simple", "none"],
+    ("bar", "density"): ["comfortable", "compact"],
     ("bar", "style"): ["lennox", "lennox-line", "lennox-aurora", "lennox-pills", "lennox-dots", "modern", "glass", "minimal"],
     ("widgets", "position"): ["top-left", "top-center", "top-right", "center", "bottom-left", "bottom-right"],
     ("widgets", "temperature_unit"): ["celsius", "fahrenheit"],

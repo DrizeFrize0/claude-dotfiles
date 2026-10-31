@@ -18,6 +18,7 @@
 .modules-right {
     background: transparent;
     border-color: transparent;
+    box-shadow: none;
     padding: 0;
 }
 

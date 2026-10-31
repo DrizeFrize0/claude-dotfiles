@@ -11,7 +11,8 @@ RUN="${XDG_RUNTIME_DIR:-/tmp}/lennox"
 mkdir -p "$RUN"
 
 build_config() {
-    local style="$1" off=() h24=true media=false
+    local style="$1" off=() h24=true media=false compact=false
+    [[ "$(lennox-get bar.density)" == compact && -f "$WAYBAR/themes/$style/compact.css" ]] && compact=true
     [[ "$(lennox-get bar.show_window_title)" == "true" ]] || off+=("hyprland/window")
     [[ "$(lennox-get bar.show_hardware)" == "true" ]] || off+=("group/hardware")
     [[ "$(lennox-get bar.show_tray)" == "true" ]] || off+=("tray")
@@ -34,10 +35,12 @@ build_config() {
     #   clock-24 / clock-12   clock formats
     #   media-in              where "now playing" goes (first in that part)
     #   ws-dots               workspaces as dots; the active one shows its number
+    #   compact-height        the height with "compact" density (with the theme's compact.css)
     jq -s \
         --argjson off "$off_json" \
         --argjson media "$media" \
-        --argjson h24 "$h24" '
+        --argjson h24 "$h24" \
+        --argjson compact "$compact" '
         def drop: map(select(. as $m | ($off | index($m)) | not));
         (.[1] + .[0]) as $c
         | ($c["x-lennox"] // {}) as $x
@@ -48,6 +51,7 @@ build_config() {
         | if $media then
               (if $x["media-in"] then .[$x["media-in"]] |= (["mpris"] + .) else .["modules-left"] += ["mpris"] end)
           else . end
+        | if $compact and $x["compact-height"] then .height = $x["compact-height"] else . end
         | .clock.format = (if $h24 then ($x["clock-24"] // "{:%H:%M  %a}")
                            else ($x["clock-12"] // "{:%I:%M %p  %a}") end)
         | if $x["ws-dots"] then
@@ -59,6 +63,21 @@ build_config() {
           else . end
         ' "$WAYBAR/themes/$style/config.json" "$WAYBAR/modules.json" > "$RUN/waybar.json.tmp" \
         && mv -f "$RUN/waybar.json.tmp" "$RUN/waybar.json"
+}
+
+# The CSS Waybar loads: the theme's, plus its compact.css and texture.css when
+# those are turned on (Settings > Bar & Dock). Prints the file to use.
+style_file() {
+    local t="$WAYBAR/themes/$1" extra=()
+    [[ "$(lennox-get bar.density)" == compact && -f "$t/compact.css" ]] && extra+=("$t/compact.css")
+    [[ "$(lennox-get bar.texture)" == true && -f "$t/texture.css" ]] && extra+=("$t/texture.css")
+    if (( ${#extra[@]} == 0 )); then
+        echo "$t/style.css" > "$RUN/style-path"
+    else
+        printf '@import url("%s");\n' "$t/style.css" "${extra[@]}" > "$RUN/waybar-style.css"
+        echo "$RUN/waybar-style.css" > "$RUN/style-path"
+    fi
+    cat "$RUN/style-path"
 }
 
 start() {
@@ -73,7 +92,7 @@ start() {
     [[ -f "$WAYBAR/themes/$style/config.json" ]] || style="lennox"
     build_config "$style" || { notify-send -a Lennox -i dialog-error "Bar" "Could not build the bar config (is jq installed?)"; return 1; }
     # 9>&- : waybar must not inherit (and keep holding) our lock
-    setsid -f waybar -c "$RUN/waybar.json" -s "$WAYBAR/themes/$style/style.css" >"$RUN/waybar.log" 2>&1 </dev/null 9>&-
+    setsid -f waybar -c "$RUN/waybar.json" -s "$(style_file "$style")" >"$RUN/waybar.log" 2>&1 </dev/null 9>&-
 }
 
 stop() {
@@ -95,11 +114,13 @@ case "${1:-reload}" in
     reload|restart) stop; start ;;
     refresh)
         # Restart only if the settings change what the bar shows
-        before="$(cat "$RUN/waybar.json" 2>/dev/null)"
+        looks() { cat "$RUN/waybar.json" "$RUN/style-path" "$RUN/waybar-style.css" 2>/dev/null; }
+        before="$(looks)"
         style="$(lennox-get bar.style)"
         [[ -f "$WAYBAR/themes/$style/config.json" ]] || style="lennox"
         build_config "$style"
-        if pgrep -x waybar >/dev/null && [[ "$(cat "$RUN/waybar.json" 2>/dev/null)" != "$before" ]]; then
+        style_file "$style" >/dev/null
+        if pgrep -x waybar >/dev/null && [[ "$(looks)" != "$before" ]]; then
             stop; start
         fi
         ;;
