@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.22.1 · 2026-10-31 · Keys rescue
+
+- Keys not working? From a text screen (Ctrl + Alt + F3) run lennox-rescue: it frees the keyboard, resets the main key, reloads the config and shows any config errors
+- Shortcuts that work without the Windows key: Alt + F2 app launcher, Alt + F4 close window, Ctrl + Alt + T terminal, Ctrl + Alt + Delete power menu
+- The dashboard no longer grabs the whole keyboard, and the window overview closes itself after two minutes so it can never get stuck
+
 ## 1.22.0 · 2026-10-31 · Bar density, texture and island look
 
 - Bar density in Settings > Bar & Dock: Compact makes the Lennox bar styles a few pixels slimmer (the island shrinks with it)

@@ -167,7 +167,9 @@ class DashboardWindow(Gtk.ApplicationWindow):
             LS.set_layer(self, LS.Layer.OVERLAY)
             for edge in (LS.Edge.TOP, LS.Edge.BOTTOM, LS.Edge.LEFT, LS.Edge.RIGHT):
                 LS.set_anchor(self, edge, True)
-            LS.set_keyboard_mode(self, LS.KeyboardMode.EXCLUSIVE)
+            # On demand, not exclusive: if the dashboard ever got stuck open
+            # it must not swallow every key
+            LS.set_keyboard_mode(self, LS.KeyboardMode.ON_DEMAND)
             LS.set_exclusive_zone(self, 0)
         else:
             self.set_default_size(DASHBOARD_WIDTH + 20, 820)

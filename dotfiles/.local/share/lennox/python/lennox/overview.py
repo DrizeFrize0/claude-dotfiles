@@ -239,6 +239,8 @@ class Overview(Gtk.ApplicationWindow):
         self.scroll.add_controller(click)
         self.first = None
         self.build()
+        # Never stuck: it closes by itself after two minutes, since it holds the keyboard
+        GLib.timeout_add_seconds(120, lambda: (self.close(), False)[1])
 
     def _key(self, _ctl, keyval, _code, _state):
         if keyval == Gdk.KEY_Escape:

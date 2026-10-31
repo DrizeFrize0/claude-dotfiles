@@ -42,6 +42,12 @@ On many GTX 1650 laptops the HDMI port is wired to the NVIDIA GPU. Lennox Settin
 - Lennox Settings → Sound: pick the right output / microphone and use *Test the microphone*.
 - Is the mic muted? The mic key toggles it, and the quick panel (`SUPER + N`) has a Microphone tile.
 
+## Keyboard shortcuts stopped working
+
+1. `Ctrl + Alt + F3`, log in, run `lennox-rescue`, then `Ctrl + Alt + F1` (or F2).
+2. Without the Windows key: `ALT + F2` launcher, `ALT + F4` close, `CTRL + ALT + T` terminal, `CTRL + ALT + DELETE` power menu.
+3. Fallbacks work but SUPER doesn't: the Windows key is locked (gaming laptops often have a lock key) or broken.
+
 ## Touchpad not working
 
 - `hyprctl devices` should list a touchpad. If not: `sudo dmesg | grep -i -E "i2c|touchpad|elan|synaptics"`.

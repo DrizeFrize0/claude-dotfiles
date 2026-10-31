@@ -21,6 +21,17 @@ local function key(combo)
     return mod .. " + " .. (combo:gsub("ALT", alt))
 end
 
+-- Fallbacks that work without the main key ------------
+-- If the Windows key stops working (some laptops have a key that locks it,
+-- often Fn + F-something or a "game mode" key), these still get you around.
+-- (With ALT as the main key, the normal shortcuts already work without it.)
+if mod ~= "ALT" then
+    hl.bind("ALT + F2",            run("lennox-menu apps"),     { description = "Open the app launcher (fallback)" })
+    hl.bind("ALT + F4",            hl.dsp.window.close(),       { description = "Close the window (fallback)" })
+    hl.bind("CTRL + ALT + T",      run("lennox-open terminal"), { description = "Open the terminal (fallback)" })
+    hl.bind("CTRL + ALT + DELETE", run("lennox-menu power"),    { description = "Power menu (fallback)" })
+end
+
 -- Applications ----------------------------------------
 hl.bind(key("RETURN"),         run("lennox-open terminal"),    { description = "Open the terminal" })
 hl.bind(key("B"),              run("lennox-open browser"),     { description = "Open the browser" })

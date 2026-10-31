@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Keys stopped working? Run this from a text screen (Ctrl + Alt + F3, log in):
+#   lennox-rescue
+# It closes anything that could be holding the keyboard, puts the main key
+# back to SUPER, re-applies and reloads the Hyprland config, and says what's
+# wrong if the config itself has errors. Then go back with Ctrl + Alt + F1 (or F2).
+export PATH="$HOME/.local/bin:$PATH"
+ok()   { echo "  ✓ $*"; }
+warn() { echo "  ! $*"; }
+
+echo "Lennox rescue"
+# Talk to the running Hyprland even from a text screen
+if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+    # shellcheck disable=SC2012  # instance names are plain hex
+    HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "/run/user/$(id -u)/hypr" 2>/dev/null | head -1)"
+    export HYPRLAND_INSTANCE_SIGNATURE
+fi
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+# 1. Anything that could hold the keyboard
+pkill -f "lennox.overview" 2>/dev/null && ok "Closed the window overview"
+pkill -f "lennox.widgets" 2>/dev/null && ok "Restarted the widgets"
+pkill -x rofi 2>/dev/null && ok "Closed an open menu"
+pkill -x hyprlock 2>/dev/null && ok "Closed a stuck lock screen"
+
+# 2. The main key
+mod="$(lennox-get keybinds.main_mod 2>/dev/null)"
+if [[ "$mod" != SUPER ]]; then
+    lennox-set keybinds.main_mod SUPER --no-apply >/dev/null 2>&1 && ok "Main key was ${mod:-unset}: back to SUPER (the Windows key)"
+fi
+
+# 3. Hyprland version: Lennox's config is written for 0.57
+ver="$(pacman -Q hyprland 2>/dev/null | awk '{print $2}')"
+echo "  Hyprland ${ver:-not found}"
+case "$ver" in
+    0.57*) ;;
+    "") warn "Hyprland isn't installed?" ;;
+    *) warn "Lennox is made for Hyprland 0.57; this is $ver. If keys still fail, send this output to get the config updated." ;;
+esac
+
+# 4. Re-generate the config and reload it
+lennox-apply hypr >/dev/null 2>&1 && ok "Config re-generated from your settings"
+if hyprctl reload >/dev/null 2>&1; then
+    ok "Hyprland reloaded"
+    errors="$(hyprctl configerrors 2>/dev/null | grep -v '^$')"
+    if [[ -n "$errors" && "$errors" != *"no errors"* ]]; then
+        warn "The config has errors:"
+        echo "$errors" | sed 's/^/      /' | head -20
+    else
+        ok "No config errors"
+    fi
+else
+    warn "Couldn't reach Hyprland (is the desktop running? Log in on Ctrl + Alt + F1 first)"
+fi
+
+# Restart the widgets in the desktop session
+if [[ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]]; then
+    WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}" setsid -f lennox-widgets >/dev/null 2>&1 </dev/null
+fi
+
+cat <<'TXT'
+
+Now press Ctrl + Alt + F1 (or F2) and try SUPER + SPACE.
+Still nothing? These work without the Windows key:
+  ALT + F2  app launcher     ALT + F4  close window
+  CTRL + ALT + T  terminal   CTRL + ALT + DELETE  power menu
+If those work but SUPER doesn't, the Windows key itself is locked or broken.
+Many gaming laptops have a Windows-key lock (a key combo or a game-mode key,
+sometimes with a small light): check your laptop's manual for "Windows key
+lock", or test the key in Windows.
+TXT
