@@ -1,71 +1,162 @@
 #!/usr/bin/env bash
-# Keys stopped working? Run this from a text screen (Ctrl + Alt + F3, log in):
-#   lennox-rescue
-# It closes anything that could be holding the keyboard, puts the main key
-# back to SUPER, re-applies and reloads the Hyprland config, and says what's
-# wrong if the config itself has errors. Then go back with Ctrl + Alt + F1 (or F2).
+# Keys or the desktop stopped working? From a text screen (Ctrl + Alt + F3,
+# log in) run:
+#   lennox-rescue          find what's wrong, fix what it can, explain the rest
+#   lennox-rescue --undo   leave safe mode (put the full Lennox config back)
+# A report is saved to ~/lennox-rescue-report.txt (send it if you need help).
 export PATH="$HOME/.local/bin:$PATH"
-ok()   { echo "  ✓ $*"; }
-warn() { echo "  ! $*"; }
 
-echo "Lennox rescue"
+REPORT="$HOME/lennox-rescue-report.txt"
+HYPR="$HOME/.config/hypr"
+SAFE_BACKUP="$HYPR/hyprland.lua.before-safe-mode"
+problems=0
+fixed=0
+
+exec > >(tee "$REPORT") 2>&1
+step()  { echo; echo "== $*"; }
+ok()    { echo "  ✓ $*"; }
+bad()   { echo "  ✗ $*"; problems=$((problems + 1)); }
+fixed() { echo "  → fixed: $*"; fixed=$((fixed + 1)); }
+note()  { echo "    $*"; }
+ask()   { local a; read -r -p "  $* [y/N] " a </dev/tty; [[ "$a" == [yY]* ]]; }
+
 # Talk to the running Hyprland even from a text screen
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
     # shellcheck disable=SC2012  # instance names are plain hex
-    HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "/run/user/$(id -u)/hypr" 2>/dev/null | head -1)"
+    HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null | head -1)"
     export HYPRLAND_INSTANCE_SIGNATURE
 fi
-export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+LOG="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/hyprland.log"
 
-# 1. Anything that could hold the keyboard
-pkill -f "lennox.overview" 2>/dev/null && ok "Closed the window overview"
-pkill -f "lennox.widgets" 2>/dev/null && ok "Restarted the widgets"
-pkill -x rofi 2>/dev/null && ok "Closed an open menu"
-pkill -x hyprlock 2>/dev/null && ok "Closed a stuck lock screen"
+module_failures() { grep -a "\[lennox\] could not load" "$LOG" 2>/dev/null | sed 's/.*\[lennox\] //' | sort -u; }
+config_errors() { hyprctl configerrors 2>/dev/null | grep -v '^\s*$' | grep -vi "no errors"; }
 
-# 2. The main key
-mod="$(lennox-get keybinds.main_mod 2>/dev/null)"
-if [[ "$mod" != SUPER ]]; then
-    lennox-set keybinds.main_mod SUPER --no-apply >/dev/null 2>&1 && ok "Main key was ${mod:-unset}: back to SUPER (the Windows key)"
+# ---------------------------------------------------------------- undo safe mode
+if [[ "${1:-}" == --undo ]]; then
+    if [[ -f "$SAFE_BACKUP" ]]; then
+        mv -f "$SAFE_BACKUP" "$HYPR/hyprland.lua"
+        hyprctl reload >/dev/null 2>&1
+        echo "The full Lennox config is back."
+    else
+        echo "Not in safe mode: nothing to undo."
+    fi
+    exit 0
 fi
 
-# 3. Hyprland version: Lennox's config is written for 0.57
+echo "Lennox rescue · $(date '+%Y-%m-%d %H:%M') · Lennox $(lennox-whatsnew version 2>/dev/null || echo '?')"
+
+# ---------------------------------------------------------------- 1. is the desktop running
+step "1. Is the desktop (Hyprland) running?"
+if pgrep -x Hyprland >/dev/null && [[ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]] && hyprctl version >/dev/null 2>&1; then
+    ok "Yes"
+    running=true
+else
+    bad "No. Log in on Ctrl + Alt + F1 (or F2) first, then come back here and run this again"
+    running=false
+fi
+
+# ---------------------------------------------------------------- 2. version
+step "2. Hyprland version"
 ver="$(pacman -Q hyprland 2>/dev/null | awk '{print $2}')"
-echo "  Hyprland ${ver:-not found}"
 case "$ver" in
-    0.57*) ;;
-    "") warn "Hyprland isn't installed?" ;;
-    *) warn "Lennox is made for Hyprland 0.57; this is $ver. If keys still fail, send this output to get the config updated." ;;
+    0.57*) ok "Hyprland $ver (what Lennox is made for)" ;;
+    "") bad "Hyprland isn't installed" ;;
+    *) bad "Hyprland $ver: Lennox is made for 0.57, an update may have changed how the config works"
+       note "Send this report to get Lennox updated for it. Safe mode (below) gets you working keys meanwhile." ;;
 esac
 
-# 4. Re-generate the config and reload it
-lennox-apply hypr >/dev/null 2>&1 && ok "Config re-generated from your settings"
-if hyprctl reload >/dev/null 2>&1; then
-    ok "Hyprland reloaded"
-    errors="$(hyprctl configerrors 2>/dev/null | grep -v '^$')"
-    if [[ -n "$errors" && "$errors" != *"no errors"* ]]; then
-        warn "The config has errors:"
-        echo "$errors" | sed 's/^/      /' | head -20
-    else
-        ok "No config errors"
-    fi
+# ---------------------------------------------------------------- 3. anything holding the keyboard
+step "3. Anything holding the keyboard?"
+held=false
+for what in "lennox.overview:the window overview" "lennox.widgets:the widgets / dashboard" "rofi:a menu"; do
+    pattern="${what%%:*}"; name="${what#*:}"
+    if pkill -f "$pattern" 2>/dev/null; then fixed "closed $name"; held=true; fi
+done
+if pidof hyprlock >/dev/null; then
+    note "The lock screen is running. If you can't get past it on Ctrl + Alt + F1, close it:"
+    if ask "Close the lock screen?"; then pkill -x hyprlock && fixed "closed the lock screen"; held=true; fi
+fi
+$held || ok "Nothing was"
+
+# ---------------------------------------------------------------- 4. main key
+step "4. Main key"
+mod="$(lennox-get keybinds.main_mod 2>/dev/null)"
+if [[ "$mod" == SUPER ]]; then
+    ok "SUPER (the Windows key)"
 else
-    warn "Couldn't reach Hyprland (is the desktop running? Log in on Ctrl + Alt + F1 first)"
+    lennox-set keybinds.main_mod SUPER --no-apply >/dev/null 2>&1 && fixed "main key was ${mod:-unset}, now SUPER"
 fi
 
-# Restart the widgets in the desktop session
-if [[ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]]; then
+# ---------------------------------------------------------------- 5. config
+step "5. Config"
+lennox-apply hypr >/dev/null 2>&1 && ok "Re-generated from your settings"
+if $running; then
+    hyprctl reload >/dev/null 2>&1 && ok "Reloaded"
+    sleep 1
+fi
+failures="$(module_failures)"
+errors="$($running && config_errors)"
+if [[ -z "$failures" && -z "$errors" ]]; then
+    ok "No errors, every part of the Lennox config loaded"
+else
+    [[ -n "$failures" ]] && { bad "Parts of the config didn't load (their shortcuts are missing):"; echo "$failures" | sed 's/^/      /' | head -10; }
+    [[ -n "$errors" ]] && { bad "Hyprland reports config errors:"; echo "$errors" | sed 's/^/      /' | head -10; }
+    if [[ ! -f "$SAFE_BACKUP" ]] && $running; then
+        note "Safe mode swaps in a tiny config with the basic shortcuts, so you can use the laptop"
+        note "while this gets fixed. 'lennox-rescue --undo' puts the full Lennox config back."
+        if ask "Turn on safe mode?"; then
+            cp -f "$HYPR/hyprland.lua" "$SAFE_BACKUP"
+            cat > "$HYPR/hyprland.lua" <<'LUA'
+-- Lennox SAFE MODE (lennox-rescue). The full config is in hyprland.lua.before-safe-mode;
+-- run `lennox-rescue --undo` to put it back.
+local term = "kitty"
+local launcher = "rofi -show drun"
+hl.bind("SUPER + RETURN", hl.dsp.exec_cmd(term), { description = "Terminal" })
+hl.bind("SUPER + SPACE", hl.dsp.exec_cmd(launcher), { description = "Apps" })
+hl.bind("SUPER + Q", hl.dsp.window.close(), { description = "Close the window" })
+hl.bind("SUPER + M", hl.dsp.exit(), { description = "Log out" })
+hl.bind("ALT + F2", hl.dsp.exec_cmd(launcher), { description = "Apps" })
+hl.bind("ALT + F4", hl.dsp.window.close(), { description = "Close the window" })
+hl.bind("CTRL + ALT + T", hl.dsp.exec_cmd(term), { description = "Terminal" })
+for i = 1, 9 do
+    hl.bind("SUPER + " .. i, hl.dsp.focus({ workspace = i }), { description = "Workspace" })
+end
+LUA
+            hyprctl reload >/dev/null 2>&1
+            fixed "safe mode on: SUPER + SPACE launcher, SUPER + RETURN terminal, SUPER + Q close, SUPER + 1-9 workspaces"
+        fi
+    fi
+fi
+
+# ---------------------------------------------------------------- 6. the Windows key itself
+step "6. Does the Windows key itself send anything?"
+if [[ "$(tty)" == /dev/tty* ]] && command -v showkey >/dev/null; then
+    if ask "Test it now? (press the Windows key a few times, then wait 10 seconds)"; then
+        echo "    Press the Windows key now..."
+        # shellcheck disable=SC2024  # the console is read by showkey itself
+        out="$(sudo showkey -k 2>&1 </dev/tty)"
+        if grep -qE "keycode +12[56]" <<<"$out"; then
+            ok "The Windows key works (the laptop sees it)"
+        else
+            bad "The laptop doesn't see the Windows key"
+            note "It's locked or broken, not a Lennox problem. Many gaming laptops have a Windows-key"
+            note "lock (a key combo or a game-mode key, sometimes with a light): see your laptop's manual"
+            note "for \"Windows key lock\". Meanwhile: ALT + F2 launcher, ALT + F4 close, CTRL + ALT + T terminal."
+        fi
+    else
+        note "Skipped"
+    fi
+else
+    note "Run this from a text screen (Ctrl + Alt + F3) to test the key"
+fi
+
+# ---------------------------------------------------------------- the widgets come back
+if $running; then
     WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}" setsid -f lennox-widgets >/dev/null 2>&1 </dev/null
 fi
 
-cat <<'TXT'
-
-Now press Ctrl + Alt + F1 (or F2) and try SUPER + SPACE.
-Still nothing? These work without the Windows key:
-  ALT + F2  app launcher     ALT + F4  close window
-  CTRL + ALT + T  terminal   CTRL + ALT + DELETE  power menu
-If those work but SUPER doesn't, the Windows key itself is locked or broken.
-Many gaming laptops have a Windows-key lock (a key combo or a game-mode key,
-sometimes with a small light): check your laptop's manual for "Windows key
-lock", or test the key in Windows.
-TXT
+step "Done: $problems problem(s) found, $fixed fix(es) made"
+echo "  Go back with Ctrl + Alt + F1 (or F2) and try SUPER + SPACE."
+echo "  Without the Windows key: ALT + F2 launcher, ALT + F4 close, CTRL + ALT + T terminal."
+echo "  Report saved: $REPORT"

@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.22.2 · 2026-10-31 · A better rescue
+
+- lennox-rescue now checks step by step: is the desktop running, the Hyprland version, anything holding the keyboard, the main key, parts of the config that failed to load, and whether the Windows key itself works
+- It fixes what it can, and offers a safe mode with the basic shortcuts when the config is broken (lennox-rescue --undo puts the full config back)
+- It saves a report to lennox-rescue-report.txt in your home folder
+
 ## 1.22.1 · 2026-10-31 · Keys rescue
 
 - Keys not working? From a text screen (Ctrl + Alt + F3) run lennox-rescue: it frees the keyboard, resets the main key, reloads the config and shows any config errors
