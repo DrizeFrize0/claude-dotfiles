@@ -75,6 +75,17 @@ wind-down at 23:00 with weekly sleep stats.
   opens the finished file.
 - **Wallpaper of the day:** a fresh wallpaper each morning from a collection
   you choose.
+- **Prayer times:** the next prayer in the bar with its Arabic name and a
+  soft reminder, calculated for Amman. Optional.
+- **Water reminder:** a gentle nudge every hour you're on the laptop, paused
+  while gaming or focusing.
+- **Discord status widget:** how many friends are online in your Discord
+  server, on the desktop.
+- **Temperature alerts:** a warning when the CPU or GPU gets too hot (while
+  gaming), with a one-tap switch to Quiet mode.
+- **Fan and noise profiles + controller:** a Silent profile that caps power so
+  the fans stay quiet at night, with a page to see temperatures and fan
+  speeds and pick a profile (where the laptop allows fan control).
 
 ## Ideas offered, not yet asked for
 
