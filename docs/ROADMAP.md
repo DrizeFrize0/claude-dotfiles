@@ -65,6 +65,10 @@ wind-down at 23:00 with weekly sleep stats.
 - **Storage view:** a simple map of what's using the disk (folders sized
   as bars, biggest first), with a safe delete button and "open in Files".
   Builds on the Cleanup page.
+- **Desktop pet:** a small animated cat that walks along the bottom of the
+  screen, sleeps when you're idle or focusing, and can be turned off.
+- **Study timer with a subject:** pick a subject (Math, Physics...) before a
+  focus session, then see the hours per subject this week. Builds on Focus.
 
 ## Ideas offered, not yet asked for
 
