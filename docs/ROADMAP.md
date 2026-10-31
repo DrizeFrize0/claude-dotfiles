@@ -62,6 +62,10 @@ wind-down at 23:00 with weekly sleep stats.
 
 ## Release 5: Queued
 
+- **First: island and bar redesign.** Spring animations, real icons, split
+  activities, new Waybar themes and decor. The full plan is in
+  [DESIGN-ISLAND-BAR.md](DESIGN-ISLAND-BAR.md).
+
 - **Storage view:** a simple map of what's using the disk (folders sized
   as bars, biggest first), with a safe delete button and "open in Files".
   Builds on the Cleanup page.
