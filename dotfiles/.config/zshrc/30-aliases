@@ -1,0 +1,26 @@
+# -----------------------------------------------------
+# Aliases
+# -----------------------------------------------------
+alias ..='cd ..'
+alias c='clear'
+alias ff='fastfetch'
+alias ls='eza -a --icons=always --group-directories-first'
+alias ll='eza -al --icons=always --group-directories-first'
+alias lt='eza -a --tree --level=2 --icons=always'
+alias wifi='nmtui'
+alias update='lennox update'
+alias doctor='lennox doctor'
+alias settings='lennox settings'
+alias wallpaper='lennox wallpaper'
+alias gpu='lennox gpu'
+alias nv='prime-run'
+alias cleanup='sudo pacman -Rns $(pacman -Qdtq) 2>/dev/null; paccache -rk2'
+
+# Git
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit -m'
+alias gp='git push'
+alias gpl='git pull'
+alias gd='git diff'
+alias glog='git log --oneline --graph --decorate -20'

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Lennox Settings
+GenericName=Settings
+Comment=Control your whole desktop: look, wallpaper, sound, display, touchpad, power, graphics, updates
+Exec=lennox-settings
+Icon=preferences-system
+Terminal=false
+Categories=Settings;
+Keywords=settings;control;panel;wallpaper;theme;sound;display;touchpad;nvidia;update;
+StartupWMClass=dev.lennox.Settings

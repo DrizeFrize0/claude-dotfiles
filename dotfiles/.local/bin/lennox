@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Lennox command line. Run `lennox` for help.
+export PATH="$HOME/.local/bin:$PATH"
+
+cmd="${1:-help}"
+shift 2>/dev/null
+case "$cmd" in
+    settings)  exec lennox-settings "$@" ;;
+    wallpaper) exec lennox-wallpaper "$@" ;;
+    theme)     exec lennox-theme "$@" ;;
+    look)      exec lennox-look "$@" ;;
+    wallpapers) exec lennox-wallpapers "$@" ;;
+    minimize)  exec lennox-minimize "$@" ;;
+    windows)   exec lennox-windows "$@" ;;
+    sound)     exec lennox-sound "$@" ;;
+    clock)     exec lennox-clock "$@" ;;
+    clips)     exec lennox-clips "$@" ;;
+    perf)      exec lennox-perf "$@" ;;
+    server)    exec lennox-mcserver "$@" ;;
+    cleanup)   exec lennox-cleanup "$@" ;;
+    apps)      exec lennox-apps "$@" ;;
+    phone)     exec lennox-phone "$@" ;;
+    focus)     exec lennox-focus "$@" ;;
+    backup)    exec lennox-backup "$@" ;;
+    version)   exec lennox-whatsnew version ;;
+    news)      exec lennox-whatsnew show "$@" ;;
+    passwords) exec lennox-passwords "$@" ;;
+    bar)       exec lennox-bar "$@" ;;
+    dock)      exec lennox-dock "$@" ;;
+    update)    exec lennox-update "$@" ;;
+    doctor)    exec lennox-doctor "$@" ;;
+    gpu)       exec lennox-gpu "$@" ;;
+    get)       exec lennox-get "$@" ;;
+    set)       exec lennox-set "$@" ;;
+    apply)     exec lennox-apply "$@" ;;
+    keys)      exec lennox-menu keybinds ;;
+    upgrade)   exec lennox-update-dotfiles "$@" ;;
+    help|-h|--help)
+        cat <<'HELP'
+Lennox - Hyprland for Arch, in the spirit of ML4W
+
+  lennox settings            open Lennox Settings (also SUPER + I)
+  lennox wallpaper IMAGE     set a wallpaper and re-color everything (--random)
+  lennox theme toggle        dark / light mode
+  lennox theme set NAME      color theme: wallpaper | ocean | sakura | sunset ... (lennox theme list)
+  lennox look NAME           one-click look: lennox | glass | neon | minimal | focus | lightweight | ml4w
+  lennox wallpapers make     paint the Lennox wallpaper pack   (ml4w: download 200+ more)
+  lennox windows toggle      tiling (side by side) / stacking (overlap like Windows)   (SUPER + SHIFT + T)
+  lennox minimize menu       bring back a minimized window (SUPER + H minimizes)
+  lennox passwords fill      fill a password (SUPER + P; set up in Settings > Passwords)
+  lennox bar style NAME      modern | glass | minimal
+  lennox dock toggle         show / hide the dock
+  lennox update              update system, drivers, AUR apps and Flatpaks now
+  lennox doctor              check drivers, sound, mic, touchpad, updates
+  lennox clock timer 20m     timers, alarms, reminders (lennox clock: the app, SUPER + ALT + C)
+  lennox clips save          save the last 2 minutes of gameplay (perf quiet|balanced|max, server)
+  lennox cleanup [now]       see what takes space for nothing, or free it
+  lennox apps search WORDS   find apps on Arch, the AUR and Flathub (no words: App Store)
+  lennox focus [start|stop]  focus mode: distractions blocked, then a break
+  lennox backup now          back up your setup (list, restore FILE)
+  lennox phone ring ID       phone link (KDE Connect): status, ring, send FILE, clipboard
+  lennox sound check         sound drivers and mic quality   (fix | clean-mic on|off | report)
+  lennox gpu status          NVIDIA / Intel status   (gpu run APP: run on NVIDIA)
+  lennox get KEY / set KEY V read or change a setting, e.g. lennox set bar.style glass
+  lennox keys                searchable list of all keybindings
+  lennox upgrade             update Lennox itself from its git repository
+  lennox version             which Lennox this is (lennox news: what changed)
+HELP
+        ;;
+    *) echo "lennox: unknown command '$cmd' (try: lennox help)" >&2; exit 2 ;;
+esac

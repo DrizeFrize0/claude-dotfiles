@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# Volume, microphone and brightness keys, with a small on-screen popup.
+#   lennox-osd volume up|down|mute
+#   lennox-osd mic mute|up|down
+#   lennox-osd brightness up|down
+#   lennox-osd keyboard up|down
+export PATH="$HOME/.local/bin:$PATH"
+
+island_osd() {
+    # In the island when it's on and visible; the separate pop-up when it's not
+    # (island off, or a fullscreen game hides it)
+    local settings="${XDG_CONFIG_HOME:-$HOME/.config}/lennox/settings.json"
+    [[ -r "$settings" ]] || return 1
+    [[ "$(jq -r '(.widgets.island != false) and (.widgets.island_osd != false)' "$settings" 2>/dev/null)" == true ]] || return 1
+    hyprctl activewindow -j 2>/dev/null | jq -e '(.fullscreen // 0) as $f | ($f == true) or (($f | type) == "number" and $f > 0)' >/dev/null 2>&1 && return 1
+    command -v lennox-widgets >/dev/null || return 1
+    local text="$1"
+    [[ -n "$2" ]] && text="$1  $2%"
+    lennox-widgets island event "$3-symbolic" "$text" 1.6 >/dev/null 2>&1
+}
+
+popup() {
+    # popup ICON TITLE PERCENT
+    local shown="$3"
+    [[ "$2" == Muted || "$2" == *" off" ]] && shown=""      # "Muted", not "Muted 0%"
+    island_osd "$2" "$shown" "$1" && return
+    notify-send -a "Lennox OSD" -u low -t 1200 -i "$1" \
+        -h string:x-canonical-private-synchronous:lennox-osd \
+        -h "int:value:$3" "$2" "$3%"
+}
+
+volume_of() {
+    # "Volume: 0.45 [MUTED]" -> "45 muted"
+    wpctl get-volume "$1" 2>/dev/null | awk '{ printf "%d %s\n", $2 * 100 + 0.5, ($3 == "[MUTED]" ? "muted" : "on") }'
+}
+
+# The screen's real backlight (Intel + NVIDIA laptops list more than one)
+screen=(-c backlight)
+dev="$(lennox-panel backlight)" && [[ -n "$dev" ]] && screen=(-d "$dev")
+
+case "${1:-} ${2:-}" in
+    "volume up")   wpctl set-mute @DEFAULT_AUDIO_SINK@ 0; wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+
+                   lennox-sound-fx volume & ;;
+    "volume down") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-; lennox-sound-fx volume & ;;
+    "volume mute") wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+    "mic mute")    wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle ;;
+    "mic up")      wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SOURCE@ 5%+ ;;   # over 100% only adds hiss
+    "mic down")    wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%- ;;
+    "brightness up")   brightnessctl "${screen[@]}" -q -e4 -n2 set 5%+ ;;
+    "brightness down") brightnessctl "${screen[@]}" -q -e4 -n2 set 5%- ;;
+    "keyboard up")   brightnessctl -q -d '*::kbd_backlight' set +1 ;;
+    "keyboard down") brightnessctl -q -d '*::kbd_backlight' set 1- ;;
+    *) echo "usage: lennox-osd volume|mic|brightness|keyboard up|down|mute" >&2; exit 2 ;;
+esac
+
+case "$1" in
+    volume)
+        read -r level state < <(volume_of @DEFAULT_AUDIO_SINK@)
+        if [[ "$state" == "muted" ]]; then
+            popup audio-volume-muted "Muted" 0
+        else
+            icon=audio-volume-high
+            (( level < 66 )) && icon=audio-volume-medium
+            (( level < 33 )) && icon=audio-volume-low
+            popup "$icon" "Volume" "$level"
+        fi
+        ;;
+    mic)
+        read -r level state < <(volume_of @DEFAULT_AUDIO_SOURCE@)
+        if [[ "$state" == "muted" ]]; then
+            popup microphone-sensitivity-muted "Microphone off" 0
+        else
+            popup audio-input-microphone "Microphone" "$level"
+        fi
+        ;;
+    brightness)
+        level="$(brightnessctl "${screen[@]}" -m 2>/dev/null | head -n1 | cut -d, -f4 | tr -d '%')"
+        popup display-brightness "Brightness" "${level:-0}"
+        ;;
+    keyboard)
+        level="$(brightnessctl -m -d '*::kbd_backlight' 2>/dev/null | head -n1 | cut -d, -f4 | tr -d '%')"
+        popup keyboard-brightness "Keyboard light" "${level:-0}"
+        ;;
+esac

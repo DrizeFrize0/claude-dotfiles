@@ -1,0 +1,231 @@
+/*
+ * Lennox bar: Glass
+ * Three frosted glass islands with a gradient rim, after ML4W Glass.
+ * Colors come from the wallpaper (../../colors.css, written by matugen).
+ */
+
+@import "../../colors.css";
+
+@define-color icon_color @on_surface;
+
+* {
+    font-family: "Fira Sans Semibold", "Symbols Nerd Font", "Font Awesome 7 Free", sans-serif;
+    border: none;
+    border-radius: 0px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: transparent;
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+    border-radius: 12px;
+    background: radial-gradient(circle at 50% 250%, alpha(shade(@surface, 0.8), 0.9), alpha(@surface_dim, 0.9)) padding-box,
+        linear-gradient(@primary, @on_primary) border-box;
+    border: 2px solid transparent;
+    opacity: 0.85;
+    margin: 10px;
+    padding: 0px 4px;
+    box-shadow: inset 1px 2px 2px rgba(255, 255, 255, 0.2);
+}
+
+label.module {
+    font-size: 14px;
+    color: @on_surface;
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+tooltip {
+    border-radius: 12px;
+    background: radial-gradient(circle at 50% 250%, @surface, @surface_dim) padding-box,
+        linear-gradient(#FFFFFF, @on_primary) border-box;
+    border: 1px solid transparent;
+}
+
+tooltip label {
+    color: @on_surface;
+}
+
+/* ---------------------------------------------------- Workspaces */
+
+#workspaces {
+    padding: 5px 3px;
+}
+
+#workspaces label.module.ws {
+    color: @on_surface;
+    border-radius: 3px;
+    padding: 0px 5px;
+    margin: 0px 2px;
+    min-width: 12px;
+    border: 1px solid transparent;
+    transition: all 0.3s ease-in-out;
+}
+
+#workspaces .ws.empty {
+    color: alpha(@on_surface, 0.55);
+}
+
+#workspaces .ws:hover {
+    background: alpha(@secondary, 0.2);
+    border-radius: 15px;
+}
+
+#workspaces .ws.visible {
+    background: alpha(@secondary, 0.25);
+    border-radius: 8px;
+}
+
+#workspaces .ws.active {
+    background: alpha(@primary, 0.25);
+    color: @on_surface;
+    min-width: 30px;
+    border-radius: 8px;
+    box-shadow: inset 1px 2px 2px rgba(255, 255, 255, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+#workspaces .ws.urgent {
+    background: alpha(@error, 0.6);
+    color: @on_error;
+    border-radius: 8px;
+}
+
+/* ---------------------------------------------------- Modules */
+
+#custom-appmenu {
+    padding-left: 6px;
+    padding-right: 2px;
+}
+
+#custom-updates.pending {
+    border-radius: 8px;
+    margin: 5px 0px 5px 5px;
+    padding: 0px 6px;
+    background-color: @secondary;
+    color: @on_secondary;
+}
+
+#custom-updates.many {
+    border-radius: 8px;
+    margin: 5px 0px 5px 5px;
+    padding: 0px 6px;
+    background-color: @error;
+    color: @on_error;
+}
+
+#pulseaudio.muted,
+#network.disconnected {
+    color: @outline;
+}
+
+#custom-idle.off,
+#custom-gamemode.on,
+#custom-nightlight.on {
+    color: @primary;
+}
+
+#custom-notification {
+    font-size: 17px;
+}
+
+#battery.critical:not(.charging) {
+    color: @error;
+}
+
+#custom-lennox {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-right: 20px;
+    background-image: url("../../assets/lennox.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+#window {
+    font-weight: normal;
+}
+
+window#waybar.empty .modules-center {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+#tray {
+    padding: 0px 8px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+}
+
+/* Minimized windows (lennox-minimize) */
+#custom-minimized {
+    margin: 3px 8px 3px 0px;
+    padding: 0px 10px;
+    border-radius: 12px;
+    color: @on_primary;
+    background-color: @primary;
+}
+
+/* System monitor (lennox-sysmon) and AI spend (lennox-aispend) */
+#custom-sysmon,
+#custom-aispend {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @on_surface;
+    font-size: 13px;
+    transition: all 250ms ease;
+}
+#custom-sysmon.warm,
+#custom-aispend.near {
+    color: @tertiary;
+}
+#custom-sysmon.hot,
+#custom-aispend.over {
+    color: @on_error;
+    background: @error;
+}
+
+/* Next timer / alarm (lennox-clock) */
+#custom-clocknext {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @primary;
+    font-size: 13px;
+}
+#custom-clocknext.ringing {
+    color: @on_primary;
+    background: @primary;
+}
+
+/* Performance mode (lennox-perf) */
+#custom-perf {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @on_surface;
+}
+#custom-perf.max { color: @tertiary; }
+
+/* Minecraft server (lennox-mcserver) */
+#custom-mcserver {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @on_surface;
+    font-size: 13px;
+}
+#custom-mcserver.online { color: @primary; }
+#custom-mcserver.offline { color: @outline; }

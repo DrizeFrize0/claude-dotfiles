@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# System monitor for the bar: temperatures, load, fans and the busiest apps.
+#   lennox-sysmon waybar   bar item (CPU temperature; the GPU's only while it is awake)
+#   lennox-sysmon          the same details as text
+#   lennox-sysmon open     the full monitor (Mission Center, SUPER + CTRL + ESC)
+export PATH="$HOME/.local/bin:$PATH"
+case "${1:-text}" in
+    open) exec lennox-open system_monitor ;;
+    *) PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.sysmon "${1:-text}" ;;
+esac

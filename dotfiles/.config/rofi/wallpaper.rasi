@@ -1,0 +1,61 @@
+/* Lennox wallpaper picker (SUPER + W): a grid of your wallpapers. */
+
+@import "~/.config/rofi/shared.rasi"
+
+window {
+    width:             66em;
+}
+
+mainbox {
+    padding:           20px;
+    spacing:           16px;
+    children:          [ "inputbar", "listview" ];
+    background-color:  transparent;
+}
+
+inputbar {
+    children:          [ "prompt", "entry" ];
+}
+
+entry {
+    placeholder:       "Search wallpapers";
+}
+
+listview {
+    columns:           4;
+    lines:             3;
+    spacing:           12px;
+    cycle:             true;
+    dynamic:           false;
+    scrollbar:         false;
+    layout:            vertical;
+    fixed-height:      true;
+    fixed-columns:     true;
+    flow:              horizontal;
+    background-color:  transparent;
+}
+
+element {
+    orientation:       vertical;
+    padding:           8px;
+    spacing:           8px;
+    border:            2px;
+    border-radius:     22px;
+    children:          [ "element-icon", "element-text" ];
+}
+
+element selected.normal {
+    border-color:      @primary;
+    background-color:  @primary-soft;
+    text-color:        @primary;
+}
+
+element-icon {
+    size:              11.5em;
+    border-radius:     16px;
+}
+
+element-text {
+    horizontal-align:  0.5;
+    font:              "Inter Medium 9";
+}

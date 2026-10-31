@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# Battery helper, started at login:
+#  - low / critical battery warnings
+#  - battery saver: on battery, switch to the power-saver profile and turn
+#    off blur and shadows; back to normal when you plug in.
+export PATH="$HOME/.local/bin:$PATH"
+
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/lennox-battery.lock"
+flock -n 9 || exit 0   # already running
+
+battery=""
+for supply in /sys/class/power_supply/*; do
+    [[ "$(cat "$supply/type" 2>/dev/null)" == "Battery" ]] || continue
+    [[ "$(cat "$supply/scope" 2>/dev/null)" == "Device" ]] && continue   # mouse/headset batteries
+    battery="$supply"
+    break
+done
+[[ -n "$battery" ]] || exit 0   # desktop: nothing to do
+
+on_ac() {
+    local supply
+    for supply in /sys/class/power_supply/*; do
+        [[ "$(cat "$supply/type" 2>/dev/null)" == "Mains" ]] || continue
+        [[ "$(cat "$supply/online" 2>/dev/null)" == "1" ]] && return 0
+    done
+    # No charger entry at all: trust the battery status
+    [[ "$(cat "$battery/status" 2>/dev/null)" != "Discharging" ]]
+}
+
+set_profile() {
+    command -v powerprofilesctl >/dev/null || return
+    powerprofilesctl set "$1" >/dev/null 2>&1
+}
+
+SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/lennox/settings.json"
+power_setting() {
+    # jq, not Python: this loop asks every 20 s while on battery
+    local v=""
+    [[ -r "$SETTINGS" ]] && v="$(jq -r --arg k "$1" '.power[$k] // empty' "$SETTINGS" 2>/dev/null)"
+    [[ -n "$v" ]] || v="$(lennox-get "power.$1" 2>/dev/null)"
+    echo "$v"
+}
+
+warned_low=false
+warned_critical=false
+last_power=""
+
+while true; do
+    # Hyprland gone (logged out): stop
+    [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && ! hyprctl version >/dev/null 2>&1 && exit 0
+
+    if on_ac; then power="ac"; else power="battery"; fi
+    capacity="$(cat "$battery/capacity" 2>/dev/null || echo 100)"
+
+    if [[ "$power" != "$last_power" ]]; then
+        if [[ "$(lennox-get power.saver_on_battery)" == "true" ]]; then
+            if [[ "$power" == "battery" ]]; then
+                set_profile power-saver
+                lennox-mode saver on
+            elif [[ -n "$last_power" ]]; then
+                # Plugged in (not at login, so a profile you picked is kept)
+                set_profile balanced
+                lennox-mode saver off
+            fi
+        fi
+        last_power="$power"
+        warned_low=false
+        warned_critical=false
+    fi
+
+    if [[ "$power" == "battery" ]]; then
+        low="$(power_setting low_battery_warning)"
+        critical="$(power_setting critical_battery)"
+        if (( capacity <= critical )) && ! $warned_critical; then
+            notify-send -a Lennox -u critical -i battery-caution "Battery almost empty" \
+                "${capacity}% left. Plug in now, or your laptop will turn off."
+            warned_critical=true
+            warned_low=true
+        elif (( capacity <= low )) && ! $warned_low; then
+            notify-send -a Lennox -i battery-low "Battery low" "${capacity}% left."
+            warned_low=true
+        fi
+    fi
+    sleep 20
+done

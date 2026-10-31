@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+# Open Lennox Settings. `lennox-settings --page NAME` opens a specific page.
+import os
+import sys
+
+sys.path.insert(0, os.path.expanduser("~/.local/share/lennox/python"))
+from lennox.app.main import main  # noqa: E402
+
+sys.exit(main(sys.argv))

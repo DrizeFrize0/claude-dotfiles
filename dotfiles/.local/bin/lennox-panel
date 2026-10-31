@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# The quick panel is swaync's control center: Wi-Fi, Bluetooth, sliders, media, notifications.
+#   lennox-panel toggle|open|close     show / hide the panel
+#   lennox-panel state NAME            true / false: is this toggle on? (swaync asks when the panel opens)
+#   lennox-panel switch NAME           turn it on or off, as $SWAYNC_TOGGLE_STATE says
+#   lennox-panel get brightness|mic    slider value 0-100
+#   lennox-panel set brightness|mic N  move a slider
+#   lennox-panel backlight             the screen's backlight device (brightnessctl name)
+# swaync runs these as /bin/sh -c "COMMAND", so its config only calls this
+# script with plain words: quotes inside a command would break.
+# NAME: wifi bluetooth mic nightlight game awake saver dark focus
+export PATH="$HOME/.local/bin:$PATH"
+
+backlight() {
+    # Laptops with Intel + NVIDIA can list several backlights (acpi_video0,
+    # intel_backlight, nvidia_0); only the GPU one really dims the screen.
+    local dev name first=""
+    for dev in "${BACKLIGHT_DIR:-/sys/class/backlight}"/*; do
+        [[ -e "$dev" ]] || continue
+        name="${dev##*/}"
+        case "$name" in
+            intel_backlight|amdgpu_bl*|nvidia_wmi_ec_backlight|nvidia_*) echo "$name"; return ;;
+        esac
+        [[ -z "$first" || ( "$first" == acpi_video* && "$name" != acpi_video* ) ]] && first="$name"
+    done
+    [[ -n "$first" ]] && echo "$first"
+}
+
+bright() {
+    local dev; dev="$(backlight)"
+    if [[ -n "$dev" ]]; then brightnessctl -d "$dev" "$@"; else brightnessctl -c backlight "$@"; fi
+}
+
+state() {
+    case "$1" in
+        wifi)       [[ "$(nmcli radio wifi 2>/dev/null)" == enabled ]] ;;
+        bluetooth)  timeout 2 bluetoothctl show 2>/dev/null | grep -q "Powered: yes" ;;
+        mic)        wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null | grep -q "^Volume" &&
+                        ! wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null | grep -q MUTED ;;
+        nightlight) [[ "$(lennox-nightlight status)" == on ]] ;;
+        game)       [[ "$(lennox-mode game status)" == on ]] ;;
+        awake)      [[ "$(lennox-idle status)" == off ]] ;;
+        focus)      lennox-focus status | grep -q '"phase": "focus"' ;;
+        saver)      [[ "$(powerprofilesctl get 2>/dev/null)" == power-saver ]] ;;
+        dark)       [[ "$(lennox-get appearance.color_mode)" == dark ]] ;;
+        *)          return 2 ;;
+    esac
+}
+
+switch() {
+    local on=false
+    [[ "${SWAYNC_TOGGLE_STATE:-}" == true ]] && on=true
+    case "$1" in
+        wifi)       if $on; then nmcli radio wifi on; else nmcli radio wifi off; fi ;;
+        bluetooth)  if $on; then rfkill unblock bluetooth; sleep 1; bluetoothctl power on
+                    else bluetoothctl power off; rfkill block bluetooth; fi ;;
+        mic)        if $on; then wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 0; else wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 1; fi ;;
+        nightlight) if $on; then lennox-nightlight on; else lennox-nightlight off; fi ;;
+        game)       if $on; then lennox-mode game on; else lennox-mode game off; fi ;;
+        awake)      if $on; then lennox-idle off; else lennox-idle on; fi ;;
+        focus)      if $on; then lennox-focus start; else lennox-focus stop; fi ;;
+        saver)      if $on; then powerprofilesctl set power-saver; else powerprofilesctl set balanced; fi ;;
+        dark)       if $on; then lennox-theme dark; else lennox-theme light; fi ;;
+        *)          return 2 ;;
+    esac
+} >/dev/null 2>&1
+
+case "${1:-toggle}" in
+    toggle|open|close)
+        pgrep -x swaync >/dev/null || { setsid -f swaync >/dev/null 2>&1; sleep 0.5; }
+        case "${1:-toggle}" in
+            toggle) swaync-client --toggle-panel --skip-wait ;;
+            open)   swaync-client --open-panel --skip-wait ;;
+            close)  swaync-client --close-panel --skip-wait ;;
+        esac
+        ;;
+    state)
+        if state "${2:-}"; then echo true; else echo false; fi
+        ;;
+    switch)
+        switch "${2:-}"
+        ;;
+    get)
+        case "${2:-}" in
+            brightness) bright -m 2>/dev/null | head -n1 | cut -d, -f4 | tr -d '%' ;;
+            mic)        wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null | awk '/^Volume/ { print int($2 * 100 + 0.5) }' ;;
+            *)          exit 2 ;;
+        esac
+        ;;
+    set)
+        value="$(printf '%.0f' "${3:-}" 2>/dev/null)" || exit 2
+        case "${2:-}" in
+            brightness) (( value < 5 )) && value=5; bright -q set "${value}%" ;;
+            mic)        wpctl set-volume @DEFAULT_AUDIO_SOURCE@ "${value}%" ;;
+            *)          exit 2 ;;
+        esac
+        ;;
+    backlight)
+        backlight
+        ;;
+    *)
+        echo "usage: lennox-panel toggle|open|close | state NAME | switch NAME | get brightness|mic | set brightness|mic N" >&2
+        exit 2
+        ;;
+esac

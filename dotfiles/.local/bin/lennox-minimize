@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# Minimize windows. Hyprland has no minimize, so minimized windows wait on
+# a hidden workspace (special:minimized) until you bring them back.
+#   lennox-minimize            minimize the active window (SUPER + H)
+#   lennox-minimize menu       pick a window to bring back (SUPER + ALT + H)
+#   lennox-minimize last       bring back the window minimized last
+#   lennox-minimize all        bring back every minimized window
+#   lennox-minimize waybar     the bar button (used by Waybar)
+export PATH="$HOME/.local/bin:$PATH"
+
+WS="special:minimized"
+STATE="${XDG_RUNTIME_DIR:-/tmp}/lennox/ws/minimized.json"
+
+dispatch() { hyprctl dispatch "$1" >/dev/null; }
+
+minimized() {
+    # Minimized windows, most recently used first: address<TAB>class<TAB>title
+    hyprctl clients -j 2>/dev/null | jq -r --arg ws "$WS" '
+        map(select(.workspace.name == $ws)) | sort_by(.focusHistoryID) | .[]
+        | [.address, (.class // ""), ((.title // "") | gsub("[\t\n]"; " "))] | @tsv'
+}
+
+restore() {
+    # restore ADDRESS: onto the workspace you are looking at, focused
+    local addr="$1" ws
+    [[ "$addr" =~ ^0x[0-9a-fA-F]+$ ]] || return 1
+    ws="$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id // empty')"
+    [[ "$ws" =~ ^-?[0-9]+$ ]] || ws=1
+    dispatch "hl.dsp.window.move({ window = \"address:$addr\", workspace = $ws, follow = false })"
+    dispatch "hl.dsp.focus({ window = \"address:$addr\" })"
+}
+
+case "${1:-hide}" in
+    hide)
+        dispatch "hl.dsp.window.move({ workspace = \"$WS\", follow = false })"
+        ;;
+
+    restore) restore "${2:-}" ;;              # restore ADDRESS (the window overview)
+
+    last)
+        addr="$(minimized | head -n1 | cut -f1)"
+        [[ -n "$addr" ]] && restore "$addr"
+        ;;
+
+    all)
+        minimized | cut -f1 | while read -r addr; do restore "$addr"; done
+        ;;
+
+    menu)
+        mapfile -t rows < <(minimized)
+        if (( ${#rows[@]} == 0 )); then
+            notify-send -a Lennox -i window-minimize -t 2500 "No minimized windows" "SUPER + H minimizes the window you're in."
+            exit 0
+        fi
+        # Straight into rofi: the \0 separators would not survive a variable
+        choice="$(
+            for row in "${rows[@]}"; do
+                IFS=$'\t' read -r _ class title <<<"$row"
+                printf '%s  ·  %s\0icon\x1f%s\n' "${title:-$class}" "$class" "${class,,}"
+            done | {
+                cat
+                (( ${#rows[@]} > 1 )) && printf 'Bring all back\0icon\x1fview-restore\n'
+            } | rofi -dmenu -i -format i -no-custom -p "󰖰 Minimized" \
+                -config "$HOME/.config/rofi/compact.rasi" -show-icons
+        )" || exit 0
+        [[ "$choice" =~ ^[0-9]+$ ]] || exit 0
+        if (( choice >= ${#rows[@]} )); then
+            "$0" all
+        else
+            restore "$(cut -f1 <<<"${rows[$choice]}")"
+        fi
+        ;;
+
+    waybar)
+        if [[ -f "$STATE" ]]; then
+            cat "$STATE"
+        else
+            echo '{"text":""}'
+        fi
+        ;;
+
+    *)
+        echo "usage: lennox-minimize [hide|menu|last|all|waybar]" >&2
+        exit 2
+        ;;
+esac
+exit 0

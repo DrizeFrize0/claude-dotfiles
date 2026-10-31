@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Panic key (SUPER + CTRL + BACKSPACE): somebody walks in. Everything on screen
+# is hidden, the sound is muted and paused, and the screen is locked. After you
+# unlock, the windows come back where they were and the sound returns.
+#   lennox-panic          do it
+# Lennox Settings > Power & Battery > Panic key chooses what it does.
+export PATH="$HOME/.local/bin:$PATH"
+
+RUNTIME="${XDG_RUNTIME_DIR:-/tmp}/lennox"
+SAVED="$RUNTIME/panic-windows.json"
+MUTED="$RUNTIME/panic-muted"
+SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/lennox/settings.json"
+WS="special:minimized"
+mkdir -p "$RUNTIME"
+
+setting() { jq -r --arg k "$1" '.panic[$k]' "$SETTINGS" 2>/dev/null | grep -qx false && echo false || echo true; }
+dispatch() { hyprctl dispatch "$1" >/dev/null 2>&1; }
+
+# A second press while it's locked does nothing
+pidof hyprlock >/dev/null && exit 0
+
+restore_all() {
+    if [[ -s "$SAVED" ]]; then
+        jq -r '.[] | "\(.address) \(.workspace)"' "$SAVED" | while read -r addr ws; do
+            [[ "$addr" =~ ^0x[0-9a-fA-F]+$ && "$ws" =~ ^-?[0-9]+$ ]] || continue
+            dispatch "hl.dsp.window.move({ window = \"address:$addr\", workspace = $ws, follow = false })"
+        done
+        rm -f "$SAVED"
+    fi
+    if [[ -f "$MUTED" ]]; then
+        wpctl set-mute @DEFAULT_AUDIO_SINK@ 0
+        rm -f "$MUTED"
+    fi
+}
+
+# Pressed again after a panic without the lock: put everything back
+if [[ -s "$SAVED" || -f "$MUTED" ]]; then
+    restore_all
+    exit 0
+fi
+
+
+if [[ "$(setting hide)" == true ]]; then
+    # Remember each window's workspace, then send them all to the hidden one
+    hyprctl clients -j 2>/dev/null | jq -c --arg ws "$WS" '[.[] | select(.mapped and (.workspace.name != $ws))
+        | {address, workspace: .workspace.id}]' > "$SAVED"
+    jq -r '.[].address' "$SAVED" 2>/dev/null | while read -r addr; do
+        [[ "$addr" =~ ^0x[0-9a-fA-F]+$ ]] || continue
+        dispatch "hl.dsp.window.move({ window = \"address:$addr\", workspace = \"$WS\", follow = false })"
+    done
+fi
+
+if [[ "$(setting mute)" == true ]]; then
+    playerctl -a pause >/dev/null 2>&1
+    rm -f "$MUTED"
+    # Only undo the mute we made ourselves
+    if ! wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -q MUTED; then
+        wpctl set-mute @DEFAULT_AUDIO_SINK@ 1 && touch "$MUTED"
+    fi
+fi
+
+if [[ "$(setting lock)" == true ]]; then
+    command -v rbw >/dev/null && rbw unlocked >/dev/null 2>&1 && rbw lock >/dev/null 2>&1
+    hyprlock >/dev/null 2>&1            # waits here until you unlock
+    locked=true
+fi
+
+# Back to how it was (without the lock, the next press does this)
+[[ "${locked:-}" == true ]] && restore_all
+exit 0

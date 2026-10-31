@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Graphics helper for hybrid laptops (Intel + NVIDIA GTX 1650).
+#   lennox-gpu status          what is running where
+#   lennox-gpu run CMD...      run an app on the NVIDIA GPU (same as prime-run)
+#   lennox-gpu waybar          bar indicator (reading this never wakes the GPU)
+#   lennox-gpu check-driver    exit 0 if the NVIDIA module is built for every kernel
+export PATH="$HOME/.local/bin:$PATH"
+
+nvidia_dev() {
+    local dev class
+    for dev in /sys/bus/pci/devices/*; do
+        [[ "$(cat "$dev/vendor" 2>/dev/null)" == "0x10de" ]] || continue
+        class="$(cat "$dev/class" 2>/dev/null)"
+        [[ "$class" == 0x0300* || "$class" == 0x0302* ]] && { echo "$dev"; return 0; }
+    done
+    return 1
+}
+
+power_state() {
+    local dev="$1"
+    cat "$dev/power/runtime_status" 2>/dev/null || echo unknown
+}
+
+case "${1:-status}" in
+    run)
+        shift
+        [[ $# -gt 0 ]] || { echo "usage: lennox-gpu run COMMAND..." >&2; exit 2; }
+        if command -v prime-run >/dev/null; then exec prime-run "$@"; fi
+        __NV_PRIME_RENDER_OFFLOAD=1 __VK_LAYER_NV_optimus=NVIDIA_only __GLX_VENDOR_LIBRARY_NAME=nvidia exec "$@"
+        ;;
+    waybar)
+        dev="$(nvidia_dev)" || { echo '{"text":""}'; exit 0; }
+        state="$(power_state "$dev")"
+        if [[ "$state" == "suspended" ]]; then
+            printf '{"text":"󰢮 off","class":"asleep","tooltip":"NVIDIA GPU is asleep (saving battery)"}\n'
+        else
+            users="$(lsof -t /dev/nvidia* 2>/dev/null | sort -u | xargs -r ps -o comm= -p 2>/dev/null | sort -u | paste -sd ', ')"
+            printf '{"text":"󰢮 on","class":"active","tooltip":"NVIDIA GPU is awake%s"}\n' "${users:+\\nUsed by: $users}"
+        fi
+        ;;
+    check-driver)
+        pacman -Q nvidia-open-dkms >/dev/null 2>&1 || exit 0   # no NVIDIA DKMS driver installed
+        ok=0
+        for moddir in /usr/lib/modules/*/; do
+            kver="$(basename "$moddir")"
+            [[ -f "$moddir/pkgbase" ]] || continue            # leftover folder, no kernel
+            dkms status -m nvidia -k "$kver" 2>/dev/null | grep -q "installed" || { echo "missing for $kver"; ok=1; }
+        done
+        exit $ok
+        ;;
+    status)
+        dev="$(nvidia_dev)" || { echo "No NVIDIA GPU found."; exit 0; }
+        echo "NVIDIA GPU:      $(lspci -s "${dev##*/}" 2>/dev/null | cut -d: -f3- | sed 's/^ //')"
+        echo "Power state:     $(power_state "$dev")"
+        if [[ -r /sys/module/nvidia/version ]]; then
+            echo "Driver:          nvidia $(cat /sys/module/nvidia/version)"
+            echo "Kernel modeset:  $(cat /sys/module/nvidia_drm/parameters/modeset 2>/dev/null || echo '?')"
+        else
+            echo "Driver:          not loaded"
+        fi
+        hypr_env="$(tr '\0' '\n' < "/proc/$(pgrep -xo Hyprland)/environ" 2>/dev/null | grep '^AQ_DRM_DEVICES=' | cut -d= -f2-)"
+        echo "Desktop runs on: ${hypr_env:-all GPUs (default)}"
+        echo "GPU mode:        $(lennox-get gpu.mode)"
+        ;;
+    *) echo "usage: lennox-gpu status|run CMD|waybar|check-driver" >&2; exit 2 ;;
+esac

@@ -1,0 +1,34 @@
+# Sound and microphone (sof-firmware is what makes most laptop mics work)
+pipewire
+pipewire-alsa
+pipewire-pulse
+pipewire-jack
+wireplumber
+libpulse
+sof-firmware
+alsa-firmware
+alsa-ucm-conf
+alsa-utils
+pavucontrol
+wiremix
+# Network and Bluetooth
+networkmanager
+network-manager-applet
+nm-connection-editor
+bluez
+bluez-utils
+blueman
+# Laptop: power, brightness, media keys, battery, firmware updates
+power-profiles-daemon
+upower
+brightnessctl
+playerctl
+fwupd
+# Intel graphics + video decoding
+mesa
+lib32-mesa
+vulkan-intel
+lib32-vulkan-intel
+intel-media-driver
+libva-utils
+vulkan-tools

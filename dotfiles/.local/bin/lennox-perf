@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Performance modes: Quiet / Balanced / Max (SUPER + ALT + P, or click the bar item).
+#   lennox-perf quiet|balanced|max|cycle|status|waybar
+# Quiet = power-saver (cooler, quieter fans, longer battery), Max = performance.
+# On laptops that support it, the fans and power limits follow the mode too.
+# Game mode switches to Max by itself and back afterwards.
+export PATH="$HOME/.local/bin:$PATH"
+
+have() { command -v powerprofilesctl >/dev/null && powerprofilesctl get >/dev/null 2>&1; }
+
+current() {
+    case "$(powerprofilesctl get 2>/dev/null)" in
+        power-saver) echo quiet ;;
+        performance) echo max ;;
+        balanced) echo balanced ;;
+        *) echo "" ;;
+    esac
+}
+
+set_mode() {
+    local profile icon text
+    case "$1" in
+        quiet) profile=power-saver; icon=power-profile-power-saver-symbolic; text="Quiet: cooler and quieter, longest battery" ;;
+        balanced) profile=balanced; icon=power-profile-balanced-symbolic; text="Balanced" ;;
+        max) profile=performance; icon=power-profile-performance-symbolic; text="Max performance: fans can get loud" ;;
+    esac
+    if ! powerprofilesctl set "$profile" 2>/dev/null; then
+        notify-send -a Lennox -i dialog-warning "Couldn't switch to ${1^}" "This laptop may not support it (power-profiles-daemon)."
+        return 1
+    fi
+    pkill -RTMIN+15 -x waybar 2>/dev/null
+    lennox-widgets island event "$icon" "$text" >/dev/null 2>&1 &
+}
+
+have || { [[ "${1:-}" == waybar ]] && { echo '{"text":""}'; exit 0; }; echo "power-profiles-daemon isn't running" >&2; exit 1; }
+
+case "${1:-status}" in
+    quiet|balanced|max) set_mode "$1" ;;
+    cycle)
+        case "$(current)" in
+            quiet) set_mode balanced ;;
+            balanced) set_mode max ;;
+            *) set_mode quiet ;;
+        esac
+        ;;
+    status) current ;;
+    waybar)
+        mode="$(current)"
+        case "$mode" in
+            quiet) icon="󰌪" ;;
+            max) icon="󰓅" ;;
+            *) icon="󰗑" ;;
+        esac
+        printf '{"text":"%s","class":"%s","tooltip":"Performance: %s\\nClick: Quiet → Balanced → Max (SUPER + ALT + P)"}\n' \
+            "$icon" "${mode:-balanced}" "${mode^}"
+        ;;
+    *) echo "usage: lennox-perf quiet|balanced|max|cycle|status|waybar" >&2; exit 2 ;;
+esac

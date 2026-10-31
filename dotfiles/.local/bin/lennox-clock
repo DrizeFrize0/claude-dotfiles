@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Lennox Clock: world clock, alarms, timers, stopwatch, reminders (SUPER + ALT + C).
+#   lennox-clock [world|alarms|timers|stopwatch|reminders]   open the app (on that tab)
+#   lennox-clock timer 20m [label]                          start a timer
+#   lennox-clock alarm 07:30 [label] [--days weekdays|daily|mon,wed]
+#   lennox-clock remind 18:00|20m TEXT                      a reminder
+#   lennox-clock stopwatch start|stop|lap|reset
+#   lennox-clock list | cancel ID | stop | snooze [minutes] | waybar
+# Everything fires from the Lennox widgets process, so the app can stay closed.
+export PATH="$HOME/.local/bin:$PATH"
+export PYTHONPATH="$HOME/.local/share/lennox/python"
+case "${1:-}" in
+    ""|world|alarms|timers|stopwatch|reminders)
+        exec python3 -m lennox.clockapp "$@"
+        ;;
+    waybar|list)
+        exec python3 -m lennox.clock "$@"
+        ;;
+    *)
+        python3 -m lennox.clock "$@" || exit
+        pkill -RTMIN+14 -x waybar 2>/dev/null
+        exit 0
+        ;;
+esac

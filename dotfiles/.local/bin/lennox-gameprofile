@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Per-game settings (Lennox Settings > Game Center): while a game is open it gets its own
+# performance mode, quiet notifications and no night light; everything returns afterwards.
+#   lennox-gameprofile list | add NAME [MATCH] | remove MATCH | check
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.gameprofiles "$@"

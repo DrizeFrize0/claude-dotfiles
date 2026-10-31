@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Smart bedtime: a bedtime that fits when you really stop, then 15 minutes earlier each good week.
+#   lennox-bedtime suggest [--json] | apply
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.bedtime "$@"

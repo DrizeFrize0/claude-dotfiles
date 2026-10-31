@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Pick a color anywhere on screen; its hex code is copied to the clipboard.
+color="$(hyprpicker -a -f hex 2>/dev/null)"
+[[ -n "$color" ]] && notify-send -a Lennox -i color-select -t 3000 "Color copied" "$color"
+exit 0

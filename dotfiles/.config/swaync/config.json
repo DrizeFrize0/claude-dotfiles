@@ -1,0 +1,180 @@
+{
+  "$schema": "/etc/xdg/swaync/configSchema.json",
+  "positionX": "right",
+  "positionY": "top",
+  "layer": "overlay",
+  "control-center-layer": "top",
+  "layer-shell": true,
+  "cssPriority": "user",
+  "control-center-width": 400,
+  "control-center-margin-top": 10,
+  "control-center-margin-bottom": 10,
+  "control-center-margin-right": 10,
+  "control-center-margin-left": 0,
+  "notification-window-width": 380,
+  "notification-icon-size": 48,
+  "notification-body-image-height": 100,
+  "notification-body-image-width": 200,
+  "timeout": 5,
+  "timeout-low": 3,
+  "timeout-critical": 0,
+  "fit-to-screen": true,
+  "keyboard-shortcuts": true,
+  "image-visibility": "when-available",
+  "transition-time": 200,
+  "hide-on-clear": false,
+  "hide-on-action": true,
+  "script-fail-notify": false,
+  "scripts": {
+    "lennox-sound": {
+      "exec": "~/.local/bin/lennox-sound-fx notification",
+      "app-name": ".*",
+      "run-on": "receive"
+    }
+  },
+  "relative-timestamps": true,
+  "notification-grouping": true,
+  "text-empty": "No notifications",
+  "widgets": [
+    "label#greeting",
+    "buttons-grid#toggles",
+    "volume",
+    "slider#mic",
+    "slider#brightness",
+    "mpris",
+    "buttons-grid#actions",
+    "dnd",
+    "title",
+    "notifications"
+  ],
+  "widget-config": {
+    "label#greeting": {
+      "text": "Lennox",
+      "max-lines": 1
+    },
+    "buttons-grid#toggles": {
+      "buttons-per-row": 2,
+      "actions": [
+        {
+          "label": "󰖩  Wi-Fi",
+          "type": "toggle",
+          "command": "~/.local/bin/lennox-panel switch wifi",
+          "update-command": "~/.local/bin/lennox-panel state wifi"
+        },
+        {
+          "label": "󰂯  Bluetooth",
+          "type": "toggle",
+          "command": "~/.local/bin/lennox-panel switch bluetooth",
+          "update-command": "~/.local/bin/lennox-panel state bluetooth"
+        },
+        {
+          "label": "󰍬  Microphone",
+          "type": "toggle",
+          "command": "~/.local/bin/lennox-panel switch mic",
+          "update-command": "~/.local/bin/lennox-panel state mic"
+        },
+        {
+          "label": "󰖔  Night light",
+          "type": "toggle",
+          "command": "~/.local/bin/lennox-panel switch nightlight",
+          "update-command": "~/.local/bin/lennox-panel state nightlight"
+        },
+        {
+          "label": "󰊗  Game mode",
+          "type": "toggle",
+          "command": "~/.local/bin/lennox-panel switch game",
+          "update-command": "~/.local/bin/lennox-panel state game"
+        },
+        {
+          "label": "󰅶  Stay awake",
+          "type": "toggle",
+          "command": "~/.local/bin/lennox-panel switch awake",
+          "update-command": "~/.local/bin/lennox-panel state awake"
+        },
+        {
+          "label": "󰌪  Battery saver",
+          "type": "toggle",
+          "command": "~/.local/bin/lennox-panel switch saver",
+          "update-command": "~/.local/bin/lennox-panel state saver"
+        },
+        {
+          "label": "󰔎  Dark mode",
+          "type": "toggle",
+          "command": "~/.local/bin/lennox-panel switch dark",
+          "update-command": "~/.local/bin/lennox-panel state dark"
+        },
+        {
+          "label": "󰀘  Focus",
+          "type": "toggle",
+          "command": "~/.local/bin/lennox-panel switch focus",
+          "update-command": "~/.local/bin/lennox-panel state focus"
+        }
+      ]
+    },
+    "buttons-grid#actions": {
+      "buttons-per-row": 5,
+      "actions": [
+        {
+          "label": "󰹑",
+          "command": "sh -c 'sleep 0.5; ~/.local/bin/lennox-screenshot area'"
+        },
+        {
+          "label": "󰋩",
+          "command": "sh -c 'sleep 0.3; ~/.local/bin/lennox-menu wallpaper'"
+        },
+        {
+          "label": "󰒓",
+          "command": "~/.local/bin/lennox-settings"
+        },
+        {
+          "label": "󰌾",
+          "command": "sh -c 'sleep 0.3; ~/.local/bin/lennox-power lock'"
+        },
+        {
+          "label": "󰐥",
+          "command": "sh -c 'sleep 0.3; ~/.local/bin/lennox-menu power'"
+        }
+      ]
+    },
+    "volume": {
+      "label": "󰕾",
+      "show-per-app": true,
+      "show-per-app-icon": true,
+      "show-per-app-label": true,
+      "expand-button-label": "⌄ Apps",
+      "collapse-button-label": "⌃ Hide",
+      "empty-list-label": "Nothing is playing"
+    },
+    "slider#mic": {
+      "label": "󰍬",
+      "cmd_getter": "~/.local/bin/lennox-panel get mic",
+      "cmd_setter": "~/.local/bin/lennox-panel set mic $value",
+      "min": 0,
+      "max": 100,
+      "min_limit": 0,
+      "max_limit": 100
+    },
+    "slider#brightness": {
+      "label": "󰃟",
+      "cmd_getter": "~/.local/bin/lennox-panel get brightness",
+      "cmd_setter": "~/.local/bin/lennox-panel set brightness $value",
+      "min": 0,
+      "max": 100,
+      "min_limit": 5,
+      "max_limit": 100
+    },
+    "mpris": {
+      "show-album-art": "when-available",
+      "autohide": true,
+      "loop-carousel": true
+    },
+    "dnd": {
+      "text": "Do not disturb"
+    },
+    "title": {
+      "text": "Notifications",
+      "clear-all-button": true,
+      "button-text": "Clear all"
+    }
+  }
+}

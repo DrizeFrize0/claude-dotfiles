@@ -1,0 +1,37 @@
+{
+  "layer": "top",
+  "position": "top",
+  "margin-top": 0,
+  "margin-bottom": 0,
+  "margin-left": 0,
+  "margin-right": 0,
+  "spacing": 0,
+  "reload_style_on_change": false,
+  "modules-left": [
+    "custom/appmenuicon",
+    "group/workspaces",
+    "custom/minimized"
+  ],
+  "modules-center": [
+    "hyprland/window"
+  ],
+  "modules-right": [
+    "custom/updates",
+    "pulseaudio",
+    "bluetooth",
+    "network",
+    "battery",
+    "custom/perf",
+    "custom/mcserver",
+    "custom/aispend",
+    "custom/sysmon",
+    "group/hardware",
+    "group/tools",
+    "custom/exit",
+    "clock",
+    "custom/clocknext",
+    "tray",
+    "custom/notification",
+    "custom/lennox"
+  ]
+}

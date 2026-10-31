@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+# Check that drivers, audio, touchpad, updates and the desktop are healthy.
+# Every problem comes with a hint on how to fix it.
+#   lennox-doctor          readable report
+#   lennox-doctor --json   machine readable (used by Lennox Settings)
+export PATH="$HOME/.local/bin:$PATH"
+
+json=false
+[[ "${1:-}" == "--json" ]] && json=true
+
+green=$'\e[32m'; yellow=$'\e[33m'; red=$'\e[31m'; bold=$'\e[1m'; reset=$'\e[0m'
+$json && { green=""; yellow=""; red=""; bold=""; reset=""; }
+
+results=()
+failures=0
+warnings=0
+
+record() {
+    # record LEVEL(ok|warn|fail) SECTION MESSAGE [HINT]
+    local level="$1" section="$2" message="$3" hint="${4:-}"
+    case "$level" in
+        warn) warnings=$((warnings + 1)) ;;
+        fail) failures=$((failures + 1)) ;;
+    esac
+    if $json; then
+        results+=("$(jq -cn --arg l "$level" --arg s "$section" --arg m "$message" --arg h "$hint" \
+            '{level:$l, section:$s, message:$m, hint:$h}')")
+    else
+        local mark="${green}✓${reset}"
+        [[ "$level" == "warn" ]] && mark="${yellow}!${reset}"
+        [[ "$level" == "fail" ]] && mark="${red}✗${reset}"
+        printf '  %s %s\n' "$mark" "$message"
+        [[ -n "$hint" && "$level" != "ok" ]] && printf '      %s\n' "$hint"
+    fi
+}
+
+section() { $json || printf '\n%s%s%s\n' "$bold" "$1" "$reset"; }
+have() { command -v "$1" >/dev/null 2>&1; }
+pkg() { pacman -Q "$1" >/dev/null 2>&1; }
+sys_active() { systemctl is-active --quiet "$1" 2>/dev/null; }
+
+# ---------------------------------------------------------------- graphics
+section "Graphics"
+if lspci -d ::03xx 2>/dev/null | grep -qi intel; then
+    if pkg vulkan-intel && pkg intel-media-driver; then
+        record ok graphics "Intel graphics drivers installed"
+    else
+        record warn graphics "Intel Vulkan / video drivers missing" "sudo pacman -S vulkan-intel intel-media-driver"
+    fi
+fi
+if lspci -d 10de::03xx 2>/dev/null | grep -q .; then
+    if [[ -r /sys/module/nvidia/version ]]; then
+        record ok graphics "NVIDIA driver $(cat /sys/module/nvidia/version) loaded"
+    elif pkg nvidia-open-dkms; then
+        record fail graphics "NVIDIA driver installed but not loaded" "Restart. If it stays like this: sudo dkms autoinstall, then restart."
+    else
+        record fail graphics "NVIDIA driver not installed" "sudo pacman -S nvidia-open-dkms nvidia-utils lib32-nvidia-utils"
+    fi
+    if [[ "$(cat /sys/module/nvidia_drm/parameters/modeset 2>/dev/null)" == "Y" ]]; then
+        record ok graphics "NVIDIA kernel modesetting on"
+    elif [[ -r /sys/module/nvidia/version ]]; then
+        record warn graphics "NVIDIA modesetting is off" "Add nvidia_drm.modeset=1 to the kernel command line."
+    fi
+    if missing="$(lennox-gpu check-driver 2>&1)"; then
+        record ok graphics "NVIDIA module built for every installed kernel"
+    else
+        record fail graphics "NVIDIA module missing: $missing" "sudo dkms autoinstall  (needs linux-headers for every kernel)"
+    fi
+    dev="$(for d in /sys/bus/pci/devices/*; do [[ "$(cat "$d/vendor")" == 0x10de && "$(cat "$d/class")" == 0x03* ]] && echo "$d" && break; done)"
+    if [[ -n "$dev" ]]; then
+        state="$(cat "$dev/power/runtime_status" 2>/dev/null)"
+        control="$(cat "$dev/power/control" 2>/dev/null)"
+        if [[ "$control" == "auto" ]]; then
+            record ok graphics "NVIDIA power saving enabled (now: $state)"
+        else
+            record warn graphics "NVIDIA power saving is off (power/control=$control)" "Re-run the Lennox installer, it adds /etc/udev/rules.d/80-lennox-nvidia-pm.rules"
+        fi
+    fi
+fi
+
+# ---------------------------------------------------------------- audio
+section "Sound & microphone"
+# Drivers, firmware, devices and levels: lennox-sound check (details there)
+while IFS=$'\t' read -r level message hint; do
+    [[ -n "$level" ]] && record "$level" audio "$message" "$hint"
+done < <(lennox-sound check --json 2>/dev/null | jq -r '.[] | [.level, .message, .hint] | @tsv' 2>/dev/null)
+
+# ---------------------------------------------------------------- input
+section "Keyboard & touchpad"
+if have hyprctl && hyprctl version >/dev/null 2>&1; then
+    pad="$(hyprctl devices -j 2>/dev/null | jq -r '.mice[]?.name | select(test("touchpad|trackpad|synaptics|elan|glidepoint"; "i"))' | head -n1)"
+    if [[ -n "$pad" ]]; then
+        record ok input "Touchpad found: $pad"
+    elif ls /sys/class/power_supply/BAT* >/dev/null 2>&1; then
+        record warn input "No touchpad found" "Some touchpads need the i2c_hid_acpi module; check 'sudo dmesg | grep -i i2c_hid'."
+    fi
+    kb="$(hyprctl devices -j 2>/dev/null | jq -r '[.keyboards[]?.name] | length')"
+    record ok input "$kb keyboard device(s), layout: $(lennox-get input.kb_layout)"
+fi
+
+# ---------------------------------------------------------------- network
+section "Network & Bluetooth"
+sys_active NetworkManager && record ok net "NetworkManager running" \
+    || record fail net "NetworkManager is not running" "sudo systemctl enable --now NetworkManager"
+if [[ -d /sys/class/bluetooth ]] && ls /sys/class/bluetooth/* >/dev/null 2>&1; then
+    sys_active bluetooth && record ok net "Bluetooth service running" \
+        || record warn net "Bluetooth service is off" "sudo systemctl enable --now bluetooth"
+fi
+
+# ---------------------------------------------------------------- updates
+section "Updates & safety"
+if systemctl is-enabled --quiet lennox-autoupdate.timer 2>/dev/null; then
+    status="/var/lib/lennox/autoupdate-status.json"
+    if [[ -r "$status" ]]; then
+        last="$(jq -r '"\(.time) (\(.result)): \(.message)"' "$status" 2>/dev/null)"
+        record ok updates "Automatic updates on. Last run: $last"
+    else
+        record ok updates "Automatic updates on (no run yet)"
+    fi
+else
+    record warn updates "Automatic updates are off" "Turn them on in Lennox Settings > Updates."
+fi
+if have snapper && sudo -n true 2>/dev/null; then
+    sudo -n snapper -c root list >/dev/null 2>&1 && record ok updates "System snapshots configured (roll back from the boot menu)"
+elif findmnt -n -o FSTYPE / 2>/dev/null | grep -q btrfs; then
+    pkg snap-pac && record ok updates "Snapshots before every update (snap-pac)" \
+        || record warn updates "btrfs without update snapshots" "sudo pacman -S snapper snap-pac grub-btrfs (the installer can set this up)"
+else
+    record ok updates "Filesystem: $(findmnt -n -o FSTYPE /) (snapshots need btrfs; updates are still checked before they run)"
+fi
+pacnew="$(find /etc -name '*.pacnew' 2>/dev/null | wc -l)"
+(( pacnew > 0 )) && record warn updates "$pacnew updated config file(s) waiting (.pacnew)" "Review them with: sudo pacdiff"
+
+# ---------------------------------------------------------------- desktop
+section "Desktop"
+for proc in waybar swaync hypridle awww-daemon; do
+    if pgrep -x "$proc" >/dev/null; then
+        record ok desktop "$proc running"
+    else
+        case "$proc" in
+            waybar) [[ "$(lennox-get bar.enabled)" == "true" ]] && record warn desktop "Bar is not running" "Press SUPER + SHIFT + B" ;;
+            hypridle) record warn desktop "Auto lock is paused (Stay awake)" "Turn it back on in the quick panel." ;;
+            *) record warn desktop "$proc is not running" "Log out and back in, or check ~/.local/state/lennox/autostart.log" ;;
+        esac
+    fi
+done
+if ! pkg gtk4-layer-shell; then
+    record warn desktop "Widgets and dashboard need gtk4-layer-shell" "sudo pacman -S gtk4-layer-shell, then log out and back in"
+elif pgrep -f "lennox\.widgets\.main" >/dev/null; then
+    record ok desktop "Widgets and dashboard running"
+else
+    record warn desktop "Widgets and dashboard are not running" "Run: setsid -f lennox-widgets  (or log out and back in)"
+fi
+for font in "Fira Sans" "Symbols Nerd Font" "JetBrainsMono Nerd Font"; do
+    fc-list 2>/dev/null | grep -qi "$font" && record ok desktop "Font: $font" \
+        || record warn desktop "Font missing: $font" "Re-run the Lennox installer"
+done
+if have hyprctl && hyprctl version >/dev/null 2>&1; then
+    errors="$(hyprctl configerrors -j 2>/dev/null | jq -r '.[] | select(length > 0)' 2>/dev/null | head -n 3)"
+    if [[ -z "$errors" ]]; then
+        record ok desktop "Hyprland config loads without errors"
+    else
+        record fail desktop "Hyprland config errors: $errors" "Check ~/.config/hypr/custom.lua first"
+    fi
+fi
+
+# ---------------------------------------------------------------- summary
+if $json; then
+    printf '%s\n' "${results[@]}" | jq -s --argjson f "$failures" --argjson w "$warnings" '{failures:$f, warnings:$w, checks:.}'
+else
+    echo
+    if (( failures == 0 && warnings == 0 )); then
+        echo "${green}${bold}All good.${reset}"
+    else
+        echo "${bold}$failures problem(s), $warnings warning(s).${reset}"
+    fi
+fi
+exit $(( failures > 0 ? 1 : 0 ))

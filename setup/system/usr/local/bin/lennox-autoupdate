@@ -1,0 +1,243 @@
+#!/usr/bin/env bash
+# Lennox automatic updates. Runs as root from lennox-autoupdate.timer
+# (hourly check, installs at most once per INTERVAL_HOURS).
+#
+# Keeps the system, kernel and every driver (NVIDIA, audio/mic firmware,
+# touchpad/libinput, Wi-Fi, Bluetooth) up to date, plus Flatpak apps.
+# Safety rules:
+#   - only on the charger (systemd ConditionACPower) and not on metered
+#     connections like a phone hotspot
+#   - pauses when Arch Linux news says an update needs manual steps
+#   - shutdown is blocked while pacman runs, so it can never be cut off
+#   - on btrfs, snap-pac snapshots the system before and after
+#   - checks the NVIDIA driver was rebuilt for every kernel afterwards
+#   - never restarts the computer; it tells you when a restart is needed
+#
+#   lennox-autoupdate              normal run (from the timer)
+#   lennox-autoupdate --now        run now, ignoring the interval
+#   lennox-autoupdate --enable | --disable
+#   lennox-autoupdate --ack-news   continue after reading the held Arch news
+#   lennox-autoupdate --status
+
+set -uo pipefail
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/bin
+
+CONF=/etc/lennox/autoupdate.conf
+STATE=/var/lib/lennox
+STATUS="$STATE/autoupdate-status.json"
+STAMP="$STATE/last-update"
+NEWS_ACK="$STATE/news-ack"
+LOG=/var/log/lennox-autoupdate.log
+
+conf() {
+    # conf KEY DEFAULT  (plain KEY=VALUE parsing, never sourced)
+    local value
+    value="$(grep -E "^$1=" "$CONF" 2>/dev/null | tail -n1 | cut -d= -f2- | tr -d '"'"'")"
+    echo "${value:-$2}"
+}
+
+set_conf() {
+    mkdir -p "$(dirname "$CONF")"
+    touch "$CONF"
+    if grep -qE "^$1=" "$CONF"; then
+        sed -i "s|^$1=.*|$1=$2|" "$CONF"
+    else
+        echo "$1=$2" >> "$CONF"
+    fi
+}
+
+ENABLED="$(conf ENABLED true)"
+USER_NAME="$(conf USER_NAME "")"
+INTERVAL_HOURS="$(conf INTERVAL_HOURS 24)"
+ALLOW_METERED="$(conf ALLOW_METERED false)"
+[[ "$INTERVAL_HOURS" =~ ^[0-9]+$ ]] || INTERVAL_HOURS=24
+
+log() { echo "[$(date '+%F %T')] $*" >> "$LOG"; }
+
+write_status() {
+    # write_status RESULT MESSAGE [REBOOT_NEEDED] [UPDATED_COUNT] [HELD_NEWS_JSON]
+    local tmp
+    tmp="$(mktemp "$STATE/.status.XXXXXX")"
+    jq -n --arg time "$(date '+%F %H:%M')" --arg result "$1" --arg message "$2" \
+        --argjson reboot "${3:-false}" --argjson updated "${4:-0}" --argjson news "${5:-[]}" \
+        '{time:$time, result:$result, message:$message, reboot_needed:$reboot, updated:$updated, held_news:$news}' > "$tmp" \
+        && chmod 644 "$tmp" && mv -f "$tmp" "$STATUS"
+}
+
+notify_user() {
+    # notify_user URGENCY TITLE BODY
+    [[ -n "$USER_NAME" ]] || return 0
+    local uid
+    uid="$(id -u "$USER_NAME" 2>/dev/null)" || return 0
+    [[ -S "/run/user/$uid/bus" ]] || return 0
+    runuser -u "$USER_NAME" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+        notify-send -a "Updates" -u "$1" -i system-software-update "$2" "$3" >/dev/null 2>&1 || true
+}
+
+on_metered() {
+    command -v nmcli >/dev/null || return 1
+    # A connected device (state 100) whose connection is metered (yes / yes (guessed))
+    nmcli -t -f GENERAL.STATE,GENERAL.METERED device show 2>/dev/null | awk -F: '
+        /^GENERAL.STATE:/   { connected = ($2 ~ /^100/) }
+        /^GENERAL.METERED:/ { if (connected && $2 ~ /^yes/) metered = 1 }
+        END { exit !metered }'
+
+}
+
+nvidia_ok() {
+    pacman -Q nvidia-open-dkms >/dev/null 2>&1 || return 0
+    local moddir kver ok=0
+    for moddir in /usr/lib/modules/*/; do
+        kver="$(basename "$moddir")"
+        [[ -f "$moddir/pkgbase" ]] || continue
+        dkms status -m nvidia -k "$kver" 2>/dev/null | grep -q installed || { log "nvidia module missing for $kver"; ok=1; }
+    done
+    return $ok
+}
+
+# ---------------------------------------------------------------- commands
+case "${1:-}" in
+    --enable)  set_conf ENABLED true;  echo "Automatic updates on";  exit 0 ;;
+    --disable) set_conf ENABLED false; echo "Automatic updates off"; exit 0 ;;
+    --ack-news) mkdir -p "$STATE"; date +%s > "$NEWS_ACK"; chmod 644 "$NEWS_ACK"; echo "OK, updates will continue"; FORCE=true ;;
+    --status) cat "$STATUS" 2>/dev/null || echo '{}'; exit 0 ;;
+    --now) FORCE=true ;;
+    "") FORCE=false ;;
+    *) echo "usage: lennox-autoupdate [--now|--enable|--disable|--ack-news|--status]" >&2; exit 2 ;;
+esac
+
+[[ $EUID -eq 0 ]] || { echo "lennox-autoupdate must run as root" >&2; exit 1; }
+mkdir -p "$STATE"
+chmod 755 "$STATE"
+
+# Only one run at a time
+exec 8>/run/lennox-autoupdate.lock
+flock -n 8 || exit 0
+
+if [[ "$ENABLED" != "true" ]]; then
+    exit 0
+fi
+
+if [[ "$FORCE" != "true" && -f "$STAMP" ]]; then
+    age=$(( $(date +%s) - $(stat -c %Y "$STAMP") ))
+    (( age < INTERVAL_HOURS * 3600 )) && exit 0
+fi
+
+if [[ "$ALLOW_METERED" != "true" ]] && on_metered; then
+    log "skipped: metered connection"
+    write_status skipped "Waiting for a non-metered connection (phone hotspots are skipped)."
+    exit 0
+fi
+
+if ! curl -fsS --max-time 15 -o /dev/null https://archlinux.org; then
+    log "skipped: offline"
+    exit 0
+fi
+
+# ---------------------------------------------------------------- Arch news
+# Arch announces updates that need manual steps on its news feed. If one
+# was posted since the last update, wait for you to read it.
+since="$(stat -c %Y "$STAMP" 2>/dev/null || echo $(( $(date +%s) - 14 * 86400 )))"
+ack="$(cat "$NEWS_ACK" 2>/dev/null || echo 0)"
+(( ack > since )) && since="$ack"
+held="[]"
+read -r -d '' NEWS_PY <<'PY'
+import sys, json, email.utils, xml.etree.ElementTree as ET
+since = int(sys.argv[1])
+items = []
+try:
+    root = ET.fromstring(sys.stdin.read())
+    for item in root.iter("item"):
+        title = item.findtext("title", "")
+        link = item.findtext("link", "")
+        when = email.utils.parsedate_to_datetime(item.findtext("pubDate", "")).timestamp()
+        if when > since and "manual intervention" in title.lower():
+            items.append({"title": title, "link": link})
+except Exception:
+    pass
+print(json.dumps(items))
+PY
+if feed="$(curl -fsS --max-time 20 https://archlinux.org/feeds/news/ 2>/dev/null)"; then
+    held="$(python3 -c "$NEWS_PY" "$since" <<<"$feed")"
+fi
+[[ "$held" == "["* ]] || held="[]"
+if [[ "$held" != "[]" ]]; then
+    title="$(jq -r '.[0].title' <<<"$held")"
+    log "held: $title"
+    write_status held "Paused: Arch news says an update needs a manual step." false 0 "$held"
+    notify_user critical "Updates paused" "Arch news: \"$title\". Open Lennox Settings > Updates to read it and continue."
+    exit 0
+fi
+
+# ---------------------------------------------------------------- update
+# A crashed pacman can leave a stale lock; it is only safe to remove when
+# no pacman is running.
+for _ in $(seq 120); do
+    [[ -f /var/lib/pacman/db.lck ]] || break
+    if ! pgrep -x pacman >/dev/null; then
+        log "removing stale pacman lock"
+        rm -f /var/lib/pacman/db.lck
+        break
+    fi
+    sleep 5
+done
+
+log "starting update"
+before="$(pacman -Q | sort)"
+running_kernel="$(uname -r)"
+
+inhibit=(systemd-inhibit --what=shutdown --who="Lennox updates" --why="Installing system updates, please wait a moment" --mode=block)
+
+"${inhibit[@]}" pacman -Sy --needed --noconfirm archlinux-keyring >> "$LOG" 2>&1
+"${inhibit[@]}" pacman -Su --noconfirm >> "$LOG" 2>&1
+result=$?
+
+after="$(pacman -Q | sort)"
+updated="$(comm -13 <(echo "$before") <(echo "$after") | wc -l)"
+
+if (( result != 0 )); then
+    log "pacman failed ($result)"
+    write_status error "The update could not finish (nothing was half-installed). Run 'lennox update' to see why." false 0
+    notify_user normal "Update needs you" "An automatic update stopped safely. Click the update count in the bar to finish it."
+    exit 1
+fi
+
+# The NVIDIA driver must be rebuilt for every kernel, or the next boot has no graphics
+if ! nvidia_ok; then
+    log "rebuilding nvidia modules"
+    dkms autoinstall >> "$LOG" 2>&1
+    if ! nvidia_ok; then
+        write_status error "The NVIDIA driver did not rebuild. Don't restart until 'lennox doctor' is green." false "$updated"
+        notify_user critical "Don't restart yet" "The graphics driver did not rebuild after the update. Run 'lennox doctor' in a terminal."
+        exit 1
+    fi
+fi
+
+if command -v flatpak >/dev/null; then
+    "${inhibit[@]}" flatpak update -y --noninteractive --system >> "$LOG" 2>&1
+fi
+
+# Keep the two newest versions of each package for downgrades, free the rest
+command -v paccache >/dev/null && paccache -rk2 >/dev/null 2>&1
+
+date +%s > "$STAMP"
+
+reboot=false
+[[ -d "/usr/lib/modules/$running_kernel" ]] || reboot=true
+
+if (( updated == 0 )); then
+    write_status ok "Everything is up to date." false 0
+elif $reboot; then
+    write_status ok "$updated packages updated. Restart to use the new kernel and drivers." true "$updated"
+    notify_user normal "Updates installed" "$updated packages updated, including the kernel. Restart when it suits you."
+else
+    write_status ok "$updated packages updated." false "$updated"
+    notify_user low "Updates installed" "$updated packages updated in the background."
+fi
+log "done: $updated packages"
+
+# Keep the log small
+if [[ -f "$LOG" ]] && (( $(stat -c %s "$LOG") > 2000000 )); then
+    tail -c 1000000 "$LOG" > "$LOG.tmp" && mv -f "$LOG.tmp" "$LOG"
+fi
+exit 0

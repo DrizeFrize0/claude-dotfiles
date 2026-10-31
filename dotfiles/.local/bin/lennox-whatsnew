@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Lennox's version and what changed (shown once after every upgrade).
+#   lennox-whatsnew version | show [--since VERSION] | check | seen
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.whatsnew "$@"

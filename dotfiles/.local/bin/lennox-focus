@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Focus mode: a timed session with distracting apps and sites blocked.
+#   lennox-focus toggle | start [MINUTES] | stop | more [MINUTES] | status | stats
+# SUPER + F12, the quick panel or the island start it; Lennox Settings > Focus sets it up.
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.focus "$@"

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Back up your Lennox setup (settings, tweaks, alarms, stats, wallpaper) and put it back.
+#   lennox-backup now [FOLDER] | list | restore FILE
+# Lennox Settings > Backup picks the folder and turns on the weekly backup.
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.backup "$@"

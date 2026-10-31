@@ -1,0 +1,459 @@
+{
+  "custom/ws1": {
+    "exec": "~/.local/bin/lennox-ws 1",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-ws go 1",
+    "on-scroll-up": "~/.local/bin/lennox-ws prev",
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
+  },
+  "custom/ws2": {
+    "exec": "~/.local/bin/lennox-ws 2",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-ws go 2",
+    "on-scroll-up": "~/.local/bin/lennox-ws prev",
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
+  },
+  "custom/ws3": {
+    "exec": "~/.local/bin/lennox-ws 3",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-ws go 3",
+    "on-scroll-up": "~/.local/bin/lennox-ws prev",
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
+  },
+  "custom/ws4": {
+    "exec": "~/.local/bin/lennox-ws 4",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-ws go 4",
+    "on-scroll-up": "~/.local/bin/lennox-ws prev",
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
+  },
+  "custom/ws5": {
+    "exec": "~/.local/bin/lennox-ws 5",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-ws go 5",
+    "on-scroll-up": "~/.local/bin/lennox-ws prev",
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
+  },
+  "custom/ws6": {
+    "exec": "~/.local/bin/lennox-ws 6",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-ws go 6",
+    "on-scroll-up": "~/.local/bin/lennox-ws prev",
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
+  },
+  "custom/ws7": {
+    "exec": "~/.local/bin/lennox-ws 7",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-ws go 7",
+    "on-scroll-up": "~/.local/bin/lennox-ws prev",
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
+  },
+  "custom/ws8": {
+    "exec": "~/.local/bin/lennox-ws 8",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-ws go 8",
+    "on-scroll-up": "~/.local/bin/lennox-ws prev",
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
+  },
+  "custom/ws9": {
+    "exec": "~/.local/bin/lennox-ws 9",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-ws go 9",
+    "on-scroll-up": "~/.local/bin/lennox-ws prev",
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
+  },
+  "custom/ws10": {
+    "exec": "~/.local/bin/lennox-ws 10",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-ws go 10",
+    "on-scroll-up": "~/.local/bin/lennox-ws prev",
+    "on-scroll-down": "~/.local/bin/lennox-ws next",
+    "hide-empty-text": true
+  },
+  "group/workspaces": {
+    "orientation": "inherit",
+    "modules": [
+      "custom/ws1",
+      "custom/ws2",
+      "custom/ws3",
+      "custom/ws4",
+      "custom/ws5",
+      "custom/ws6",
+      "custom/ws7",
+      "custom/ws8",
+      "custom/ws9",
+      "custom/ws10"
+    ]
+  },
+  "hyprland/window": {
+    "max-length": 60,
+    "separate-outputs": true,
+    "rewrite": {
+      "(.*) — Zen Browser": "$1",
+      "(.*) - Zen Browser": "$1",
+      "(.*) — Mozilla Firefox": "$1",
+      "(.*) - Visual Studio Code": "$1",
+      "(.*) - Code - OSS": "$1"
+    }
+  },
+  "custom/appmenu": {
+    "format": "Apps",
+    "on-click": "~/.local/bin/lennox-menu apps",
+    "on-click-right": "~/.local/bin/lennox-menu keybinds",
+    "tooltip-format": "Left: Open the app launcher\nRight: Show all keybindings"
+  },
+  "custom/appmenuicon": {
+    "format": "󰀻",
+    "on-click": "~/.local/bin/lennox-menu apps",
+    "on-click-right": "~/.local/bin/lennox-menu keybinds",
+    "tooltip-format": "Left: Open the app launcher\nRight: Show all keybindings"
+  },
+  "custom/updates": {
+    "format": "󰏗  {text}",
+    "return-type": "json",
+    "exec": "~/.local/bin/lennox-updates waybar",
+    "interval": 1800,
+    "signal": 12,
+    "on-click": "~/.local/bin/lennox-update",
+    "on-click-right": "~/.local/bin/lennox-updates refresh",
+    "hide-empty-text": true
+  },
+  "pulseaudio": {
+    "format": "{icon}  {volume}%",
+    "format-bluetooth": "{icon} 󰂯  {volume}%",
+    "format-muted": "󰖁  muted",
+    "format-icons": {
+      "headphone": "󰋋",
+      "headset": "󰋎",
+      "default": [
+        "󰕿",
+        "󰖀",
+        "󰕾"
+      ]
+    },
+    "scroll-step": 5,
+    "max-volume": 100,
+    "on-click": "~/.local/bin/lennox-open audio_mixer",
+    "on-click-right": "~/.local/bin/lennox-osd volume mute",
+    "on-click-middle": "~/.local/bin/lennox-osd mic mute",
+    "tooltip-format": "{desc}\nLeft: Sound settings\nRight: Mute\nMiddle: Mute microphone"
+  },
+  "bluetooth": {
+    "format": "󰂯",
+    "format-connected": "󰂱 {num_connections}",
+    "format-disabled": "󰂲",
+    "format-off": "󰂲",
+    "format-no-controller": "",
+    "interval": 30,
+    "on-click": "blueman-manager",
+    "tooltip-format": "Bluetooth: {status}",
+    "tooltip-format-connected": "Connected:\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}",
+    "tooltip-format-enumerate-connected-battery": "{device_alias}  {device_battery_percentage}%"
+  },
+  "network": {
+    "format": "{ifname}",
+    "format-wifi": "󰖩  {signalStrength}%",
+    "format-ethernet": "󰈀  wired",
+    "format-disconnected": "󰖪  offline",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)\nIP: {ipaddr}\nDown {bandwidthDownBits}  Up {bandwidthUpBits}\nLeft: Wi-Fi networks  Right: Network settings",
+    "tooltip-format-ethernet": "{ifname}\nIP: {ipaddr}\nDown {bandwidthDownBits}  Up {bandwidthUpBits}",
+    "tooltip-format-disconnected": "Not connected\nLeft: Wi-Fi networks",
+    "max-length": 40,
+    "on-click": "~/.local/bin/lennox-menu wifi",
+    "on-click-right": "nm-connection-editor"
+  },
+  "battery": {
+    "interval": 10,
+    "states": {
+      "warning": 25,
+      "critical": 12
+    },
+    "format": "{icon}  {capacity}%",
+    "format-charging": "󰂄  {capacity}%",
+    "format-plugged": "󰚥  {capacity}%",
+    "format-full": "󰁹  full",
+    "format-icons": [
+      "󰁺",
+      "󰁻",
+      "󰁼",
+      "󰁽",
+      "󰁾",
+      "󰁿",
+      "󰂀",
+      "󰂁",
+      "󰂂",
+      "󰁹"
+    ],
+    "tooltip-format": "{timeTo}\n{power:.1f} W"
+  },
+  "power-profiles-daemon": {
+    "format": "{icon}",
+    "tooltip-format": "Power profile: {profile}\nClick to change",
+    "format-icons": {
+      "default": "󰓅",
+      "performance": "󰓅",
+      "balanced": "󰗑",
+      "power-saver": "󰌪"
+    }
+  },
+  "custom/system": {
+    "format": "󰘚",
+    "tooltip": false
+  },
+  "cpu": {
+    "format": "󰻠 {usage}%",
+    "interval": 5,
+    "on-click": "~/.local/bin/lennox-open system_monitor"
+  },
+  "memory": {
+    "format": "󰍛 {percentage}%",
+    "interval": 10,
+    "on-click": "~/.local/bin/lennox-open system_monitor"
+  },
+  "disk": {
+    "format": "󰋊 {percentage_used}%",
+    "interval": 60,
+    "path": "/",
+    "on-click": "~/.local/bin/lennox-open system_monitor"
+  },
+  "custom/clocknext": {
+    "exec": "~/.local/bin/lennox-clock waybar",
+    "return-type": "json",
+    "interval": 5,
+    "signal": 14,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-clock timers",
+    "hide-empty-text": true
+  },
+  "custom/perf": {
+    "exec": "~/.local/bin/lennox-perf waybar",
+    "return-type": "json",
+    "interval": 30,
+    "signal": 15,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-perf cycle",
+    "hide-empty-text": true
+  },
+  "custom/mcserver": {
+    "exec": "~/.local/bin/lennox-mcserver waybar",
+    "return-type": "json",
+    "interval": 60,
+    "signal": 16,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-mcserver open",
+    "hide-empty-text": true
+  },
+  "custom/sysmon": {
+    "exec": "~/.local/bin/lennox-sysmon waybar",
+    "return-type": "json",
+    "interval": 10,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-open system_monitor",
+    "hide-empty-text": true
+  },
+  "custom/aispend": {
+    "exec": "~/.local/bin/lennox-aispend waybar",
+    "return-type": "json",
+    "interval": 300,
+    "signal": 13,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-aispend open",
+    "on-click-right": "~/.local/bin/lennox-aispend refresh-bar",
+    "hide-empty-text": true
+  },
+  "custom/gpu": {
+    "exec": "~/.local/bin/lennox-gpu waybar",
+    "return-type": "json",
+    "interval": 15,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-settings --page graphics",
+    "hide-empty-text": true
+  },
+  "hyprland/language": {
+    "format": "󰌌 {short}"
+  },
+  "group/hardware": {
+    "orientation": "inherit",
+    "drawer": {
+      "transition-duration": 300,
+      "children-class": "drawer-child",
+      "transition-left-to-right": false
+    },
+    "modules": [
+      "custom/system",
+      "disk",
+      "cpu",
+      "memory",
+      "custom/gpu",
+      "hyprland/language"
+    ]
+  },
+  "custom/tools": {
+    "format": "󱁤",
+    "tooltip-format": "Tools"
+  },
+  "custom/cliphist": {
+    "format": "󰨸",
+    "on-click": "~/.local/bin/lennox-menu clipboard",
+    "on-click-right": "~/.local/bin/lennox-menu clipboard-clear",
+    "tooltip-format": "Left: Clipboard history\nRight: Clear history"
+  },
+  "custom/idle": {
+    "exec": "~/.local/bin/lennox-idle waybar",
+    "return-type": "json",
+    "interval": 60,
+    "signal": 11,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-idle toggle",
+    "hide-empty-text": true
+  },
+  "custom/nightlight": {
+    "exec": "~/.local/bin/lennox-nightlight waybar",
+    "return-type": "json",
+    "interval": 60,
+    "signal": 9,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-nightlight toggle",
+    "hide-empty-text": true
+  },
+  "custom/gamemode": {
+    "exec": "~/.local/bin/lennox-mode game waybar",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 10,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-mode game toggle",
+    "hide-empty-text": true
+  },
+  "group/tools": {
+    "orientation": "inherit",
+    "drawer": {
+      "transition-duration": 300,
+      "children-class": "drawer-child",
+      "transition-left-to-right": false
+    },
+    "modules": [
+      "custom/tools",
+      "custom/cliphist",
+      "custom/idle",
+      "custom/nightlight",
+      "custom/gamemode",
+      "custom/perf"
+    ]
+  },
+  "tray": {
+    "icon-size": 18,
+    "spacing": 10
+  },
+  "custom/notification": {
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󱅫",
+      "none": "󰂚",
+      "dnd-notification": "󰂠",
+      "dnd-none": "󰂠",
+      "inhibited-notification": "󱅫",
+      "inhibited-none": "󰂚",
+      "dnd-inhibited-notification": "󰂠",
+      "dnd-inhibited-none": "󰂠"
+    },
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "~/.local/bin/lennox-panel toggle",
+    "on-click-right": "swaync-client -d -sw",
+    "tooltip-format": "Left: Quick panel\nRight: Do not disturb",
+    "escape": true
+  },
+  "custom/exit": {
+    "format": "󰐥",
+    "on-click": "~/.local/bin/lennox-menu power",
+    "tooltip-format": "Power menu"
+  },
+  "custom/lennox": {
+    "format": " ",
+    "on-click": "~/.local/bin/lennox-panel toggle",
+    "on-click-right": "~/.local/bin/lennox-settings",
+    "tooltip-format": "Left: Quick panel\nRight: Lennox Settings"
+  },
+  "mpris": {
+    "format": "{status_icon}  {title}",
+    "format-paused": "{status_icon}  <i>{title}</i>",
+    "status-icons": {
+      "playing": "󰐊",
+      "paused": "󰏤",
+      "stopped": "󰝚"
+    },
+    "max-length": 40,
+    "on-click-right": "playerctl next",
+    "tooltip-format": "{artist} - {title}\nLeft: Play / pause  Right: Next"
+  },
+  "clock": {
+    "format": "{:%H:%M  %a}",
+    "format-alt": "{:%A %d %B %Y}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "weeks-pos": "",
+      "on-scroll": 1,
+      "format": {
+        "today": "<b><u>{}</u></b>"
+      }
+    },
+    "actions": {
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
+    }
+  },
+  "custom/minimized": {
+    "exec": "~/.local/bin/lennox-minimize waybar",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "format": "󰖰  {text}",
+    "on-click": "~/.local/bin/lennox-minimize menu",
+    "on-click-right": "~/.local/bin/lennox-minimize all",
+    "on-click-middle": "~/.local/bin/lennox-minimize last",
+    "hide-empty-text": true
+  }
+}

@@ -1,0 +1,404 @@
+/*
+ * Lennox bar: Islands
+ *
+ * Three floating glass islands: the Lennox button and workspaces, the
+ * clock, and your status icons. Workspaces are dots; the one you are on
+ * stretches into a numbered pill. Hyprland blurs what is behind the
+ * islands and slides the bar in (lennox/rules.lua).
+ * Colors come from the wallpaper (../../colors.css, written by matugen).
+ */
+
+@import "../../colors.css";
+
+@define-color island alpha(@surface_container, 0.72);
+@define-color island_border alpha(@outline_variant, 0.55);
+@define-color hover alpha(@primary, 0.16);
+
+* {
+    font-family: "Inter", "Symbols Nerd Font", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: 0;
+    min-height: 0;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+window#waybar {
+    background: transparent;
+    color: @on_surface;
+}
+
+tooltip {
+    background: alpha(@surface_container_high, 0.97);
+    border: 1px solid @island_border;
+    border-radius: 14px;
+}
+
+tooltip label {
+    color: @on_surface;
+    font-weight: 500;
+    padding: 4px 6px;
+}
+
+/* ---------------------------------------------------- Islands */
+
+#lennox-start,
+.modules-center,
+.modules-right {
+    background: @island;
+    border: 1px solid @island_border;
+    border-radius: 20px;
+    padding: 0 5px;
+    transition: background-color 300ms ease;
+}
+
+.modules-center {
+    padding: 0 4px;
+}
+
+/* ---------------------------------------------------- Lennox button */
+
+#custom-lennox-launcher {
+    font-size: 15px;
+    color: @on_primary;
+    background: @primary;
+    border-radius: 99px;
+    margin: 6px 4px 6px 1px;
+    padding: 0 9px;
+    transition: all 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#custom-lennox-launcher:hover {
+    background: @primary_fixed;
+    color: @on_primary_fixed;
+    padding: 0 13px;
+}
+
+/* ---------------------------------------------------- Workspaces */
+
+#workspaces {
+    margin: 0 6px 0 4px;
+}
+
+/* Every workspace is a dot... */
+#workspaces .ws {
+    font-size: 5px;
+    color: transparent;
+    min-width: 8px;
+    margin: 15px 3px;
+    padding: 0;
+    border-radius: 99px;
+    background: alpha(@on_surface, 0.28);
+    transition: all 420ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+#workspaces .ws.occupied {
+    background: alpha(@on_surface, 0.75);
+}
+
+#workspaces .ws.visible {
+    background: @secondary;
+}
+
+#workspaces .ws:hover {
+    min-width: 16px;
+    background: alpha(@primary, 0.7);
+}
+
+/* ...and the one you are on becomes a numbered pill */
+#workspaces .ws.active {
+    font-size: 11px;
+    font-weight: 800;
+    color: @on_primary;
+    background: @primary;
+    min-width: 30px;
+    margin: 9px 3px;
+}
+
+@keyframes urgent-pulse {
+    from { background: @error; }
+    to   { background: alpha(@error, 0.35); }
+}
+
+#workspaces .ws.urgent {
+    font-size: 11px;
+    font-weight: 800;
+    color: @on_error;
+    min-width: 22px;
+    margin: 9px 3px;
+    animation: urgent-pulse 700ms ease-in-out infinite alternate;
+}
+
+/* ---------------------------------------------------- Window title */
+
+#window {
+    margin-left: 12px;
+    font-weight: 500;
+    color: @on_surface;
+    text-shadow: 0 1px 4px alpha(black, 0.55);
+    transition: color 300ms ease;
+}
+
+window#waybar.empty #window {
+    color: transparent;
+}
+
+/* ---------------------------------------------------- Clock and music */
+
+#clock {
+    padding: 0 14px;
+    margin: 4px 0;
+    border-radius: 16px;
+    color: @on_surface;
+    font-weight: 500;
+    transition: all 250ms ease;
+}
+
+#clock:hover {
+    background: @hover;
+    color: @primary;
+}
+
+#mpris {
+    padding: 0 12px;
+    margin: 4px 2px 4px 0;
+    border-radius: 16px;
+    background: alpha(@primary, 0.14);
+    color: @primary;
+    font-weight: 500;
+    transition: all 250ms ease;
+}
+
+#mpris:hover {
+    background: alpha(@primary, 0.26);
+}
+
+#mpris.paused {
+    background: transparent;
+    color: @on_surface_variant;
+}
+
+/* ---------------------------------------------------- Status icons */
+
+#custom-updates,
+#custom-system,
+#custom-tools,
+#cpu,
+#memory,
+#disk,
+#custom-gpu,
+#language,
+#custom-cliphist,
+#custom-idle,
+#custom-nightlight,
+#custom-gamemode,
+#power-profiles-daemon,
+#network,
+#bluetooth,
+#pulseaudio,
+#battery,
+#custom-notification,
+#custom-exit {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @on_surface;
+    font-size: 14px;
+    transition: all 250ms ease;
+}
+
+#cpu, #memory, #disk, #custom-gpu, #language, #pulseaudio, #battery {
+    font-size: 13px;
+}
+
+#custom-updates:hover,
+#custom-system:hover,
+#custom-tools:hover,
+#cpu:hover,
+#memory:hover,
+#disk:hover,
+#custom-gpu:hover,
+#custom-cliphist:hover,
+#custom-idle:hover,
+#custom-nightlight:hover,
+#custom-gamemode:hover,
+#power-profiles-daemon:hover,
+#network:hover,
+#bluetooth:hover,
+#pulseaudio:hover,
+#battery:hover,
+#custom-notification:hover {
+    background: @hover;
+    color: @primary;
+}
+
+/* Drawer contents (hardware, tools) slide out a little dimmer */
+#hardware .drawer-child,
+#tools .drawer-child {
+    color: @on_surface_variant;
+}
+
+#custom-idle.off,
+#custom-gamemode.on,
+#custom-nightlight.on,
+#bluetooth.connected {
+    color: @primary;
+}
+
+#network.disconnected,
+#pulseaudio.muted {
+    color: @outline;
+}
+
+#custom-updates.pending {
+    color: @tertiary;
+    background: alpha(@tertiary, 0.14);
+}
+
+#custom-updates.many {
+    color: @on_error;
+    background: @error;
+}
+
+#custom-exit {
+    margin-right: 0;
+}
+
+#custom-exit:hover {
+    background: @error;
+    color: @on_error;
+}
+
+/* A soft glow while notifications wait */
+@keyframes bell-glow {
+    from { color: @primary; background: alpha(@primary, 0.20); }
+    to   { color: @on_surface; background: transparent; }
+}
+
+#custom-notification.notification {
+    animation: bell-glow 1400ms ease-in-out infinite alternate;
+}
+
+#custom-notification.dnd-notification,
+#custom-notification.dnd-none {
+    color: @outline;
+}
+
+#battery.charging,
+#battery.plugged {
+    color: @primary;
+}
+
+#battery.warning:not(.charging) {
+    color: @tertiary;
+}
+
+@keyframes battery-low {
+    from { background: @error; color: @on_error; }
+    to   { background: transparent; color: @error; }
+}
+
+#battery.critical:not(.charging) {
+    animation: battery-low 600ms ease-in-out infinite alternate;
+}
+
+#tray {
+    padding: 0 8px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+}
+
+#tray menu {
+    background: alpha(@surface_container_high, 0.97);
+    border: 1px solid @island_border;
+    border-radius: 12px;
+    padding: 6px;
+}
+
+#tray menu menuitem {
+    border-radius: 8px;
+    padding: 4px 8px;
+    color: @on_surface;
+}
+
+#tray menu menuitem:hover {
+    background: @hover;
+}
+
+/* ---------------------------------------------------- Minimized windows */
+
+#custom-minimized {
+    margin: 7px 4px 7px 2px;
+    padding: 0 10px;
+    border-radius: 99px;
+    font-size: 12px;
+    color: @primary;
+    background: alpha(@primary, 0.16);
+    transition: all 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#custom-minimized:hover {
+    color: @on_primary;
+    background: @primary;
+}
+
+/* System monitor (lennox-sysmon) and AI spend (lennox-aispend) */
+#custom-sysmon,
+#custom-aispend {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @on_surface;
+    font-size: 13px;
+    transition: all 250ms ease;
+}
+#custom-sysmon.warm,
+#custom-aispend.near {
+    color: @tertiary;
+}
+#custom-sysmon.hot,
+#custom-aispend.over {
+    color: @on_error;
+    background: @error;
+}
+
+/* Next timer / alarm (lennox-clock) */
+#custom-clocknext {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @primary;
+    font-size: 13px;
+}
+#custom-clocknext.ringing {
+    color: @on_primary;
+    background: @primary;
+}
+
+/* Performance mode (lennox-perf) */
+#custom-perf {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @on_surface;
+}
+#custom-perf.max { color: @tertiary; }
+
+/* Minecraft server (lennox-mcserver) */
+#custom-mcserver {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 14px;
+    color: @on_surface;
+    font-size: 13px;
+}
+#custom-mcserver.online { color: @primary; }
+#custom-mcserver.offline { color: @outline; }

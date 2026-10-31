@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Start the Lennox desktop. Run once by Hyprland at login.
+# Log: ~/.local/state/lennox/autostart.log (the last 5 logins are kept)
+
+export PATH="$HOME/.local/bin:$PATH"
+
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/lennox"
+mkdir -p "$STATE"
+for n in 4 3 2 1; do
+    [[ -f "$STATE/autostart.log.$n" ]] && mv -f "$STATE/autostart.log.$n" "$STATE/autostart.log.$((n + 1))"
+done
+[[ -f "$STATE/autostart.log" ]] && mv -f "$STATE/autostart.log" "$STATE/autostart.log.1"
+exec >"$STATE/autostart.log" 2>&1
+echo ":: Lennox autostart $(date '+%F %T')"
+
+# Runtime state (modes, night light override) starts clean every login
+RUNTIME="${XDG_RUNTIME_DIR:-/tmp}/lennox"
+rm -rf "$RUNTIME"
+mkdir -p "$RUNTIME/modes" "$RUNTIME/ws"
+# Windows open in the saved window mode (tiling / stacking): lennox-windows switches from here
+lennox-get appearance.window_mode > "$RUNTIME/window_mode" 2>/dev/null || echo tiling > "$RUNTIME/window_mode"
+
+start() {
+    # start NAME [ARGS...]: run in the background, detached, unless running.
+    # Lennox's own daemons (Python/bash scripts) lock themselves instead,
+    # because pgrep cannot see script names behind the interpreter.
+    local name="$1"
+    if pgrep -x "$name" >/dev/null; then
+        echo ":: $name already running"
+        return
+    fi
+    echo ":: starting $*"
+    setsid -f "$@" >/dev/null 2>&1 </dev/null
+}
+
+# Generated configs are always in sync with settings.json
+lennox-apply --no-reload all
+
+# Clean microphone set up by the installer becomes the default mic
+setsid -f lennox-sound clean-mic login >/dev/null 2>&1
+
+# Workspace buttons need their state before the bar starts
+start lennox-workspaces
+
+# Wallpaper and colors (awww-daemon was started by Hyprland)
+lennox-wallpaper --restore --quiet --no-reload
+lennox-livewall restore >/dev/null 2>&1        # a live (video) wallpaper plays again
+
+# Desktop
+start swaync
+lennox-bar start
+lennox-dock start
+start hypridle
+start hyprsunset
+start lennox-battery
+# Game clips: the recorder runs while a game is open
+setsid -f lennox-clips watch >/dev/null 2>&1
+# Phone link (KDE Connect): phones find this PC as soon as you log in
+[[ -x /usr/lib/kdeconnectd ]] && ! pgrep -x kdeconnectd >/dev/null && setsid -f /usr/lib/kdeconnectd >/dev/null 2>&1 </dev/null
+
+# Desktop widgets and the dashboard (one process; it refuses to run twice)
+setsid -f lennox-widgets >/dev/null 2>&1 </dev/null
+
+# Clipboard history and auto-mounting USB drives
+setsid -f wl-paste --type text --watch cliphist store >/dev/null 2>&1
+setsid -f wl-paste --type image --watch cliphist store >/dev/null 2>&1
+start udiskie --smart-tray
+
+# Wi-Fi and Bluetooth helpers: they show the password / pairing prompts
+# (school and work Wi-Fi logins need nm-applet)
+command -v nm-applet >/dev/null && start nm-applet --indicator
+if command -v blueman-applet >/dev/null && [[ -d /sys/class/bluetooth ]]; then
+    start blueman-applet
+fi
+
+# GTK settings for apps that read gsettings
+lennox-apply gtk
+
+# First login: show the welcome page of Lennox Settings
+if [[ "$(lennox-get welcome.show_on_login)" == "true" ]]; then
+    sleep 2
+    setsid -f lennox-settings --page welcome >/dev/null 2>&1
+fi
+
+# Tell you about updates a minute after login (installs happen automatically)
+(sleep 60 && lennox-updates notify) &
+# Per-game settings: each game's own performance mode, notifications and night light
+setsid -f lennox-gameprofile watch >/dev/null 2>&1 </dev/null
+# The login sound (off unless turned on in Lennox Settings > Sound)
+lennox-sound-fx login >/dev/null 2>&1 &
+# Focus mode: a session that was running before a restart picks up again
+lennox-focus restore >/dev/null 2>&1
+# After an upgrade: what's new, once
+(sleep 20 && lennox-whatsnew check) >/dev/null 2>&1 &
+disown
+
+echo ":: done"

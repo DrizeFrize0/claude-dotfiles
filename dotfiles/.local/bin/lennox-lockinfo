@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Lock screen widgets (hyprlock runs this every few seconds).
+#   lennox-lockinfo [all|music|alarm|weather|phone|server]
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.lockinfo "$@"

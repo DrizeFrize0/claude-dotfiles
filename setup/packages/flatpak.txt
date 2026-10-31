@@ -1,0 +1,5 @@
+# Flatpaks are updated automatically with the system.
+# format: <app id>  <pack>   (pack = base | discord | dev)
+app.zen_browser.zen                   base
+dev.vencord.Vesktop                   discord
+com.jetbrains.IntelliJ-IDEA-Community dev

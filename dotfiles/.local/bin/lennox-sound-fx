@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# UI sounds (Lennox Settings > Sound > Sound effects).
+#   lennox-sound-fx notification|volume|screenshot|plug|unplug|connect|disconnect|lock|login|list
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.sounds "$@"

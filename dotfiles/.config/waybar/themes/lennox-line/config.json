@@ -1,0 +1,195 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 38,
+  "margin-top": 6,
+  "margin-bottom": 0,
+  "margin-left": 10,
+  "margin-right": 10,
+  "spacing": 0,
+  "reload_style_on_change": false,
+  "x-lennox": {
+    "ws-dots": true,
+    "media-in": "modules-center",
+    "clock-24": "{:<b>%H:%M</b>   <span alpha=\"60%%\">%a %d</span>}",
+    "clock-12": "{:<b>%I:%M</b> <span alpha=\"75%%\" size=\"small\">%p</span>   <span alpha=\"60%%\">%a %d</span>}"
+  },
+  "modules-left": [
+    "group/lennox-start",
+    "hyprland/window"
+  ],
+  "modules-center": [
+    "clock",
+    "custom/clocknext"
+  ],
+  "modules-right": [
+    "custom/updates",
+    "custom/mcserver",
+    "custom/aispend",
+    "custom/sysmon",
+    "group/hardware",
+    "group/tools",
+    "tray",
+    "network",
+    "bluetooth",
+    "pulseaudio",
+    "battery",
+    "custom/notification",
+    "custom/exit"
+  ],
+  "group/lennox-start": {
+    "orientation": "inherit",
+    "modules": [
+      "custom/lennox-launcher",
+      "group/workspaces",
+      "custom/minimized"
+    ]
+  },
+  "custom/lennox-launcher": {
+    "format": "󰫢",
+    "on-click": "~/.local/bin/lennox-menu apps",
+    "on-click-right": "~/.local/bin/lennox-widgets dashboard",
+    "on-click-middle": "~/.local/bin/lennox-settings",
+    "tooltip-format": "Left: Apps\nRight: Dashboard\nMiddle: Lennox Settings"
+  },
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 48,
+    "separate-outputs": true,
+    "rewrite": {
+      "(.*) — Zen Browser": "$1",
+      "(.*) - Zen Browser": "$1",
+      "(.*) — Mozilla Firefox": "$1",
+      "(.*) - Visual Studio Code": "$1",
+      "(.*) - Code - OSS": "$1"
+    }
+  },
+  "clock": {
+    "interval": 10,
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "on-scroll": 1,
+      "format": {
+        "today": "<b><u>{}</u></b>"
+      }
+    },
+    "actions": {
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
+    },
+    "on-click": "~/.local/bin/lennox-widgets dashboard",
+    "on-click-right": "~/.local/bin/lennox-settings --page widgets"
+  },
+  "mpris": {
+    "format": "{status_icon}  {title}",
+    "format-paused": "{status_icon}  {title}",
+    "status-icons": {
+      "playing": "󰏤",
+      "paused": "󰐊",
+      "stopped": "󰝚"
+    },
+    "max-length": 30,
+    "on-click-right": "playerctl next",
+    "tooltip-format": "{artist} · {title}\nLeft: Play / pause   Right: Next"
+  },
+  "network": {
+    "format": "{icon}",
+    "format-wifi": "{icon}",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰤮",
+    "format-icons": [
+      "󰤟",
+      "󰤢",
+      "󰤥",
+      "󰤨"
+    ],
+    "tooltip-format-wifi": "{essid} · {signalStrength}%\nDown {bandwidthDownBits}  Up {bandwidthUpBits}\nLeft: Wi-Fi   Right: Network settings",
+    "tooltip-format-ethernet": "Wired · {ipaddr}\nDown {bandwidthDownBits}  Up {bandwidthUpBits}",
+    "tooltip-format-disconnected": "Offline\nLeft: Wi-Fi networks",
+    "on-click": "~/.local/bin/lennox-menu wifi",
+    "on-click-right": "nm-connection-editor"
+  },
+  "bluetooth": {
+    "format": "󰂯",
+    "format-connected": "󰂱",
+    "format-disabled": "",
+    "format-off": "",
+    "format-no-controller": "",
+    "interval": 30,
+    "on-click": "blueman-manager",
+    "tooltip-format": "Bluetooth: {status}",
+    "tooltip-format-connected": "Connected:\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}",
+    "tooltip-format-enumerate-connected-battery": "{device_alias}  {device_battery_percentage}%"
+  },
+  "pulseaudio": {
+    "format": "{icon}  {volume}",
+    "format-bluetooth": "󰋋  {volume}",
+    "format-muted": "󰖁",
+    "format-icons": {
+      "headphone": "󰋋",
+      "headset": "󰋎",
+      "default": [
+        "󰕿",
+        "󰖀",
+        "󰕾"
+      ]
+    },
+    "scroll-step": 5,
+    "max-volume": 100,
+    "on-click": "~/.local/bin/lennox-open audio_mixer",
+    "on-click-right": "~/.local/bin/lennox-osd volume mute",
+    "on-click-middle": "~/.local/bin/lennox-osd mic mute",
+    "tooltip-format": "{desc} · {volume}%\nLeft: Sound settings   Right: Mute\nMiddle: Mute microphone"
+  },
+  "battery": {
+    "interval": 10,
+    "states": {
+      "warning": 25,
+      "critical": 12
+    },
+    "format": "{icon}  {capacity}",
+    "format-charging": "󰂄  {capacity}",
+    "format-plugged": "󰚥  {capacity}",
+    "format-full": "󰁹",
+    "format-icons": [
+      "󰁺",
+      "󰁻",
+      "󰁼",
+      "󰁽",
+      "󰁾",
+      "󰁿",
+      "󰂀",
+      "󰂁",
+      "󰂂",
+      "󰁹"
+    ],
+    "tooltip-format": "{capacity}% · {timeTo}\n{power:.1f} W"
+  },
+  "custom/notification": {
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󰂚",
+      "none": "󰂜",
+      "dnd-notification": "󰂛",
+      "dnd-none": "󰂛",
+      "inhibited-notification": "󰂚",
+      "inhibited-none": "󰂜",
+      "dnd-inhibited-notification": "󰂛",
+      "dnd-inhibited-none": "󰂛"
+    },
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "~/.local/bin/lennox-panel toggle",
+    "on-click-right": "swaync-client -d -sw",
+    "tooltip-format": "Left: Quick panel\nRight: Do not disturb",
+    "escape": true
+  },
+  "custom/exit": {
+    "format": "󰐥",
+    "on-click": "~/.local/bin/lennox-menu power",
+    "tooltip-format": "Power menu"
+  }
+}

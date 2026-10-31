@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# Game clips: the last 2 minutes are always ready to save while you play.
+#   lennox-clips save            save the last clip (SUPER + ALT + R)
+#   lennox-clips vertical FILE   a 9:16 copy for TikTok / Shorts / Reels
+#   lennox-clips watch           (autostart) start / stop the recorder as games open and close
+#   lennox-clips start|stop|status
+# Settings (Lennox Settings > Game center): when to record, how long, folder, mic.
+# Uses gpu-screen-recorder with the graphics chip's video encoder, so games don't slow down.
+export PATH="$HOME/.local/bin:$PATH"
+
+RUNTIME="${XDG_RUNTIME_DIR:-/tmp}/lennox"
+PIDFILE="$RUNTIME/clips.pid"
+mkdir -p "$RUNTIME"
+
+SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/lennox/settings.json"
+get() {
+    # jq is ~20x lighter than starting Python (lennox-get): the watcher asks every 5 s
+    if [[ -r "$SETTINGS" ]] && command -v jq >/dev/null; then
+        jq -r --arg k "$1" '.clips[$k] // empty' "$SETTINGS" 2>/dev/null
+    else
+        lennox-get "clips.$1" 2>/dev/null
+    fi
+}
+folder() { local f; f="$(get folder)"; f="${f/#\~/$HOME}"; echo "${f:-$HOME/Videos/Clips}"; }
+island() { lennox-widgets island event "$1" "$2" >/dev/null 2>&1 & }
+
+running() { [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; }
+
+# Steam (Proton and native), Minecraft, gamescope, Lutris / Heroic games, Windows games
+GAMES='^(steam_app_[0-9]+|gamescope|Minecraft.*|minecraft.*|.*\.exe|lutris|heroic|osu!|RobloxPlayer.*|hl2_linux|cs2|dota2)$'
+
+gaming() {
+    [[ "$(lennox-mode game status 2>/dev/null)" == on ]] && return 0
+    hyprctl clients -j 2>/dev/null | jq -e --arg re "$GAMES" \
+        'any(.[]; ((.class // "") | test($re)) or ((.initialTitle // "") | test("^Minecraft")))' >/dev/null 2>&1
+}
+
+start() {
+    running && return 0
+    command -v gpu-screen-recorder >/dev/null || { echo "gpu-screen-recorder is not installed (lennox upgrade)" >&2; return 1; }
+    local dir seconds audio=(-a default_output)
+    dir="$(folder)"; mkdir -p "$dir"
+    seconds="$(get seconds)"; [[ "$seconds" =~ ^[0-9]+$ ]] || seconds=120
+    [[ "$(get mic)" == true ]] && audio=(-a "default_output|default_input")
+    # mp4 + h264 + aac: plays everywhere and uploads anywhere without converting
+    # setsid (no fork): $! is the recorder itself, in its own session
+    setsid gpu-screen-recorder -w screen -f 60 -r "$seconds" -c mp4 -k h264 -ac aac -q very_high \
+        "${audio[@]}" -o "$dir" -sc "$HOME/.local/bin/lennox-clips" </dev/null >"$RUNTIME/clips.log" 2>&1 &
+    local pid=$!
+    disown "$pid" 2>/dev/null
+    sleep 1
+    if ! kill -0 "$pid" 2>/dev/null; then
+        echo "The clip recorder didn't start: see $RUNTIME/clips.log" >&2
+        return 1
+    fi
+    echo "$pid" > "$PIDFILE"
+}
+
+stop() {
+    running || { rm -f "$PIDFILE"; return 0; }
+    local pid; pid="$(cat "$PIDFILE")"
+    kill -INT "$pid" 2>/dev/null                 # replay mode: stop without saving
+    for _ in 1 2 3 4 5 6; do kill -0 "$pid" 2>/dev/null || break; sleep 0.5; done
+    kill -TERM "$pid" 2>/dev/null                # still there after 3 s
+    rm -f "$PIDFILE"
+}
+
+saved() {
+    # Called by gpu-screen-recorder after saving: saved FILE TYPE
+    local file="$1"
+    [[ -f "$file" ]] || return 0
+    island media-record-symbolic "Clip saved"
+    (
+        choice="$(notify-send -a Lennox -i media-record -t 10000 \
+            -A vertical="Make a TikTok copy (9:16)" -A open="Show in Files" \
+            "Clip saved" "${file##*/}")"
+        case "$choice" in
+            vertical) "$0" vertical "$file" ;;
+            open) xdg-open "${file%/*}" >/dev/null 2>&1 ;;
+        esac
+    ) >/dev/null 2>&1 &
+}
+
+vertical() {
+    local in="$1" out
+    [[ -f "$in" ]] || { echo "usage: lennox-clips vertical FILE" >&2; return 2; }
+    out="${in%.*}-vertical.mp4"
+    island media-record-symbolic "Making the TikTok copy…"
+    # The middle of the picture, 9:16, at 1080 x 1920
+    if ffmpeg -nostdin -loglevel error -y -i "$in" \
+        -vf "crop=ih*9/16:ih:(iw-ih*9/16)/2:0,scale=1080:1920" \
+        -c:v libx264 -preset veryfast -crf 20 -c:a aac -b:a 160k -movflags +faststart "$out"; then
+        island media-record-symbolic "TikTok copy ready"
+        notify-send -a Lennox -i media-record "TikTok copy ready" "${out##*/}"
+        echo "$out"
+    else
+        notify-send -a Lennox -i dialog-error "Couldn't make the TikTok copy" "${in##*/}"
+        return 1
+    fi
+}
+
+case "${1:-status}" in
+    save)
+        if ! running; then
+            mode="$(get mode)"
+            if [[ "$mode" == off ]]; then
+                notify-send -a Lennox -i media-record "Clips are off" "Turn them on in Lennox Settings > Game center."
+            else
+                notify-send -a Lennox -i media-record "Nothing to save yet" \
+                    "Clips record while a game is open (or game mode is on). Lennox Settings > Game center."
+            fi
+            exit 0
+        fi
+        kill -USR1 "$(cat "$PIDFILE")"
+        ;;
+    start) start ;;
+    stop) stop ;;
+    status) if running; then echo on; else echo off; fi ;;
+    vertical) vertical "${2:-}" ;;
+    watch)
+        # One watcher per login
+        exec 9>"$RUNTIME/clips-watch.lock"
+        flock -n 9 || exit 0
+        idle=0
+        while sleep 5; do
+            case "$(get mode)" in
+                always) want=true ;;
+                off) want=false ;;
+                *) if gaming; then want=true; idle=0; else want=false; fi ;;
+            esac
+            if [[ "$want" == true ]]; then
+                running || { start && island media-record-symbolic "Clips on · SUPER + ALT + R saves the last $(( $(get seconds) / 60 )) min"; }
+            elif running; then
+                idle=$(( idle + 5 ))
+                # A minute after the game closes (a loading screen isn't the end)
+                if [[ "$(get mode)" == off ]] || (( idle >= 60 )); then stop; idle=0; fi
+            fi
+        done
+        ;;
+    /*) saved "$1" "${2:-}" ;;                  # gpu-screen-recorder's -sc hook
+    *) echo "usage: lennox-clips save | vertical FILE | start | stop | status | watch" >&2; exit 2 ;;
+esac

@@ -1,0 +1,174 @@
+/*
+ * Lennox launcher (SUPER + SPACE)
+ *
+ *   [wallpaper]  Good evening, Alex
+ *                Wednesday 28 October · 21:47
+ *   [ 󰍉  Search apps                       ]
+ *   [app] [app] [app] [app] [app] [app]
+ *   [app] [app] [app] [app] [app] [app]
+ *   [app] [app] [app] [app] [app] [app]
+ *   (Apps) (Windows) (Run)        ↵ open  ·  esc close
+ *
+ * lennox-menu fills in the greeting and the date when it opens.
+ */
+
+@import "~/.config/rofi/shared.rasi"
+
+configuration {
+    modi:                 "drun,window,run";
+    display-drun:         "󰀻  Apps";
+    display-window:       "󰖯  Windows";
+    display-run:          "󰆍  Run";
+    drun-display-format:  "{name}";
+    window-format:        "{t}";
+    kb-mode-next:         "Control+Tab,Shift+Right";
+    kb-mode-previous:     "Control+ISO_Left_Tab,Shift+Left";
+}
+
+window {
+    width:             52em;
+}
+
+mainbox {
+    padding:           22px;
+    spacing:           16px;
+    orientation:       vertical;
+    children:          [ "header", "inputbar", "listview", "footer" ];
+    background-color:  transparent;
+}
+
+/* ---------------------------------------------------- header */
+
+header {
+    expand:            false;
+    orientation:       horizontal;
+    spacing:           16px;
+    children:          [ "wallpaper", "greeting" ];
+    background-color:  transparent;
+}
+
+wallpaper {
+    expand:            false;
+    padding:           2.4em;
+    border:            1px;
+    border-color:      @outline-soft;
+    border-radius:     @radius-inner;
+    background-color:  @tile;
+    background-image:  @current-image;
+}
+
+greeting {
+    orientation:       vertical;
+    spacing:           2px;
+    children:          [ "dummy-top", "textbox-greeting", "textbox-date", "dummy-bottom" ];
+    background-color:  transparent;
+}
+
+dummy-top, dummy-bottom {
+    expand:            true;
+    background-color:  transparent;
+}
+
+textbox-greeting {
+    expand:            false;
+    str:               "Hello";
+    font:              "Inter Bold 20";
+    text-color:        @on-surface;
+    background-color:  transparent;
+}
+
+textbox-date {
+    expand:            false;
+    str:               "";
+    font:              "Inter Medium 11";
+    text-color:        @primary;
+    background-color:  transparent;
+}
+
+/* ---------------------------------------------------- search */
+
+inputbar {
+    expand:            false;
+    children:          [ "textbox-search", "entry" ];
+}
+
+entry {
+    placeholder:       "Search";
+}
+
+/* ---------------------------------------------------- app grid */
+
+listview {
+    columns:           6;
+    lines:             3;
+    flow:              horizontal;
+    spacing:           10px;
+    cycle:             true;
+    dynamic:           false;
+    fixed-height:      true;
+    fixed-columns:     true;
+    scrollbar:         false;
+    layout:            vertical;
+    background-color:  transparent;
+}
+
+element {
+    orientation:       vertical;
+    padding:           16px 6px 12px 6px;
+    spacing:           10px;
+    children:          [ "element-icon", "element-text" ];
+}
+
+element-icon {
+    size:              2.8em;
+    horizontal-align:  0.5;
+}
+
+element-text {
+    horizontal-align:  0.5;
+    vertical-align:    0.5;
+    font:              "Inter Medium 10";
+}
+
+/* ---------------------------------------------------- footer */
+
+footer {
+    expand:            false;
+    orientation:       horizontal;
+    spacing:           10px;
+    children:          [ "mode-switcher", "textbox-hint" ];
+    background-color:  transparent;
+}
+
+mode-switcher {
+    expand:            false;
+    spacing:           8px;
+    background-color:  transparent;
+}
+
+button {
+    padding:           7px 14px;
+    expand:            false;
+    border:            1px;
+    border-color:      @outline-soft;
+    border-radius:     99px;
+    cursor:            pointer;
+    background-color:  @tile;
+    text-color:        @on-surface-variant;
+    font:              "Inter SemiBold 10";
+}
+
+button selected {
+    border-color:      @primary;
+    background-color:  @primary;
+    text-color:        @on-primary;
+}
+
+textbox-hint {
+    str:               "Enter  open    Ctrl+Tab  switch    Esc  close";
+    horizontal-align:  1.0;
+    vertical-align:    0.5;
+    font:              "Inter Medium 9";
+    text-color:        @on-surface-variant;
+    background-color:  transparent;
+}

@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Update counter for the bar and the login reminder.
+# System packages and drivers update automatically (lennox-autoupdate,
+# a system timer). AUR apps need your password, so they are counted here
+# and installed with one click (lennox-update).
+#   lennox-updates waybar | notify | refresh | count
+export PATH="$HOME/.local/bin:$PATH"
+
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/lennox"
+mkdir -p "$CACHE"
+
+aur_helper() {
+    command -v yay >/dev/null && { echo yay; return; }
+    command -v paru >/dev/null && { echo paru; return; }
+}
+
+count() {
+    local repo=0 aur=0 helper
+    # Wait for a running pacman (e.g. the automatic updater) to finish
+    for _ in $(seq 60); do [[ -f /var/lib/pacman/db.lck ]] || break; sleep 2; done
+    if command -v checkupdates >/dev/null; then
+        repo="$(checkupdates 2>/dev/null | wc -l)"
+    fi
+    helper="$(aur_helper)"
+    [[ -n "$helper" ]] && aur="$("$helper" -Qua 2>/dev/null | grep -vc '\[ignored\]')"
+    echo "$repo $aur" > "$CACHE/updates"
+    echo "$repo $aur"
+}
+
+case "${1:-waybar}" in
+    count) count ;;
+    waybar)
+        read -r repo aur < <(count)
+        total=$((repo + aur))
+        if (( total == 0 )); then
+            echo '{"text":""}'
+            exit 0
+        fi
+        class="pending"
+        (( total > 40 )) && class="many"
+        tip="System: ${repo} (installed automatically)\nAUR apps: ${aur}\n\nClick to update everything now\nRight-click to check again"
+        printf '{"text":"%s","class":"%s","tooltip":"%s"}\n' "$total" "$class" "$tip"
+        ;;
+    refresh)
+        pkill -RTMIN+12 -x waybar
+        ;;
+    notify)
+        read -r repo aur < <(count)
+        if (( aur > 0 )); then
+            action="$(notify-send -a "Updates" -i system-software-update -t 15000 -A update="Update now" \
+                "$aur app update(s) ready" "System and driver updates install automatically. These AUR apps need one click.")"
+            [[ "$action" == "update" ]] && lennox-update
+        fi
+        pkill -RTMIN+12 -x waybar
+        ;;
+    *) echo "usage: lennox-updates waybar|notify|refresh|count" >&2; exit 2 ;;
+esac
