@@ -107,6 +107,31 @@ F.save_state({"phase": "break", "start": time.time(), "end": time.time() + 300, 
 check(isl.kind == "focus" and isl.label.get_label() == "Break", f"break ({isl.label.get_label()})")
 F.save_state(None); pump(1.5)
 check(isl.kind == "clock", "focus over: back to the clock")
+# two at once: music + a timer split into the pill and a linked blob
+check(I.choose_two({"music": {"playing": True, "title": "x"}, "next_up": ("timer", {"id": "t"}, 60)}, 0)[1][0] == "music"
+      and I.choose_two({"music": {"playing": True}, "event": {"until": 9}}, 0)[1] is None, "choose_two: timer + music blob, events never split")
+S.set_value("widgets.island_music", True); app.reload(); pump(2.5)
+check(isl.kind == "music" and not isl.blob_reveal.get_reveal_child(), f"music alone: one pill ({isl.kind})")
+with C.edit() as d: C.add_timer(d, 600, "Tea", time.time())
+pump(1.5)
+check(isl.kind == "timer" and isl.blob_kind == "music" and isl.blob_reveal.get_reveal_child(),
+      f"music + timer: the pill splits (pill {isl.kind}, blob {isl.blob_kind})")
+pump(0.6); settled("split")
+check(isl.get_height() == isl.compact_height + 2 and isl.blob.get_height() == isl.pill.get_height(),
+      f"split: both blobs the bar's height ({isl.get_height()}, {isl.blob.get_height()})")
+shot("split")
+isl._blob_clicked(); pump(1.0)
+check(isl.kind == "music" and isl.blob_kind == "timer" and isl.blob_label.get_label().startswith("9:"),
+      f"click the blob: they swap (pill {isl.kind}, blob {isl.blob_kind} {isl.blob_label.get_label()})")
+settled("swap"); shot("split-swap")
+isl._hover(True); pump(1.2)
+check(isl.reveal.get_reveal_child() and not isl.blob_reveal.get_reveal_child(), "open: one card, no blob")
+isl._hover(False); pump(1.2)
+with C.edit() as d: C.cancel(d, d["timers"][-1]["id"])
+pump(1.5)
+check(isl.kind == "music" and not isl.blob_reveal.get_reveal_child() and isl.prefer is None, "timer gone: one pill again")
+settled("joined")
+S.set_value("widgets.island_music", False); app.reload(); pump(1)
 S.set_value("widgets.island_place", "below"); app.reload(); pump(1)
 check(app.island is not None and app.island.place == "below" and not app.island.get_visible(), "below the bar: hidden when idle")
 S.set_value("widgets.island", False); app.reload(); pump(0.5)

@@ -74,24 +74,46 @@ def choose(state, now):
     event = state.get("event")
     if event and event["until"] > now:
         return "event", event
+    running = activities(state)
+    if running:
+        return running[0]
+    if state.get("place") == "bar":
+        return "clock", {}     # in the bar it is the clock when nothing's happening
+    return None
+
+
+def activities(state):
+    """What's running, most important first: [(kind, info), ...]. Pure."""
+    out = []
     if state.get("call_since"):
-        return "call", {"since": state["call_since"]}
+        out.append(("call", {"since": state["call_since"]}))
     focus = state.get("focus")
     if focus and focus.get("active"):
-        return "focus", focus
+        out.append(("focus", focus))
     up = state.get("next_up")
     if up:
         kind, item, left = up
         if kind == "timer" or left <= SOON:
-            return "timer", {"kind": kind, "item": item, "left": left}
+            out.append(("timer", {"kind": kind, "item": item, "left": left}))
     if state.get("stopwatch_running"):
-        return "stopwatch", {"elapsed": state["stopwatch_elapsed"]}
+        out.append(("stopwatch", {"elapsed": state["stopwatch_elapsed"]}))
     music = state.get("music")
     if music and music.get("playing") and state.get("show_music", True):
-        return "music", music
-    if state.get("place") == "bar":
-        return "clock", {}     # in the bar it is the clock when nothing's happening
-    return None
+        out.append(("music", music))
+    return out
+
+
+def choose_two(state, now, prefer=None):
+    """(main, second): what the pill shows and, when another activity runs too
+    (music + a timer), the one for the small linked blob beside it, or None.
+    `prefer` (the blob that was clicked) goes in the main pill. Pure."""
+    main = choose(state, now)
+    running = activities(state)
+    if main is None or len(running) < 2 or main[0] not in [k for k, _ in running]:
+        return main, None
+    if prefer in [k for k, _ in running[:2]]:
+        return (running[0], running[1]) if running[0][0] == prefer else (running[1], running[0])
+    return running[0], running[1]
 
 
 def show_key(kind, info):
@@ -716,7 +738,33 @@ class IslandWindow(Gtk.ApplicationWindow):
             if build:
                 build(page)
         self.pill = SpringBin(self.stack, css_classes=["lennox-island"], halign=Gtk.Align.CENTER)
-        self.set_child(self.pill)
+        # Two at once: a small linked blob beside the pill with the other activity
+        self.blob_kind = None
+        self.prefer = None          # the activity whose blob was clicked: it gets the big pill
+        blob_row = Gtk.Box(spacing=6, css_classes=["island-blob-row"])
+        blob_row.set_size_request(-1, self.compact_height)
+        self.blob_art_image = Gtk.Image(pixel_size=18)
+        self.blob_art = Gtk.Box(css_classes=["island-art"], valign=Gtk.Align.CENTER,
+                                overflow=Gtk.Overflow.HIDDEN, visible=False)
+        self.blob_art.append(self.blob_art_image)
+        self.blob_icon = Gtk.Image(pixel_size=11, valign=Gtk.Align.CENTER, halign=Gtk.Align.CENTER)
+        self.blob_ring = Ring(22)
+        lead = Gtk.Overlay(valign=Gtk.Align.CENTER)
+        lead.set_child(self.blob_ring)
+        lead.add_overlay(self.blob_icon)
+        self.blob_label = Gtk.Label(css_classes=["island-detail"], visible=False)
+        for w in (self.blob_art, lead, self.blob_label):
+            blob_row.append(w)
+        self.blob = SpringBin(blob_row, css_classes=["lennox-island", "island-blob"], margin_start=6)
+        click = Gtk.GestureClick()
+        click.connect("released", self._blob_clicked)
+        self.blob.add_controller(click)
+        self.blob_reveal = Gtk.Revealer(transition_type=Gtk.RevealerTransitionType.SLIDE_RIGHT,
+                                        transition_duration=260, child=self.blob)
+        row = Gtk.Box(halign=Gtk.Align.CENTER, valign=Gtk.Align.START)
+        row.append(self.pill)
+        row.append(self.blob_reveal)
+        self.set_child(row)
 
         hover = Gtk.EventControllerMotion()
         hover.connect("enter", lambda *_: self._hover(True))
@@ -781,9 +829,15 @@ class IslandWindow(Gtk.ApplicationWindow):
 
     def render(self, now=None):
         now = now or time.time()
-        chosen = choose(self.state, now)
+        if self.prefer not in [k for k, _ in activities(self.state)]:
+            self.prefer = None
+        chosen, second = choose_two(self.state, now, self.prefer)
+        if second is None:
+            self.prefer = None      # the pair broke up: next time the usual order
         if chosen is None:
             self.kind = None
+            self.blob_kind = None
+            self.blob_reveal.set_reveal_child(False)
             for page in self.pages.values():
                 page.reveal.set_reveal_child(False)
             self.bars.set_playing(False)
@@ -815,7 +869,15 @@ class IslandWindow(Gtk.ApplicationWindow):
             (other.box.add_css_class if expanded and other is page else other.box.remove_css_class)("expanded")
         if self.stack.get_visible_child_name() != kind:
             self.stack.set_visible_child_name(kind)
+        # The other activity in the blob (not while the card is open: one thing at a time there)
+        second = None if expanded else second
+        self.blob_kind = second[0] if second else None
+        if second:
+            self._show_blob(*second, now)
+        self.blob_reveal.set_reveal_child(second is not None)
         self.set_visible(True)
+        if second:
+            self.blob.resize()
         # A new event or alarm: a small bounce; anything else: spring to the new size
         self.pill.resize(bounce=new and kind in ("event", "ringing"))
 
@@ -996,6 +1058,57 @@ class IslandWindow(Gtk.ApplicationWindow):
                                  else "Stand up, stretch, drink some water")
         more_rounds = info.get("round", 1) < rounds
         self.focus_stop.set_label("Stop" if focusing else ("Next round now" if more_rounds else "Skip break"))
+
+    # blob ------------------------------------------------------------------
+
+    def _show_blob(self, kind, info, now):
+        """The second activity, small: its icon (a countdown ring for timers and
+        focus, the cover for music) and its value."""
+        for cls in KINDS + GLOWS:
+            self.blob.remove_css_class(cls)
+        self.blob.add_css_class(kind)
+        glow = glow_for(kind, info)
+        if glow:
+            self.blob.add_css_class(f"glow-{glow}")
+        art = info.get("art_file") if kind == "music" else None
+        texture = scaled_texture(art, 18) if art else None
+        self.blob_art.set_visible(texture is not None)
+        if texture is not None and self.blob_art_image.get_paintable() is not texture:
+            self.blob_art_image.set_from_paintable(texture)
+        self.blob_ring.get_parent().set_visible(texture is None)
+        self.blob_ring.set_visible(kind in ("timer", "focus"))
+        value, fraction = "", None
+        if kind == "timer":
+            item = info["item"]
+            set_icon(self.blob_icon, {"timer": "timer-symbolic", "alarm": "alarm-symbolic",
+                                      "reminder": "appointment-soon-symbolic"}[info["kind"]])
+            value = C.countdown(info["left"])
+            total = item.get("duration") if info["kind"] == "timer" else SOON
+            fraction = info["left"] / total if total else 1.0
+        elif kind == "focus":
+            set_icon(self.blob_icon, "find-location-symbolic" if info["phase"] == "focus" else "face-smile-symbolic")
+            value = C.countdown(max(0, info["end"] - now))
+            fraction = max(0.0, info["end"] - now) / max(1.0, info["end"] - info.get("start", info["end"] - 1))
+        elif kind == "call":
+            set_icon(self.blob_icon, "audio-input-microphone-symbolic")
+            value = C.countdown(now - info["since"])
+        elif kind == "stopwatch":
+            set_icon(self.blob_icon, "stopwatch-symbolic")
+            value = C.countdown(info["elapsed"])
+        else:
+            set_icon(self.blob_icon, "audio-x-generic-symbolic")
+        self.blob_icon.set_pixel_size(11 if fraction is not None else 14)
+        if fraction is not None:
+            self.blob_ring.set_fraction(fraction)
+        if self.blob_label.get_label() != value:
+            self.blob_label.set_label(value)
+        self.blob_label.set_visible(bool(value))
+
+    def _blob_clicked(self, *_args):
+        """Click the blob: its activity takes the big pill (and the other one the blob)."""
+        if self.blob_kind:
+            self.prefer = self.blob_kind
+            self.render()
 
     # ---------------------------------------------------------------- input
 

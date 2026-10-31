@@ -198,6 +198,9 @@ window.lennox-island-window { background: transparent; }
 .island-page.ringing { min-width: 280px; padding-bottom: 12px; }
 .lennox-island.ringing { border-radius: 24px; }
 .island-ring { color: @primary; }
+.island-blob { border-radius: 22px; }
+.island-blob-row { padding: 0 8px; min-width: 20px; }
+.lennox-island.stopwatch image { color: #ff9f0a; }
 .lennox-island.timer .island-ring, .lennox-island.timer image { color: #ff9f0a; }
 .lennox-island.focus .island-ring, .lennox-island.focus image { color: #30d158; }
 .lennox-island.timer .island-detail, .lennox-island.stopwatch .island-detail { color: #ff9f0a; }

@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.17.0 · 2026-10-31 · Island redesign, part 2
+
+- Two things at once, the iPhone way: when music plays and a timer runs (or focus, a call, the stopwatch), the island splits into the pill and a small linked bubble beside it, each with its own icon, color and time
+- Click the small bubble to swap: its activity moves into the big pill
+- Opening the island still shows one card at a time; the bubble comes back when it closes
+
 ## 1.16.0 · 2026-10-31 · Island redesign, part 1
 
 - The island now springs smoothly between sizes instead of jumping, and fades between what it shows (music, timer, focus, a message) instead of redrawing
