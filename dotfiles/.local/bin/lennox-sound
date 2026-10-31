@@ -8,7 +8,7 @@
 #                                   for the microphone (a "Microphone (clean)" input)
 #   lennox-sound driver auto|sof|hda   pick the Intel sound driver (needs a restart):
 #                                   sof = current one (digital mics), hda = older and simpler
-#   lennox-sound bluetooth hifi|headset-mic|status
+#   lennox-sound bluetooth hifi|headset-mic|status|lag|smooth
 #                                   hifi (default): Bluetooth headphones always play in full
 #                                   quality and you talk through the laptop mic; headset-mic:
 #                                   use the headset's mic, which drops it into low quality call mode
@@ -98,6 +98,9 @@ cards_off() { pactl -f json list cards 2>/dev/null | jq -r "$CARDS_JQ" 2>/dev/nu
 DRIVER_CONF="${LENNOX_DRIVER_CONF:-/etc/modprobe.d/lennox-sound-driver.conf}"
 WP_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/wireplumber/wireplumber.conf.d"
 BT_CONF="$WP_DIR/61-lennox-bluetooth.conf"
+BT_SMOOTH_CONF="$WP_DIR/62-lennox-bluetooth-smooth.conf"
+NM_POWERSAVE_CONF="${LENNOX_NM_CONF:-/etc/NetworkManager/conf.d/lennox-wifi-powersave.conf}"
+BTUSB_CONF="${LENNOX_BTUSB_CONF:-/etc/modprobe.d/lennox-bluetooth.conf}"
 OUTPUTS_CONF="$WP_DIR/60-lennox-outputs.conf"
 
 bt_hifi() { [[ -f "$BT_CONF" ]]; }
@@ -142,6 +145,72 @@ monitor.alsa.rules = [
 CONF
 }
 
+# Laggy or stuttering Bluetooth headphones: what the laptop is doing that can cause it
+bt_lag() {
+    local wifi freq power card codec profile
+    echo "Bluetooth headphones:"
+    while IFS=$'\t' read -r card profile codec; do
+        [[ -n "$card" ]] && echo "  $card: $profile, codec ${codec:-unknown}"
+    done < <(pactl -f json list sinks 2>/dev/null | jq -r '.[] | select(.name | startswith("bluez_output"))
+        | [.name, (.properties["api.bluez5.profile"] // .active_port // ""), (.properties["api.bluez5.codec"] // "")] | @tsv' 2>/dev/null)
+    wifi="$(iw dev 2>/dev/null | awk '$1 == "Interface" { print $2; exit }')"
+    if [[ -n "$wifi" ]]; then
+        freq="$(iw dev "$wifi" link 2>/dev/null | awk '/freq:/ { print $2; exit }')"
+        power="$(iw dev "$wifi" get power_save 2>/dev/null | awk '{ print $NF }')"
+        if [[ -n "$freq" ]]; then freq="${freq%.*}"; echo "Wi-Fi $wifi: $freq MHz, power saving ${power:-unknown}"
+        else echo "Wi-Fi $wifi: not connected, power saving ${power:-unknown}"; fi
+        if [[ "$freq" =~ ^24[0-9][0-9]$ ]]; then
+            echo "  -> You're on the 2.4 GHz Wi-Fi band: it shares the radio with Bluetooth and makes headphones stutter. Use the 5 GHz network."
+        fi
+        [[ "$power" == on ]] && echo "  -> Wi-Fi power saving is on: it makes Bluetooth stutter. 'lennox-sound bluetooth smooth' turns it off."
+    fi
+    local autosuspend
+    autosuspend="$(cat /sys/module/btusb/parameters/enable_autosuspend 2>/dev/null)"
+    [[ "$autosuspend" == Y ]] && echo "Bluetooth USB power saving is on (can make audio cut out): 'lennox-sound bluetooth smooth' turns it off."
+    [[ -f "$BT_SMOOTH_CONF" ]] && echo "Smoothing is already applied (lennox-sound bluetooth smooth)."
+    local profile_now
+    profile_now="$(pactl -f json list cards 2>/dev/null | jq -r '[.[] | select(.name | startswith("bluez_card")) | .active_profile] | first // empty' 2>/dev/null)"
+    [[ "$profile_now" == headset-head-unit* ]] && echo "  -> The headphones are in call mode (low quality, choppy): lennox-sound bluetooth hifi"
+    return 0
+}
+
+# Steady Bluetooth audio: no waking up delays, no Wi-Fi power saving, no USB power saving
+bt_smooth() {
+    mkdir -p "$WP_DIR"
+    cat > "$BT_SMOOTH_CONF" <<'CONF'
+# Lennox (lennox-sound bluetooth smooth): Bluetooth headphones are never put
+# to sleep between sounds, which cut the start of every sound and made the
+# sound arrive late after a pause.
+monitor.bluez.rules = [
+  {
+    matches = [
+      { node.name = "~bluez_output.*" }
+      { node.name = "~bluez_input.*" }
+    ]
+    actions = {
+      update-props = {
+        session.suspend-timeout-seconds = 0
+        node.pause-on-idle = false
+      }
+    }
+  }
+]
+CONF
+    local cmd="mkdir -p \"\$(dirname $NM_POWERSAVE_CONF)\" && printf '%s\n' '# Lennox: Wi-Fi power saving makes Bluetooth stutter (lennox-sound bluetooth smooth)' '[connection]' 'wifi.powersave = 2' > $NM_POWERSAVE_CONF && printf '%s\n' '# Lennox: no Bluetooth USB power saving (lennox-sound bluetooth smooth)' 'options btusb enable_autosuspend=n' > $BTUSB_CONF"
+    if [[ -t 0 ]] || ! have pkexec; then
+        sudo sh -c "$cmd"
+    else
+        pkexec sh -c "$cmd"
+    fi || { echo "The system part wasn't changed (no password?); the sound part was" >&2; }
+    # Wi-Fi power saving off right now too, without waiting for a restart
+    local wifi
+    wifi="$(iw dev 2>/dev/null | awk '$1 == "Interface" { print $2; exit }')"
+    [[ -n "$wifi" ]] && { sudo -n iw dev "$wifi" set power_save off 2>/dev/null || true; }
+    restart_sound
+    echo "Bluetooth smoothing applied. Reconnect the headphones, and restart the laptop once for the rest."
+    echo "Still laggy? Run: lennox-sound bluetooth lag (a 2.4 GHz Wi-Fi network is the usual cause)."
+}
+
 set_bluetooth() {
     case "${1:-status}" in
         hifi)
@@ -166,8 +235,10 @@ CONF
         status)
             if bt_hifi; then echo hifi; else echo headset-mic; fi
             ;;
+        lag) bt_lag ;;
+        smooth) bt_smooth ;;
         *)
-            echo "usage: lennox-sound bluetooth hifi|headset-mic|status" >&2
+            echo "usage: lennox-sound bluetooth hifi|headset-mic|status|lag|smooth" >&2
             return 2
             ;;
     esac

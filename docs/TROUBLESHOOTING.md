@@ -98,3 +98,10 @@ On many GTX 1650 laptops the HDMI port is wired to the NVIDIA GPU. Lennox Settin
 - Nothing moves: `lennox-livewall status`. "mpvpaper is not installed" → `lennox upgrade` (or `yay -S mpvpaper`).
 - It stutters or uses a lot of battery: turn on *Pause on battery*, or use a 1080p video instead of 4K.
 - Back to a still picture: **Stop** in `SUPER + I` → **Wallpaper**, or pick any picture.
+
+## Bluetooth headphones laggy or cutting out
+
+1. `SUPER + I` → **Sound** → *Bluetooth headphones laggy* → **Check**. It says what's wrong.
+2. Biggest cause: the Wi-Fi is on the **2.4 GHz** band, which shares the radio with Bluetooth. Connect to the 5 GHz network (often the one with "5G" in its name).
+3. Press **Smooth it**, reconnect the headphones, and restart the laptop once.
+4. Headphones sound like an old phone line? They're in call mode: `lennox-sound bluetooth hifi`.

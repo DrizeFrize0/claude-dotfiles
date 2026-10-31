@@ -2,7 +2,7 @@
 
 import json
 
-from gi.repository import Adw, Gtk
+from gi.repository import Adw, GLib, Gtk
 
 from .. import rows
 from ..util import Debouncer, launch, lennox_bin, run_async
@@ -131,6 +131,19 @@ class Page:
         self.input.group.add(self.bt_row)
         page.add(self.input.group)
 
+        lag = Adw.PreferencesGroup(title="Bluetooth headphones laggy or cutting out?")
+        self.lag_row = Adw.ActionRow(title="Check what's causing it",
+                                     subtitle="Wi-Fi on the 2.4 GHz band and power saving are the usual causes",
+                                     subtitle_lines=6)
+        self.lag_row.add_prefix(Gtk.Image.new_from_icon_name("bluetooth-symbolic"))
+        for label, mode in (("Check", "lag"), ("Smooth it", "smooth")):
+            button = Gtk.Button(label=label, valign=Gtk.Align.CENTER,
+                                css_classes=["suggested-action"] if mode == "smooth" else [])
+            button.connect("clicked", lambda _b, m=mode: self._bt_lag(m))
+            self.lag_row.add_suffix(button)
+        lag.add(self.lag_row)
+        page.add(lag)
+
         self.drivers = Adw.PreferencesGroup(title="Drivers and sound quality",
                                             description="Checks that every sound driver and its firmware loaded, "
                                                         "and the usual causes of a bad sounding mic.")
@@ -202,6 +215,15 @@ class Page:
             self.bt_busy = False
 
         run_async([lennox_bin("lennox-sound"), "bluetooth", "status"], got_bt)
+
+    def _bt_lag(self, mode):
+        self.lag_row.set_subtitle("Working…" if mode == "smooth" else "Checking…")
+
+        def done(_ok, out, err):
+            text = (out or err).strip() or "Nothing to report"
+            self.lag_row.set_subtitle(GLib.markup_escape_text(text))
+
+        run_async([lennox_bin("lennox-sound"), "bluetooth", mode], done)
 
     def _on_bt(self, row, _param):
         if self.bt_busy:

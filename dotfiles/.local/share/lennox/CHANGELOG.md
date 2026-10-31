@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.12.1 · 2026-10-31 · Fixes
+
+- Laggy or cutting-out Bluetooth headphones: Lennox Settings > Sound > Check finds the cause (2.4 GHz Wi-Fi, Wi-Fi power saving, call mode), and Smooth it fixes the rest
+- Smooth it keeps the headphones awake between sounds and turns off Wi-Fi and Bluetooth power saving
+
 ## 1.12.0 · 2026-10-31 · Arabic keyboard
 
 - An Arabic keyboard switch in Lennox Settings > Keyboard & Touchpad: adds Arabic next to your layout
