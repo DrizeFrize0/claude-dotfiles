@@ -1,0 +1,7 @@
+# Test output (homes, screenshots, logs) stays out of git: only the tests are kept
+*
+!.gitignore
+!README.md
+!*.sh
+!*.py
+!*.lua
