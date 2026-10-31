@@ -103,7 +103,7 @@ def show_key(kind, info):
     if kind == "clock":
         return "clock"
     if kind == "focus":
-        return info.get("phase")
+        return info.get("phase"), info.get("round")
     return None
 
 
@@ -692,8 +692,12 @@ class IslandWindow(Gtk.ApplicationWindow):
     def _show_focus(self, info, now, rebuild):
         focusing = info["phase"] == "focus"
         left = C.countdown(max(0, info["end"] - now))
+        rounds = info.get("rounds", 1)
+        name = "Focus" if focusing else "Break"
+        if rounds > 1:
+            name += f" {info.get('round', 1)}/{rounds}"
         self._compact(icon="find-location-symbolic" if focusing else "face-smile-symbolic",
-                      text="Focus" if focusing else "Break", detail=left)
+                      text=name, detail=left)
         self.label.set_xalign(0)
         self.bars.set_playing(False)
         if rebuild:
@@ -705,8 +709,10 @@ class IslandWindow(Gtk.ApplicationWindow):
             row = Gtk.Box(spacing=10, homogeneous=True)
             more = Gtk.Button(label="+5 min", css_classes=["island-pill-button"])
             more.connect("clicked", lambda _b: self._focus("more", "5"))
-            stop = Gtk.Button(label="Stop" if focusing else "Skip break", css_classes=["island-pill-button", "stop"])
-            stop.connect("clicked", lambda _b: self._focus("stop"))
+            more_rounds = info.get("round", 1) < info.get("rounds", 1)
+            stop = Gtk.Button(label="Stop" if focusing else ("Next round now" if more_rounds else "Skip break"),
+                              css_classes=["island-pill-button", "stop"])
+            stop.connect("clicked", lambda _b: self._focus("stop" if focusing else "skip"))
             row.append(more)
             row.append(stop)
             self.card.append(row)

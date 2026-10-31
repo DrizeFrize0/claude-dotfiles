@@ -3,6 +3,14 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.14.0 · 2026-10-31 · Pomodoro and a tidier Settings
+
+- Pomodoro: set Rounds in Lennox Settings > Focus (say 4) and focus, break, focus, break repeat by themselves, with a long break at the end
+- The island shows which round you're on (Focus 2/4), with Next round now and +5 min
+- Lennox Settings is tidier: pages are in groups (Look & feel, Devices, Everyday, Keep it safe, Help)
+- A search box in Settings finds pages by what you want to do ("arabic", "free space", "bluetooth", "pomodoro")
+- The quick panel's volume now lists apps by name, with an Apps button to turn one down
+
 ## 1.13.0 · 2026-10-31 · Copy text, lighter in the background
 
 - SUPER + SHIFT + O: drag a box around any text on the screen (a video, an image, a game) and it lands in your clipboard, in English and Arabic

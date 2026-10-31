@@ -140,7 +140,9 @@
       "label": "󰕾",
       "show-per-app": true,
       "show-per-app-icon": true,
-      "show-per-app-label": false,
+      "show-per-app-label": true,
+      "expand-button-label": "⌄ Apps",
+      "collapse-button-label": "⌃ Hide",
       "empty-list-label": "Nothing is playing"
     },
     "slider#mic": {

@@ -47,6 +47,45 @@ PAGES = [
 ]
 PAGE_IDS = [p[0] for p in PAGES]
 
+# The sidebar, in groups: (header or None, [page ids])
+GROUPS = [
+    (None, ["welcome"]),
+    ("Look & feel", ["appearance", "wallpaper", "bar", "widgets"]),
+    ("Devices", ["sound", "display", "input", "connections", "phone", "power", "graphics"]),
+    ("Everyday", ["focus", "night", "games", "store", "apps", "passwords"]),
+    ("Keep it safe", ["updates", "cleanup", "backup", "health"]),
+    ("Help", ["keybinds", "about"]),
+]
+
+PAGE_IDS_IN_ORDER = [page_id for _title, ids in GROUPS for page_id in ids]
+
+# Words that find a page in the search box besides its title
+KEYWORDS = {
+    "appearance": "theme colors dark light mode rounded corners gaps blur animations border opacity font cursor icons",
+    "wallpaper": "background live video animated gif lock screen picture",
+    "bar": "waybar dock panel top clock style islands",
+    "widgets": "desktop dashboard weather island lock screen notes ai spend music minecraft",
+    "sound": "audio volume microphone mic speakers headphones bluetooth effects lag driver clean noise",
+    "display": "monitor screen resolution brightness scale refresh hdmi second",
+    "input": "keyboard layout arabic language touchpad mouse scroll tap speed shortcut switch",
+    "connections": "wifi wi-fi bluetooth network internet airplane devices",
+    "phone": "android iphone kde connect notifications battery files ring",
+    "power": "battery saver sleep suspend lid idle lock charge",
+    "graphics": "nvidia gpu intel hybrid driver games",
+    "focus": "pomodoro study homework block distractions timer break deep work",
+    "night": "night light bedtime sleep wind down warm blue light",
+    "games": "steam minecraft clips record fps overlay performance server mangohud",
+    "store": "apps install uninstall flathub aur pacman software discord chrome",
+    "apps": "default browser terminal editor files",
+    "passwords": "bitwarden vault login autofill",
+    "updates": "upgrade system packages arch news",
+    "cleanup": "free space disk trash cache storage junk",
+    "backup": "restore reinstall save settings usb drive",
+    "health": "doctor check problems fix troubleshoot",
+    "keybinds": "keyboard shortcuts keys hotkeys",
+    "about": "version whats new changelog credits",
+}
+
 
 class Context:
     """What every page gets: the settings store and a few window helpers."""
@@ -77,20 +116,33 @@ class Window(Adw.ApplicationWindow):
         # Sidebar
         self.sidebar_list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
         self.sidebar_list.add_css_class("navigation-sidebar")
-        for page_id, title, icon, _module in PAGES:
-            box = Gtk.Box(spacing=12, margin_top=6, margin_bottom=6, margin_start=6, margin_end=6)
-            box.append(Gtk.Image.new_from_icon_name(icon))
-            box.append(Gtk.Label(label=title, xalign=0, hexpand=True))
-            row = Gtk.ListBoxRow(child=box)
-            row.page_id = page_id
-            self.sidebar_list.append(row)
-            self.rows[page_id] = row
+        self.search = Gtk.SearchEntry(placeholder_text="Search settings", margin_start=8, margin_end=8,
+                                      margin_bottom=6)
+        self.search.connect("search-changed", self._on_search)
+        self.search.connect("activate", self._open_first_match)
+        self.search.connect("stop-search", lambda _e: (self.search.set_text(""), self.sidebar_list.grab_focus()))
+        info = {p[0]: p for p in PAGES}
+        for group_title, page_ids in GROUPS:
+            for page_id in page_ids:
+                _id, title, icon, _module = info[page_id]
+                box = Gtk.Box(spacing=12, margin_top=6, margin_bottom=6, margin_start=6, margin_end=6)
+                box.append(Gtk.Image.new_from_icon_name(icon))
+                box.append(Gtk.Label(label=title, xalign=0, hexpand=True))
+                row = Gtk.ListBoxRow(child=box)
+                row.page_id = page_id
+                row.group = group_title
+                row.search_text = f"{title} {KEYWORDS.get(page_id, '')}".lower()
+                self.sidebar_list.append(row)
+                self.rows[page_id] = row
+        self.sidebar_list.set_header_func(self._sidebar_header)
+        self.sidebar_list.set_filter_func(self._sidebar_filter)
         self.sidebar_list.connect("row-selected", self._on_row_selected)
 
         sidebar_header = Adw.HeaderBar()
         sidebar_header.set_title_widget(Adw.WindowTitle(title="Lennox", subtitle=f"Settings · {VERSION}"))
         sidebar_view = Adw.ToolbarView()
         sidebar_view.add_top_bar(sidebar_header)
+        sidebar_view.add_top_bar(self.search)
         sidebar_view.set_content(Gtk.ScrolledWindow(child=self.sidebar_list, hscrollbar_policy=Gtk.PolicyType.NEVER))
         sidebar_page = Adw.NavigationPage(title="Lennox", child=sidebar_view)
 
@@ -121,6 +173,30 @@ class Window(Adw.ApplicationWindow):
         self.add_controller(keys)
 
         self.connect("close-request", self._on_close)
+
+    # ---------------------------------------------------------------- sidebar
+
+    def _sidebar_header(self, row, before):
+        """A small title above the first page of each group (not while searching)."""
+        if self.search.get_text().strip() or row.group is None or (before is not None and before.group == row.group):
+            row.set_header(None)
+            return
+        row.set_header(Gtk.Label(label=row.group, xalign=0, margin_start=12, margin_top=14, margin_bottom=4,
+                                 css_classes=["dim-label", "caption-heading"]))
+
+    def _sidebar_filter(self, row):
+        words = self.search.get_text().lower().split()
+        return all(w in row.search_text for w in words)
+
+    def _on_search(self, _entry):
+        self.sidebar_list.invalidate_filter()
+        self.sidebar_list.invalidate_headers()
+
+    def _open_first_match(self, _entry):
+        for page_id in PAGE_IDS_IN_ORDER:
+            if self._sidebar_filter(self.rows[page_id]):
+                self.show_page(page_id)
+                return
 
     # ---------------------------------------------------------------- pages
 

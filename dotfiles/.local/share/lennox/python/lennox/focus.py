@@ -3,6 +3,7 @@
     python3 -m lennox.focus start [MINUTES]   start (default: Lennox Settings > Focus)
     python3 -m lennox.focus stop | toggle
     python3 -m lennox.focus more [MINUTES]    add time (default 5)
+    python3 -m lennox.focus skip              skip the break (the next round starts now)
     python3 -m lennox.focus status            JSON (the island and the quick panel read it)
     python3 -m lennox.focus stats             JSON: today, this week, streak
     python3 -m lennox.focus run               (started by `start`) the watcher
@@ -78,7 +79,8 @@ def status(state, now):
         return {"active": False}
     left = max(0, int(round(state["end"] - now)))
     return {"active": True, "phase": state["phase"], "left": left, "end": state["end"],
-            "minutes": state.get("minutes", 0), "start": state.get("start", now)}
+            "minutes": state.get("minutes", 0), "start": state.get("start", now),
+            "round": state.get("round", 1), "rounds": state.get("rounds", 1)}
 
 
 def log_session(log, start, end):
@@ -229,7 +231,8 @@ def start(minutes=None, now=None):
     if current:                                   # a break: end it first
         save_state(None)
     minutes = int(minutes or settings["focus"]["minutes"])
-    state = {"phase": "focus", "start": now, "end": now + minutes * 60, "minutes": minutes}
+    state = {"phase": "focus", "start": now, "end": now + minutes * 60, "minutes": minutes,
+             "round": 1, "rounds": max(1, int(settings["focus"]["rounds"])), "length": minutes}
     _begin_focus(state, settings)
     save_state(state)
     _island("find-location-symbolic", f"Focus · {minutes} min")
@@ -274,23 +277,58 @@ def step(now, settings):
         _record(state["start"], state["end"])
         _end_focus(state, settings)
         _sound(SOUND_END, settings)
-        pause = settings["focus"]["break_minutes"]
+        rnd, rounds = state.get("round", 1), state.get("rounds", 1)
+        last = rnd >= rounds
+        # Between rounds a short break; after the last round of a set, a long one
+        pause = settings["focus"]["long_break_minutes"] if last and rounds > 1 else settings["focus"]["break_minutes"]
+        if pause <= 0 and not last:
+            _next_round(state, now, settings)
+            return True
         if pause <= 0:
             _notify("Focus done", f"{state['minutes']} minutes. Nice work.")
             save_state(None)
             return False
-        _notify("Focus done: take a break", f"{state['minutes']} minutes done. Stand up, drink some water, "
-                                            f"back in {pause} min.", "emblem-ok-symbolic")
+        what = "Set complete: take a long break" if last and rounds > 1 else "Focus done: take a break"
+        _notify(what, f"{state['minutes']} minutes done. Stand up, drink some water, back in {pause} min."
+                      + (f" Next: round {rnd + 1} of {rounds}." if not last else ""), "emblem-ok-symbolic")
         state.update({"phase": "break", "start": now, "end": now + pause * 60})
         save_state(state)
         return True
     if now >= state["end"]:
+        if state.get("round", 1) < state.get("rounds", 1):
+            _sound(SOUND_BREAK_OVER, settings)
+            _next_round(state, now, settings)
+            return True
         _sound(SOUND_BREAK_OVER, settings)
         _notify("Break's over", "Start another focus session from the island, the quick panel or SUPER + F12.",
                 "find-location-symbolic")
         save_state(None)
         return False
     return True
+
+
+def _next_round(state, now, settings):
+    """The break is over (or skipped) and there are rounds left: focus again."""
+    minutes = state.get("length") or settings["focus"]["minutes"]
+    state.update({"phase": "focus", "start": now, "end": now + minutes * 60, "minutes": minutes,
+                  "round": state.get("round", 1) + 1})
+    _begin_focus(state, settings)
+    save_state(state)
+    _island("find-location-symbolic", f"Focus · round {state['round']} of {state['rounds']}")
+    _notify(f"Round {state['round']} of {state['rounds']}", f"{minutes} minutes. Go.", "find-location-symbolic")
+
+
+def skip(now=None):
+    """Skip the break: the next round starts now (or, after the last round, it's all over)."""
+    now = time.time() if now is None else now
+    state = load_state()
+    if not state or state["phase"] != "break":
+        return state
+    if state.get("round", 1) < state.get("rounds", 1):
+        _next_round(state, now, S.load())
+        return load_state()
+    save_state(None)
+    return None
 
 
 def run():
@@ -343,6 +381,8 @@ def main(argv):
             stop()
         else:
             start()
+    elif mode == "skip":
+        skip()
     elif mode == "more":
         more(int(arg) if arg else 5)
     elif mode == "status":

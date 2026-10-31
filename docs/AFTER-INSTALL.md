@@ -241,7 +241,7 @@ Everything is here. You never need to edit a config file:
 
 ### 4.9 Focus mode (`SUPER + F12`)
 
-Press `SUPER + F12` (or **Focus** in the quick panel) to start a 50-minute session. While it runs, Discord / Vesktop / Steam close if you open them, YouTube, TikTok, Instagram, Reddit, X and Twitch don't load, notifications wait in the quick panel, and the island counts down. Then a sound and a 5-minute break. Change the length and the lists in `SUPER + I` → **Focus**, which also shows today, the last 7 days and your streak. Starting game mode ends a session.
+Press `SUPER + F12` (or **Focus** in the quick panel) to start a 50-minute session. While it runs, Discord / Vesktop / Steam close if you open them, YouTube, TikTok, Instagram, Reddit, X and Twitch don't load, notifications wait in the quick panel, and the island counts down. Then a sound and a 5-minute break. For Pomodoro, set **Rounds** to 4 in the same page: focus and break then repeat by themselves, with a long break after the last round. Tip: type what you want in the search box at the top of Settings (`SUPER + I`), like "arabic" or "free space". Change the length and the lists in `SUPER + I` → **Focus**, which also shows today, the last 7 days and your streak. Starting game mode ends a session.
 
 ### 4.10 Back up your setup
 

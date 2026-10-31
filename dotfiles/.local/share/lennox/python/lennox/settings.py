@@ -171,6 +171,8 @@ DEFAULTS = {
     "focus": {
         "minutes": 50,                 # a focus session
         "break_minutes": 5,            # the break after it (0 = none)
+        "rounds": 1,                   # Pomodoro: focus + break repeated this many times (1 = one session)
+        "long_break_minutes": 15,      # the break after the last round of a set
         "block_apps": "vesktop, discord, steam",          # closed while focusing (app names)
         "block_sites": "youtube.com, tiktok.com, instagram.com, reddit.com, x.com, twitch.tv",
         "quiet": True,                 # notifications wait in the panel
@@ -265,6 +267,8 @@ RANGES = {
     ("focus", "minutes"): (5, 240),
     ("sounds", "volume"): (0, 100),
     ("focus", "break_minutes"): (0, 60),
+    ("focus", "long_break_minutes"): (0, 90),
+    ("focus", "rounds"): (1, 8),
     ("power", "low_battery_warning"): (5, 50),
     ("power", "critical_battery"): (2, 20),
 }

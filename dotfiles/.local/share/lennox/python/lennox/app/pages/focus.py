@@ -34,6 +34,11 @@ class Page:
                                 lower=5, upper=240, step=5))
         setup.add(rows.spin_row(store, "focus.break_minutes", "Break after it", "Minutes (0 = no break)",
                                 lower=0, upper=60, step=1))
+        setup.add(rows.spin_row(store, "focus.rounds", "Rounds (Pomodoro)",
+                                "Focus and break repeat this many times by themselves (1 = just one session)",
+                                lower=1, upper=8, step=1))
+        setup.add(rows.spin_row(store, "focus.long_break_minutes", "Long break after the last round",
+                                "Minutes", lower=0, upper=90, step=5))
         setup.add(rows.entry_row(store, "focus.block_apps", "Apps that close (names, commas between)"))
         setup.add(rows.entry_row(store, "focus.block_sites", "Sites that don't load (commas between)"))
         setup.add(rows.switch_row(store, "focus.quiet", "Hold notifications",
@@ -87,15 +92,16 @@ class Page:
             info = json.loads(out) if ok else {}
         except ValueError:
             info = {}
-        key = (info.get("active"), info.get("phase"))
+        key = (info.get("active"), info.get("phase"), info.get("round"))
         if info.get("active"):
             left = int(info.get("left", 0))
             clock = f"{left // 60}:{left % 60:02d}"
+            rounds = f" · round {info.get('round', 1)} of {info['rounds']}" if info.get("rounds", 1) > 1 else ""
             if info["phase"] == "focus":
-                self.now_row.set_title(f"Focusing · {clock} left")
+                self.now_row.set_title(f"Focusing{rounds} · {clock} left")
                 self.now_row.set_subtitle(f"Ends at {time.strftime('%H:%M', time.localtime(info['end']))}")
             else:
-                self.now_row.set_title(f"Break · {clock} left")
+                self.now_row.set_title(f"Break{rounds} · {clock} left")
                 self.now_row.set_subtitle("Stand up, stretch, drink some water")
         else:
             self.now_row.set_title("Not focusing")
@@ -109,7 +115,10 @@ class Page:
         elif info["phase"] == "focus":
             self._set_buttons([("+5 min", ["more", "5"], []), ("Stop", ["stop"], ["destructive-action"])])
         else:
-            self._set_buttons([("Skip break", ["stop"], [])])
+            more = info.get("round", 1) < info.get("rounds", 1)
+            self._set_buttons([("Next round now" if more else "Skip break", ["skip"], []),
+                               ("Stop all", ["stop"], ["destructive-action"])] if more
+                              else [("Skip break", ["skip"], [])])
 
     # ------------------------------------------------------------ stats
 
