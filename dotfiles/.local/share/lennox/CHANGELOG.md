@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.29.5 · 2026-11-04 · Boot menu picture on ImageMagick 7
+
+- lennox-bootmenu restyle works with ImageMagick 7 (it uses magick when it exists), finds a font file by itself so the LENNOX name is drawn on the boot menu background, and no longer prints the deprecation warnings
+
 ## 1.29.4 · 2026-11-04 · Exactly two entries
 
 - The boot menu now has two fixed entries, Arch Linux and Windows, and no automatic scanning, so boot files on your other disk partitions (old installs) can no longer show up as extra Linux entries. Windows is found from the laptop's own boot list; if it can't be found, the menu keeps scanning so Windows still shows. After upgrading, run lennox-bootmenu restyle

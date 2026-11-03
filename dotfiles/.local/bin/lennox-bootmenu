@@ -83,16 +83,31 @@ plan() {
 }
 
 # The look: a night-sky background, a glowing selection, only the entries you want (Arch and Windows)
+# ImageMagick 7 wants "magick"; version 6 only has "convert"
+im() { if command -v magick >/dev/null; then magick "$@"; else convert "$@"; fi 2>/dev/null; }
+
+# A bold font FILE (a named font is often not found): from fontconfig, else the first font on the system
+pick_font() {
+    local f
+    f="$(fc-match -f '%{file}' 'DejaVu Sans:bold' 2>/dev/null)"
+    [[ -f "$f" ]] || f="$(fc-match -f '%{file}' 'sans-serif:bold' 2>/dev/null)"
+    [[ -f "$f" ]] || f="$(find /usr/share/fonts -iname '*.ttf' -o -iname '*.otf' 2>/dev/null | head -1)"
+    [[ -f "$f" ]] && echo "$f"
+}
+
 make_art() {   # make_art DIR
-    command -v convert >/dev/null || return 0
-    local dir="$1" tmp; tmp="$(mktemp -d)"
-    convert -size 1920x1080 radial-gradient:'#22356e-#05070f' "$tmp/base.png"
-    convert -size 1920x1080 xc:black +noise Random -colorspace Gray -threshold 98.8% -blur 0x0.7 -level 0,55% "$tmp/stars.png"
-    convert "$tmp/base.png" "$tmp/stars.png" -compose screen -composite -font DejaVu-Sans-Bold -pointsize 54 -kerning 18 \
-        -fill '#cfe0ff' -gravity south -annotate +0+64 'LENNOX' "$tmp/banner.png"
-    convert -size 144x144 xc:none -fill 'rgba(130,170,255,0.20)' -stroke 'rgba(175,205,255,0.95)' -strokewidth 3 \
+    command -v magick >/dev/null || command -v convert >/dev/null || return 0
+    local dir="$1" tmp font; tmp="$(mktemp -d)"; font="$(pick_font)"
+    im -size 1920x1080 radial-gradient:'#22356e-#05070f' "$tmp/base.png"
+    im -size 1920x1080 xc:black +noise Random -colorspace Gray -threshold 98.8% -blur 0x0.7 -level 0,55% "$tmp/stars.png"
+    im "$tmp/base.png" "$tmp/stars.png" -compose screen -composite "$tmp/banner.png"
+    if [[ -n "$font" ]]; then    # the name along the bottom (skipped, not failed, when no font can be found)
+        im "$tmp/banner.png" -font "$font" -pointsize 54 -kerning 18 -fill '#cfe0ff' -gravity south -annotate +0+64 'LENNOX' "$tmp/named.png" \
+            && [[ -s "$tmp/named.png" ]] && mv -f "$tmp/named.png" "$tmp/banner.png"
+    fi
+    im -size 144x144 xc:none -fill 'rgba(130,170,255,0.20)' -stroke 'rgba(175,205,255,0.95)' -strokewidth 3 \
         -draw 'roundrectangle 5,5 138,138 22,22' "$tmp/selection_big.png"
-    convert -size 64x64 xc:none -fill 'rgba(130,170,255,0.20)' -stroke 'rgba(175,205,255,0.95)' -strokewidth 2 \
+    im -size 64x64 xc:none -fill 'rgba(130,170,255,0.20)' -stroke 'rgba(175,205,255,0.95)' -strokewidth 2 \
         -draw 'roundrectangle 3,3 60,60 12,12' "$tmp/selection_small.png"
     $SUDO cp "$tmp/banner.png" "$tmp/selection_big.png" "$tmp/selection_small.png" "$dir/" && rm -rf "$tmp"
 }
@@ -148,7 +163,7 @@ CONF
 
 write_look() {   # write_look ESP UKI
     local dir="$1/EFI/refind" art=no
-    if command -v convert >/dev/null && make_art "$dir"; then
+    if make_art "$dir"; then
         # the banner file names the files make_art wrote (renamed to what the config says)
         $SUDO mv -f "$dir/banner.png" "$dir/lennox-banner.png" && art=yes
     fi

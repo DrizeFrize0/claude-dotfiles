@@ -117,5 +117,9 @@ rm -rf "$T/partuuid"; mkdir "$T/partuuid"
 check "can't read partitions: removes nothing" "! $EC bash $TOOL clean --yes 2>&1 | grep -q Removed"
 rm -rf "$T"
 
+T="$(mktemp -d)"; mk "$T"
+check "enable and restyle print no shell errors (command not found, syntax)" "! $(env_for "$T") bash $TOOL enable --yes 2>&1 | grep -qi 'not found\|syntax error\|unbound'; ! $(env_for "$T") bash $TOOL restyle 2>&1 | grep -qi 'not found\|syntax error\|unbound'"
+rm -rf "$T"
+
 check "does not use mountpoint (it needs to open /boot/.., which only root may)" "! grep -q 'mountpoint -q' $TOOL"
 exit $fail
