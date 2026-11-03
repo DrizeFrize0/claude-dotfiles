@@ -4,6 +4,7 @@
 #   lennox-bootmenu plan           what "enable" would do (changes nothing)
 #   lennox-bootmenu enable --yes   install it, make it the first thing the laptop starts
 #   lennox-bootmenu disable --yes  take it out again and put the old boot order back
+#   lennox-bootmenu restyle        redo the look and the entry list (after an upgrade)
 #   lennox-bootmenu clean [--yes]  list (then remove) boot entries of partitions that no longer exist
 # It never touches Windows. Your own way in (F9 boot menu > boot from EFI file) keeps working.
 # Tests point LENNOX_ESP, LENNOX_SUDO, LENNOX_SB_FILE and LENNOX_STATE at a fake system.
@@ -81,25 +82,63 @@ plan() {
     return 0
 }
 
-lennox_conf() {   # lennox_conf UKI_PATH_ON_ESP
+# The look: a night-sky background, a glowing selection, only the entries you want (Arch and Windows)
+make_art() {   # make_art DIR
+    command -v convert >/dev/null || return 0
+    local dir="$1" tmp; tmp="$(mktemp -d)"
+    convert -size 1920x1080 radial-gradient:'#22356e-#05070f' "$tmp/base.png"
+    convert -size 1920x1080 xc:black +noise Random -colorspace Gray -threshold 98.8% -blur 0x0.7 -level 0,55% "$tmp/stars.png"
+    convert "$tmp/base.png" "$tmp/stars.png" -compose screen -composite -font DejaVu-Sans-Bold -pointsize 54 -kerning 18 \
+        -fill '#cfe0ff' -gravity south -annotate +0+64 'LENNOX' "$tmp/banner.png"
+    convert -size 144x144 xc:none -fill 'rgba(130,170,255,0.20)' -stroke 'rgba(175,205,255,0.95)' -strokewidth 3 \
+        -draw 'roundrectangle 5,5 138,138 22,22' "$tmp/selection_big.png"
+    convert -size 64x64 xc:none -fill 'rgba(130,170,255,0.20)' -stroke 'rgba(175,205,255,0.95)' -strokewidth 2 \
+        -draw 'roundrectangle 3,3 60,60 12,12' "$tmp/selection_small.png"
+    $SUDO cp "$tmp/banner.png" "$tmp/selection_big.png" "$tmp/selection_small.png" "$dir/" && rm -rf "$tmp"
+}
+
+lennox_conf() {   # lennox_conf UKI_PATH_ON_ESP ART_DIR_READABLE(yes|no)
     cat <<CONF
 # Lennox boot menu look (lennox-bootmenu). Changes here are kept; 'disable' removes the file.
 timeout 8
+resolution max
 use_graphics_for linux,windows
 enable_mouse
 enable_touch
 hideui hints
-banner lennox-banner.png
-banner_scale fillscreen
-selection_big selection-big.png
+showtools shutdown,reboot,firmware
+big_icon_size 128
+small_icon_size 48
 default_selection "Arch Linux"
-dont_scan_files $(basename "$1")
+# Only Arch and Windows: no kernel lists, no leftovers from other installs
+scan_all_linux_kernels false
+scanfor internal,external,manual
+dont_scan_dirs ESP:/EFI/BOOT,ESP:/EFI/systemd,ESP:/grub,ESP:/EFI/grub
+dont_scan_files grubx64.efi,shimx64.efi,mmx64.efi,BOOTX64.EFI,core.efi,grub.efi,systemd-bootx64.efi,$(basename "$1")
+CONF
+    if [[ "$2" == yes ]]; then
+        echo "banner lennox-banner.png"
+        echo "banner_scale fillscreen"
+        echo "selection_big selection_big.png"
+        echo "selection_small selection_small.png"
+    fi
+    cat <<CONF
 
 menuentry "Arch Linux" {
     icon /EFI/refind/icons/os_arch.png
     loader $1
 }
 CONF
+}
+
+write_look() {   # write_look ESP UKI
+    local dir="$1/EFI/refind" art=no
+    if command -v convert >/dev/null && make_art "$dir"; then
+        # the banner file names the files make_art wrote (renamed to what the config says)
+        $SUDO mv -f "$dir/banner.png" "$dir/lennox-banner.png" && art=yes
+    fi
+    lennox_conf "${2#"$1"}" "$art" | $SUDO tee "$dir/lennox.conf" >/dev/null
+    grep -qx 'include lennox.conf' "$dir/refind.conf" 2>/dev/null || echo 'include lennox.conf' | $SUDO tee -a "$dir/refind.conf" >/dev/null
 }
 
 enable() {
@@ -115,12 +154,7 @@ enable() {
     else
         $SUDO mkdir -p "$esp/EFI/refind/icons"; $SUDO touch "$esp/EFI/refind/refind.conf"
     fi
-    local dir="$esp/EFI/refind"
-    lennox_conf "${uki#"$esp"}" | $SUDO tee "$dir/lennox.conf" >/dev/null
-    grep -qx 'include lennox.conf' "$dir/refind.conf" 2>/dev/null || echo 'include lennox.conf' | $SUDO tee -a "$dir/refind.conf" >/dev/null
-    if command -v convert >/dev/null; then
-        $SUDO convert -size 1920x1080 gradient:'#070b18-#1c2c5c' "$dir/lennox-banner.png" 2>/dev/null
-    fi
+    write_look "$esp" "$uki"
     echo "Done. Restart: you should see a menu with Arch Linux and Windows."
     echo "If the laptop still goes straight to Windows: press F9 at the HP logo and pick rEFInd, or tell me what 'lennox-bootmenu status' says."
     echo "To remove it: lennox-bootmenu disable --yes"
@@ -174,12 +208,21 @@ clean() {
     done <<<"$list"
 }
 
+restyle() {
+    local esp uki; esp="$(find_esp)"; uki="$(find_ukis "$esp" | head -1)"
+    as_reader "$esp" test -d "$esp/EFI/refind" || { echo "The boot menu isn't installed: run enable first." >&2; exit 1; }
+    [[ -n "$uki" ]] || { echo "Can't find your Arch boot file: nothing changed." >&2; exit 1; }
+    write_look "$esp" "$uki"
+    echo "The boot menu look is updated. It shows at the next restart."
+}
+
 case "${1:-status}" in
+    restyle) restyle ;;
     clean) clean "${2:-}" ;;
     status) status ;;
     plan) plan ;;
     enable|disable)
         [[ "${2:-}" == --yes ]] || { echo "This changes how the laptop starts. See what it does: lennox-bootmenu plan"; echo "Then: lennox-bootmenu $1 --yes"; exit 1; }
         "$1" ;;
-    *) echo "usage: lennox-bootmenu status | plan | enable --yes | disable --yes | clean [--yes]" >&2; exit 2 ;;
+    *) echo "usage: lennox-bootmenu status | plan | enable --yes | disable --yes | restyle | clean [--yes]" >&2; exit 2 ;;
 esac

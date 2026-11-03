@@ -3,6 +3,13 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.29.0 · 2026-11-04 · A nicer boot menu and a welcome
+
+- The boot menu is cleaner and prettier: a night-sky background, a glowing selection, and only Arch Linux and Windows (the extra Linux entries are hidden). After upgrading, run lennox-bootmenu restyle to apply it
+- Welcome animation: a few seconds of stars and "Good evening, YOUR NAME" every time the desktop starts. Any key skips it. Settings > Daily care > Greeting turns it off
+- The startup animation (lennox-boot-animation) now works with your kind of setup, where Arch starts from one boot file built by mkinitcpio. It puts the splash option into the kernel options file instead of a boot loader file, and still shows its plan first and keeps backups
+- New tool: lennox-sessions hide-others makes the login screen list only "Lennox (Hyprland)" (lennox-sessions show-all undoes it). Use the Lennox entry: it picks the right graphics chip and starts everything, the plain Hyprland entry does not
+
 ## 1.28.4 · 2026-11-04 · Clean up old boot entries
 
 - lennox-bootmenu clean lists the boot entries that point to partitions that no longer exist (left over from old installs), and lennox-bootmenu clean --yes removes them after saving a backup. Windows, the boot menu, USB drives and the laptop's own entries are never touched, and nothing is removed if the partitions can't be read

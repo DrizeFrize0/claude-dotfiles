@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# A few seconds of welcome animation at login (Settings > Daily care > Greeting).
+#   lennox-login-anim [--force] [--seconds N]
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.loginanim "$@"

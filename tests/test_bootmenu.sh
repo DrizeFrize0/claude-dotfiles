@@ -64,7 +64,12 @@ rm -rf "$T"
 T="$(mktemp -d)"; mk "$T"; mv "$T/esp/EFI/Linux/archlinux.efi" "$T/esp/EFI/Linux/arch-linux.efi"; mkdir -p "$T/esp/grub/x86_64-efi"; : > "$T/esp/grub/x86_64-efi/core.efi"; : > "$T/esp/grub/x86_64-efi/grub.efi"
 check "picks arch-linux.efi, ignores GRUB's own files" "[ \"\$($(env_for "$T") bash $TOOL status | grep -c 'efi$')\" = 1 ] || $(env_for "$T") bash $TOOL status | grep -q '/EFI/Linux/arch-linux.efi'"
 $(env_for "$T") bash "$TOOL" enable --yes >/dev/null 2>&1
-check "Arch entry points at arch-linux.efi" "grep -q 'loader /EFI/Linux/arch-linux.efi' $T/esp/EFI/refind/lennox.conf && grep -q 'dont_scan_files arch-linux.efi' $T/esp/EFI/refind/lennox.conf"
+check "Arch entry points at arch-linux.efi" "grep -q 'loader /EFI/Linux/arch-linux.efi' $T/esp/EFI/refind/lennox.conf && grep -q '^dont_scan_files .*arch-linux.efi' $T/esp/EFI/refind/lennox.conf"
+check "extra Linux entries hidden" "grep -q 'scan_all_linux_kernels false' $T/esp/EFI/refind/lennox.conf && grep -q 'ESP:/grub' $T/esp/EFI/refind/lennox.conf"
+check "look files created and used" "[ -f $T/esp/EFI/refind/lennox-banner.png ] && [ -f $T/esp/EFI/refind/selection_big.png ] && grep -q '^banner lennox-banner.png' $T/esp/EFI/refind/lennox.conf"
+: > $T/esp/EFI/refind/lennox.conf
+$(env_for "$T") bash "$TOOL" restyle >/dev/null 2>&1
+check "restyle rewrites the look without reinstalling" "grep -q 'default_selection' $T/esp/EFI/refind/lennox.conf && ! grep -q refind-install $T/calls.restyle 2>/dev/null"
 rm -rf "$T"
 
 # No UKI on the partition: stops

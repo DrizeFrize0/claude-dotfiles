@@ -218,6 +218,7 @@ DEFAULTS = {
     },
     "greeting": {
         "on": True,                    # a friendly hello a little after login
+        "animation": True,             # a short welcome animation when the desktop starts
         "name": "",                    # what to call you (empty: your user name)
     },
     "care": {

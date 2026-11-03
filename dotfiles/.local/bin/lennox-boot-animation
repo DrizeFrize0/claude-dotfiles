@@ -13,15 +13,24 @@ THEME_SRC="${PLYMOUTH_THEME_SRC:-/usr/share/plymouth/themes/lennox}"
 MKINIT="$ROOT/etc/mkinitcpio.conf"
 GRUB="$ROOT/etc/default/grub"
 ENTRIES="$ROOT/boot/loader/entries"
+CMDLINE="$ROOT/etc/kernel/cmdline"
+CMDLINE_D="$ROOT/etc/cmdline.d"
+PROC_CMDLINE="${LENNOX_PROC_CMDLINE:-/proc/cmdline}"
+
+# "uki": Arch builds one signed-style boot file (mkinitcpio presets with *_uki=) with the kernel options inside,
+# whatever menu starts it. Then the options live in /etc/kernel/cmdline, not in a boot loader file.
+uses_uki() { grep -qsE '^[a-z_]*_uki=' "$ROOT"/etc/mkinitcpio.d/*.preset; }
 
 bootloader() {
-    if [[ -f "$GRUB" ]]; then echo grub
+    if uses_uki; then echo uki
+    elif [[ -f "$GRUB" ]]; then echo grub
     elif compgen -G "$ENTRIES/*.conf" >/dev/null; then echo systemd-boot
     else echo unknown; fi
 }
 has_hook() { grep -E '^HOOKS=' "$MKINIT" 2>/dev/null | grep -qw plymouth; }
 has_splash() {
     case "$(bootloader)" in
+        uki) cat "$CMDLINE" "$CMDLINE_D"/*.conf 2>/dev/null | grep -qw splash ;;
         grub) grep -E '^GRUB_CMDLINE_LINUX_DEFAULT=' "$GRUB" | grep -qw splash ;;
         systemd-boot) grep -qw splash "$ENTRIES"/*.conf ;;
         *) return 1 ;;
@@ -37,13 +46,14 @@ plan() {
     has_hook || echo " - add the 'plymouth' hook to $MKINIT (after udev), saving a backup"
     has_splash || echo " - add 'quiet splash' to the kernel options ($loader), saving a backup"
     [[ "$(theme_now)" == lennox ]] || echo " - make 'lennox' the startup theme and rebuild the initramfs"
-    [[ "$loader" == unknown ]] && echo " ! Can't find GRUB or systemd-boot: enable would stop before changing anything"
+    [[ "$loader" == uki ]] && echo "   (your Arch starts from one boot file built by mkinitcpio: the options go into $CMDLINE, then it is rebuilt)"
+    [[ "$loader" == unknown ]] && echo " ! Can't find a boot file, GRUB or systemd-boot: enable would stop before changing anything"
     return 0
 }
 
 enable() {
     local loader; loader="$(bootloader)"
-    [[ "$loader" != unknown ]] || { echo "Can't find GRUB or systemd-boot: nothing changed." >&2; exit 1; }
+    [[ "$loader" != unknown ]] || { echo "Can't find a boot file, GRUB or systemd-boot: nothing changed." >&2; exit 1; }
     [[ -d "$THEME_SRC" ]] || { echo "The theme files are missing (run lennox upgrade): nothing changed." >&2; exit 1; }
     command -v plymouth >/dev/null || $SUDO pacman -S --needed --noconfirm plymouth || exit 1
     if ! has_hook; then
@@ -54,6 +64,20 @@ enable() {
     fi
     if ! has_splash; then
         case "$loader" in
+            uki)
+                if [[ -f "$CMDLINE" ]]; then
+                    [[ -f "$CMDLINE.lennox-backup" ]] || $SUDO cp "$CMDLINE" "$CMDLINE.lennox-backup"
+                    $SUDO sed -i -E '1 s/[[:space:]]*$/ quiet splash/' "$CMDLINE"
+                elif compgen -G "$CMDLINE_D/*.conf" >/dev/null; then
+                    echo 'quiet splash' | $SUDO tee "$CMDLINE_D/90-lennox-splash.conf" >/dev/null
+                else
+                    # No file yet: mkinitcpio has been copying the running options. Keep them exactly, plus splash.
+                    local now; now="$(sed -E 's/(^| )(BOOT_IMAGE|initrd)=[^ ]*//g; s/^ +//; s/ +$//' "$PROC_CMDLINE")"
+                    [[ "$now" == *root=* ]] || { echo "Can't read the current kernel options (no root=): nothing changed." >&2; exit 1; }
+                    $SUDO mkdir -p "${CMDLINE%/*}"
+                    echo "$now quiet splash" | $SUDO tee "$CMDLINE" >/dev/null
+                    $SUDO touch "$CMDLINE.lennox-created"
+                fi ;;
             grub)
                 [[ -f "$GRUB.lennox-backup" ]] || $SUDO cp "$GRUB" "$GRUB.lennox-backup"
                 $SUDO sed -i -E 's/^(GRUB_CMDLINE_LINUX_DEFAULT="[^"]*)"/\1 quiet splash"/' "$GRUB"
@@ -71,6 +95,9 @@ enable() {
 }
 
 disable() {
+    [[ -f "$CMDLINE.lennox-backup" ]] && $SUDO cp "$CMDLINE.lennox-backup" "$CMDLINE"
+    [[ -f "$CMDLINE.lennox-created" ]] && $SUDO rm -f "$CMDLINE" "$CMDLINE.lennox-created"
+    $SUDO rm -f "$CMDLINE_D/90-lennox-splash.conf"
     [[ -f "$MKINIT.lennox-backup" ]] && $SUDO cp "$MKINIT.lennox-backup" "$MKINIT"
     [[ -f "$GRUB.lennox-backup" ]] && { $SUDO cp "$GRUB.lennox-backup" "$GRUB"; $SUDO grub-mkconfig -o "$ROOT/boot/grub/grub.cfg"; }
     for f in "$ENTRIES"/*.conf.lennox-backup; do [[ -f "$f" ]] && $SUDO cp "$f" "${f%.lennox-backup}"; done
