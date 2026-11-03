@@ -13,18 +13,23 @@ mkdir -p "$STATE"
 
 find_esp() {
     if [[ -n "${LENNOX_ESP:-}" ]]; then echo "$LENNOX_ESP"; return; fi
-    local d
+    local d first=""
     for d in /efi /boot /boot/efi; do
-        mountpoint -q "$d" 2>/dev/null && [[ "$(findmnt -no FSTYPE "$d" 2>/dev/null)" == vfat ]] && { echo "$d"; return; }
+        if mountpoint -q "$d" 2>/dev/null && [[ "$(findmnt -no FSTYPE "$d" 2>/dev/null)" == vfat ]]; then
+            [[ -n "$(find_ukis "$d")" ]] && { echo "$d"; return; }      # the one that holds your Arch file
+            first="${first:-$d}"
+        fi
     done
+    [[ -n "$first" ]] && echo "$first"
 }
 
 secure_boot_on() { [[ -r "$SB_FILE" && "$(od -An -t u1 -j4 -N1 "$SB_FILE" 2>/dev/null | tr -d ' ')" == 1 ]]; }
 
-# The Linux boot files on the boot partition (not rEFInd, Windows or the fallback)
+# The Linux boot files on the boot partition: any .efi that isn't rEFInd, Windows, the generic fallback or a tool
 find_ukis() {
-    [[ -d "$1/EFI" ]] || return 0
-    find "$1/EFI" -type f -iname '*.efi' ! -ipath '*/refind/*' ! -ipath '*/Microsoft/*' ! -ipath '*/BOOT/*' 2>/dev/null | sort
+    [[ -d "$1" ]] || return 0
+    find "$1" -maxdepth 4 -type f -iname '*.efi' ! -ipath '*/refind/*' ! -ipath '*/Microsoft/*' \
+        ! -iname 'bootx64.efi' ! -iname 'bootmgfw.efi' ! -iname 'bootmgr.efi' ! -iname 'shell*.efi' ! -iname 'memtest*' 2>/dev/null | sort
 }
 
 status() {
@@ -46,6 +51,9 @@ problems() {
     [[ -n "$esp" ]] || echo "Can't find the boot partition (no vfat partition at /efi, /boot or /boot/efi). Mount it, then set LENNOX_ESP=/where."
     if [[ -n "$esp" && -z "$(find_ukis "$esp")" ]]; then
         echo "No Linux boot file (like archlinux.efi) on $esp. Is this the right partition?"
+        echo "    These are the .efi files that ARE there: $(find "$esp" -maxdepth 4 -iname '*.efi' 2>/dev/null | sed "s#^$esp#  #" | tr '\n' ' ')"
+        echo "    FAT partitions mounted: $(findmnt -rno TARGET,FSTYPE 2>/dev/null | awk '$2=="vfat"{print $1}' | tr '\n' ' ')"
+        echo "    Run: lsblk -f   (the EFI partition holding archlinux.efi may not be mounted: sudo mount /dev/nvme0n1pN /mnt, then LENNOX_ESP=/mnt lennox-bootmenu plan)"
     fi
     if secure_boot_on; then
         echo "Secure Boot is ON: rEFInd isn't signed, so the laptop would refuse it. Turn Secure Boot off in the BIOS (F10) first."

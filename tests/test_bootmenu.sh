@@ -53,8 +53,16 @@ $(env_for "$T") bash "$TOOL" enable --yes >/dev/null 2>&1
 check "refind missing: pacman installs it" "grep -q 'pacman -S --needed --noconfirm refind' $T/calls"
 rm -rf "$T"
 
+# The Arch file sits at the top of the partition, not under EFI/Linux
+T="$(mktemp -d)"; mk "$T"; mv "$T/esp/EFI/Linux/archlinux.efi" "$T/esp/archlinux.efi"
+check "finds archlinux.efi at the top of the partition" "$(env_for "$T") bash $TOOL status | grep -q '  /archlinux.efi'"
+$(env_for "$T") bash "$TOOL" enable --yes >/dev/null 2>&1
+check "uses it as the Arch entry" "grep -q 'loader /archlinux.efi' $T/esp/EFI/refind/lennox.conf"
+rm -rf "$T"
+
 # No UKI on the partition: stops
 T="$(mktemp -d)"; mk "$T"; rm -f "$T/esp/EFI/Linux/archlinux.efi"
 check "no Linux file: stops" "! $(env_for "$T") bash $TOOL enable --yes >/dev/null 2>&1 && [ ! -d $T/esp/EFI/refind ]"
+check "no Linux file: says what IS there" "$(env_for "$T") bash $TOOL enable --yes 2>&1 | grep -q 'bootmgfw.efi'"
 rm -rf "$T"
 exit $fail

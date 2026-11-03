@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.28.1 · 2026-11-04 · The boot menu finds your Arch file
+
+- lennox-bootmenu now looks for your Arch boot file (like archlinux.efi) anywhere on the boot partition, and checks every FAT partition that is mounted to find the one that holds it. When it still finds nothing, it lists the .efi files that are there and tells you what to try, instead of just stopping
+
 ## 1.28.0 · 2026-11-04 · A boot menu
 
 - New tool: lennox-bootmenu. Sets up a graphical boot menu (rEFInd) so the laptop asks whether to start Arch Linux or Windows, instead of going straight to Windows. It shows its plan first, saves your current boot entries, never touches Windows, and lennox-bootmenu disable --yes takes it out and puts the old boot order back
