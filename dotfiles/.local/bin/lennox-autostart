@@ -39,6 +39,9 @@ lennox-apply --no-reload all
 # Clean microphone set up by the installer becomes the default mic
 setsid -f lennox-sound clean-mic login >/dev/null 2>&1
 
+# Keeps the sound right: headphones in music mode, a real default microphone
+setsid -f lennox-sound guard >/dev/null 2>&1 </dev/null
+
 # Workspace buttons need their state before the bar starts
 start lennox-workspaces
 

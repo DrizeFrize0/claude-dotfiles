@@ -3,6 +3,14 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.27.0 · 2026-11-04 · Sound that stays fixed, game mode by itself, better ping
+
+- Bluetooth headphones no longer start in bad quality: the laptop stops offering the phone-call mode, so the headphones connect in full quality every time and you no longer need to disconnect and reconnect them. Better SBC quality is on too
+- Microphone fixes for Discord: microphones are never put to sleep (a sleeping mic could wake up silent), a muted mic is switched back on at login, and the default microphone can never be a speaker loopback. A small helper watches for changes (headphones connecting, mics appearing) and puts things right
+- Game mode now turns on by itself while a game is open (Steam and Proton games, Minecraft, emulators, gamescope, or names you add) and off when you close it, without touching a game mode you turned on by hand. Settings > Game Center
+- Better ping: BBR and fq network settings, and Wi-Fi power saving is off. Settings > Game Center > Check my ping measures your router, the internet and your Minecraft server, and tells you what to fix (weak signal, 2.4 GHz, bumpy connection)
+- The upgrade applies all of this once and restarts the sound system, so headphones may blip for a second
+
 ## 1.26.0 · 2026-11-04 · Everything in Release 5
 
 - Extras page (Settings > Everyday) with a switch for each of these:

@@ -74,6 +74,20 @@ class Page:
                                     self._copy_option, "edit-copy-symbolic"))
         page.add(overlay)
 
+        auto = Adw.PreferencesGroup(
+            title="Game mode and ping",
+            description="Game mode turns on by itself while a game is open (Steam games, Minecraft, emulators, gamescope) and "
+                        "off when you close it: no effects, performance power mode, quiet notifications.")
+        auto.add(rows.switch_row(store, "games.auto_mode", "Turn game mode on by itself"))
+        auto.add(rows.entry_row(store, "games.auto_extra", "More games (window names, commas between)"))
+        self.ping_row = rows.info_row("Ping", "Not checked yet")
+        self.ping_row.value_label.set_wrap(True)
+        auto.add(self.ping_row)
+        self.ping_button = rows.button_row("Check my ping", "Router, internet and your Minecraft server, with what to fix",
+                                           "Check", self._check_ping, "network-wireless-symbolic")
+        auto.add(self.ping_button)
+        page.add(auto)
+
         self.profiles_group = Adw.PreferencesGroup(
             title="Per-game settings",
             description="Each game can have its own performance mode, quiet notifications and no night light "
@@ -105,6 +119,13 @@ class Page:
         self.widget = page
 
     # ------------------------------------------------------------ per-game settings
+
+    def _check_ping(self):
+        self.ping_row.value_label.set_label("Checking… (about 10 seconds)")
+
+        def done(ok, out, _err):
+            self.ping_row.value_label.set_label(out.strip() if ok and out.strip() else "Couldn't measure it: is the laptop online?")
+        run_async([lennox_bin("lennox-ping")], done)
 
     def _refresh_profiles(self):
         for row in self.profile_rows:

@@ -145,6 +145,29 @@ monitor.alsa.rules = [
 CONF
 }
 
+MIC_AWAKE_CONF="$WP_DIR/64-lennox-mic-awake.conf"
+
+write_mic_awake_conf() {
+    mkdir -p "$WP_DIR"
+    cat > "$MIC_AWAKE_CONF" <<'CONF'
+# Lennox (lennox-sound): microphones are never put to sleep. A mic that sleeps
+# while nobody records sometimes wakes up silent (Discord says "no input"):
+# kept awake it is ready the moment an app asks.
+monitor.alsa.rules = [
+  {
+    matches = [
+      { node.name = "~alsa_input.*" }
+    ]
+    actions = {
+      update-props = {
+        session.suspend-timeout-seconds = 0
+      }
+    }
+  }
+]
+CONF
+}
+
 # Laggy or stuttering Bluetooth headphones: what the laptop is doing that can cause it
 bt_lag() {
     local wifi freq power card codec profile
@@ -222,7 +245,15 @@ set_bluetooth() {
 wireplumber.settings = {
   bluetooth.autoswitch-to-headset-profile = false
 }
+# The laptop never offers the phone-call roles (HSP/HFP), so a headset can't
+# connect in call mode when the laptop starts, and music always gets A2DP.
+# SBC-XQ is the best quality every headset supports.
+monitor.bluez.properties = {
+  bluez5.roles = [ a2dp_sink a2dp_source ]
+  bluez5.enable-sbc-xq = true
+}
 CONF
+            write_mic_awake_conf
             wpctl settings --save bluetooth.autoswitch-to-headset-profile false >/dev/null 2>&1
             bt_to_music_mode
             echo "Bluetooth: full quality sound, the laptop mic is used for calls"
@@ -665,7 +696,59 @@ report() {
     echo "$out"
 }
 
+# ---------------------------------------------------------------- guard
+
+# Keeps the sound right while you use the laptop: headphones in call mode go back to
+# music mode, and the default microphone is always a real one (never a speaker's loopback).
+guard_mic() {
+    local src first
+    src="$(pactl get-default-source 2>/dev/null)"
+    if clean_mic_on && pactl list short sources 2>/dev/null | grep -q "$CLEAN_NODE"; then
+        [[ -z "$src" || "$src" == *.monitor ]] && pactl set-default-source "$CLEAN_NODE" && echo "default mic -> clean microphone"
+    elif [[ -z "$src" || "$src" == *.monitor ]]; then
+        first="$(pactl list short sources 2>/dev/null | awk '$2 !~ /monitor/ {print $2; exit}')"
+        [[ -n "$first" ]] && pactl set-default-source "$first" && echo "default mic -> $first"
+    fi
+    return 0
+}
+
+guard_once() {
+    bt_hifi && bt_to_music_mode
+    guard_mic
+    # At login only: a mic left muted by the last session is why Discord hears nothing
+    [[ "${1:-}" == login ]] && pactl set-source-mute @DEFAULT_SOURCE@ 0 >/dev/null 2>&1
+    return 0
+}
+
+guard_watch() {
+    mkdir -p "${XDG_RUNTIME_DIR:-/tmp}/lennox"
+    exec 8>"${XDG_RUNTIME_DIR:-/tmp}/lennox/sound-guard.lock"
+    flock -n 8 || return 0
+    local line first=login
+    while true; do
+        for _ in $(seq 1 60); do pactl info >/dev/null 2>&1 && break; sleep 0.5; done
+        guard_once "$first" >/dev/null; first=""
+        while read -r line; do
+            case "$line" in
+                *"on card"*|*"'new' on source"*|*"'remove' on source"*|*"on server"*) ;;
+                *) continue ;;
+            esac
+            while read -r -t 1 _; do :; done            # let a burst of events settle
+            guard_once >/dev/null
+            sleep 3; guard_once >/dev/null              # headphones can still be negotiating their mode
+            while read -r -t 1 _; do :; done
+        done < <(pactl subscribe 2>/dev/null)
+        sleep 2                                         # the sound server restarted: start over
+    done
+}
+
 case "${1:-check}" in
+    guard)
+        case "${2:-watch}" in
+            once) guard_once "${3:-}" ;;
+            *) guard_watch ;;
+        esac
+        ;;
     check)
         check
         print_check "$([[ "${2:-}" == --json ]] && echo true || echo false)"
@@ -680,6 +763,7 @@ case "${1:-check}" in
         # (both are read by WirePlumber when it starts)
         write_outputs_conf
         set_bluetooth hifi >/dev/null
+        write_mic_awake_conf
         ;;
     report)
         file="$(report)"
@@ -687,7 +771,7 @@ case "${1:-check}" in
         have wl-copy && wl-copy < "$file" 2>/dev/null && echo "Also copied, so you can paste it anywhere."
         ;;
     *)
-        echo "usage: lennox-sound check [--json] | fix | clean-mic on|off|status | bluetooth hifi|headset-mic|status | driver auto|sof|hda|status | outputs | report" >&2
+        echo "usage: lennox-sound check [--json] | fix | guard [once|watch] | clean-mic on|off|status | bluetooth hifi|headset-mic|status | driver auto|sof|hda|status | outputs | report" >&2
         exit 2
         ;;
 esac

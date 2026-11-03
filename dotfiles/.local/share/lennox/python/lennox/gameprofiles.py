@@ -87,6 +87,70 @@ def match_client(clients, profiles):
     return None
 
 
+# ---------------------------------------------------------------- game mode by itself
+
+# Window classes (lower case, "starts with" or "contains") that mean "this is a game"
+GAME_START = ("steam_app_", "gamescope", "minecraft", "net.minecraft", "com.mojang", "lunarclient", "lunar client",
+              "badlion", "cs2", "dota2", "hl2_linux", "csgo", "factorio", "terraria", "stardew", "hollow knight",
+              "eldenring", "valheim", "among us", "roblox", "osu", "supertuxkart", "xonotic", "openttd", "mgba", "dolphin-emu", "retroarch", "yuzu", "ryujinx", "rpcs3", "pcsx2", "ppsspp", "duckstation")
+GAME_TITLE = ("minecraft",)            # Prism / MultiMC run Minecraft in a Java window with this title
+
+
+def is_game_client(client, extra=()):
+    """True for a window that is a game: Steam/Proton games, gamescope, Minecraft, emulators, or your own words."""
+    if not client.get("mapped", True):
+        return False
+    names = [(client.get("class") or "").lower(), (client.get("initialClass") or "").lower()]
+    title = (client.get("title") or "").lower()
+    if any(n.startswith(GAME_START) for n in names if n):
+        return True
+    if any(t in title for t in GAME_TITLE) and any(n.startswith(("java", "minecraft", "org.prismlauncher", "net.minecraft")) or n.endswith("-game") for n in names if n):
+        return True
+    return any(w and (w in names[0] or w in names[1] or w in title) for w in extra)
+
+
+def auto_action(we_turned_it_on, mode_on, game_open):
+    """'on' to start game mode, 'off' to end it (only if we started it), or None."""
+    if game_open and not mode_on:
+        return "on"
+    if not game_open and we_turned_it_on and mode_on:
+        return "off"
+    return None
+
+
+def _auto_flag():
+    return os.path.join(S.RUNTIME_DIR, "autogame")
+
+
+def auto_game(clients, settings, when):
+    """Game mode follows the games. `when` is 'before' (turn on, before the per-game profile) or
+    'after' (turn off, after the profile went back): that order puts every setting back as it was."""
+    if not settings["games"]["auto_mode"]:
+        if os.path.exists(_auto_flag()):                       # switched off in Settings while it was on
+            _set_game_mode("off")
+        return
+    extra = [w.strip().lower() for w in settings["games"]["auto_extra"].split(",") if w.strip()]
+    game_open = any(is_game_client(c, extra) for c in clients)
+    mode_on = _out([_bin("lennox-mode"), "game", "status"]) == "on"
+    action = auto_action(os.path.exists(_auto_flag()), mode_on, game_open)
+    if action == "on" and when == "before":
+        _set_game_mode("on")
+    elif action == "off" and when == "after":
+        _set_game_mode("off")
+
+
+def _set_game_mode(state):
+    subprocess.run([_bin("lennox-mode"), "game", state], capture_output=True, check=False)
+    if state == "on":
+        os.makedirs(os.path.dirname(_auto_flag()), exist_ok=True)
+        open(_auto_flag(), "w").close()                        # noqa: SIM115  an empty marker file
+    else:
+        try:
+            os.remove(_auto_flag())
+        except OSError:
+            pass
+
+
 # ---------------------------------------------------------------- doing it
 
 _out, _bin = sh.out, sh.bin_path
@@ -152,22 +216,27 @@ def decide(state, found):
 
 
 def check():
-    if not S.load()["games"]["profiles"]:
-        state = _read_state()
-        if state:
-            undo(state)
-        return None
+    settings = S.load()
     try:
         clients = json.loads(_out(["hyprctl", "clients", "-j"]) or "[]")
     except ValueError:
+        return None
+    if not settings["games"]["profiles"]:
+        state = _read_state()
+        if state:
+            undo(state)
+        auto_game(clients, settings, "before")
+        auto_game(clients, settings, "after")
         return None
     found = match_client(clients, load())
     state = _read_state()
     action = decide(state, found)
     if action in ("undo", "switch"):
         undo(state)
+    auto_game(clients, settings, "before")                     # game mode first: it remembers your real power mode
     if action in ("apply", "switch"):
         apply(found[0])
+    auto_game(clients, settings, "after")
     return action
 
 

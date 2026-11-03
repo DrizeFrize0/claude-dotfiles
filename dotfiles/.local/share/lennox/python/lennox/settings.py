@@ -151,6 +151,8 @@ DEFAULTS = {
         "mc_server": "vetosmp.net",    # Minecraft server in the bar ("" = off)
         "mc_joins": True,              # notify when someone joins
         "profiles": True,              # per-game settings (performance, notifications, night light)
+        "auto_mode": True,             # game mode turns on by itself while a game is open, off when it closes
+        "auto_extra": "",              # more game names (window class or title, commas between)
     },
     "ai": {
         "spend_widget": True,          # AI coding spend in the bar (CodeBurn)

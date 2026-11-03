@@ -369,6 +369,11 @@ install_system_files() {
     install_system_file etc/systemd/system/lennox-autoupdate.timer 644
     install_system_file usr/local/bin/lennox-focus-hosts 755
     install_system_file etc/polkit-1/rules.d/50-lennox-focus.rules 644
+    # Lower, steadier ping: BBR and fq, and no Wi-Fi power saving
+    install_system_file etc/sysctl.d/99-lennox-network.conf 644
+    install_system_file etc/modules-load.d/lennox-network.conf 644
+    install_system_file etc/NetworkManager/conf.d/lennox-wifi-powersave.conf 644
+    sudo modprobe tcp_bbr 2>/dev/null; sudo sysctl --system >/dev/null 2>&1
     install_system_file usr/local/bin/lennox-cpucap 755
     install_system_file usr/share/plymouth/themes/lennox/lennox.plymouth 644
     install_system_file usr/share/plymouth/themes/lennox/lennox.script 644
@@ -557,6 +562,14 @@ personalize() {
     marker="$HOME/.config/lennox/.winddown-v2-done"
     if [[ ! -f "$marker" ]]; then
         [[ "$(lennox-get night.winddown_time)" == "23:30" ]] && lennox-set night.winddown_time 23:00 --no-apply >/dev/null
+        touch "$marker"
+    fi
+    # Once: headphones never start in call mode, microphones never sleep (needs the sound system restarted)
+    marker="$HOME/.config/lennox/.audio-v2-done"
+    if [[ ! -f "$marker" ]]; then
+        "$HOME/.local/bin/lennox-sound" defaults >/dev/null 2>&1
+        systemctl --user restart wireplumber >/dev/null 2>&1
+        ok "Bluetooth headphones start in full quality; microphones stay awake"
         touch "$marker"
     fi
     marker="$HOME/.config/lennox/.sound-defaults-done"
