@@ -54,20 +54,27 @@ uki_case() {   # uki_case NAME STYLE(file|dir|none)
     case "$style" in
         file) mkdir -p "$T/etc/kernel"; printf 'root=UUID=abc rw rootflags=subvol=@\n' > "$T/etc/kernel/cmdline" ;;
         dir) mkdir -p "$T/etc/cmdline.d"; printf 'root=UUID=abc rw\n' > "$T/etc/cmdline.d/root.conf" ;;
+        both) mkdir -p "$T/etc/cmdline.d" "$T/etc/kernel"; printf 'root=UUID=abc rw\n' > "$T/etc/cmdline.d/root.conf"
+              printf 'root=UUID=abc rw\n' > "$T/etc/kernel/cmdline" ;;
     esac
-    for c in pacman grub-mkconfig mkinitcpio plymouth; do printf '#!/bin/sh\necho "$0 $@" >> %s/calls\n' "$T" > "$T/bin/$c"; chmod +x "$T/bin/$c"; done
-    printf '#!/bin/sh\necho "$0 $@" >> %s/calls\n[ -n "$1" ] && exit 0\n' "$T" > "$T/bin/plymouth-set-default-theme"; chmod +x "$T/bin/plymouth-set-default-theme"
-    local env=(env PATH="$T/bin:$PATH" LENNOX_ROOT="$T" LENNOX_SUDO= PLYMOUTH_THEME_SRC="$T/theme" LENNOX_PROC_CMDLINE="$T/proc-cmdline")
+    # A fake mkinitcpio: the boot file's options come from cmdline.d first, else /etc/kernel/cmdline, else the running ones
+    printf '#!/bin/sh\nif [ -n "$(ls %s/etc/cmdline.d/*.conf 2>/dev/null)" ]; then cat %s/etc/cmdline.d/*.conf; elif [ -f %s/etc/kernel/cmdline ]; then cat %s/etc/kernel/cmdline; else cat %s/proc-cmdline; fi > %s/uki-cmdline\n' "$T" "$T" "$T" "$T" "$T" "$T" > "$T/bin/mkinitcpio"
+    printf '#!/bin/sh\ncat %s/uki-cmdline 2>/dev/null\n' "$T" > "$T/bin/objcopy"
+    chmod +x "$T/bin/mkinitcpio" "$T/bin/objcopy"
+    cp "$T/proc-cmdline" "$T/uki-cmdline"
+    for c in pacman grub-mkconfig plymouth; do printf '#!/bin/sh\necho "$0 $@" >> %s/calls\n' "$T" > "$T/bin/$c"; chmod +x "$T/bin/$c"; done
+    printf '#!/bin/sh\necho "$0 $@" >> %s/calls\n[ "$1" = -R ] && %s/bin/mkinitcpio\n[ -n "$1" ] && exit 0\n' "$T" "$T" > "$T/bin/plymouth-set-default-theme"; chmod +x "$T/bin/plymouth-set-default-theme"
+    local env=(env PATH="$T/bin:$PATH" LENNOX_ROOT="$T" LENNOX_SUDO= PLYMOUTH_THEME_SRC="$T/theme" LENNOX_PROC_CMDLINE="$T/proc-cmdline" LENNOX_UKI_FILE="$T/uki.efi")
     check "$name: detected as a single boot file, not GRUB" "${env[*]} bash $TOOL plan | grep -q 'Boot loader: uki'"
     "${env[@]}" bash "$TOOL" enable --yes >/dev/null 2>&1
     local all; all="$(cat "$T/etc/kernel/cmdline" "$T"/etc/cmdline.d/*.conf 2>/dev/null)"
     check "$name: splash added to the kernel options" "grep -qw splash <<<\"\$all\" && grep -qw quiet <<<\"\$all\""
+    check "$name: the REBUILT boot file really contains quiet and splash" "grep -qw splash $T/uki-cmdline && grep -qw quiet $T/uki-cmdline && grep -q 'root=UUID=abc' $T/uki-cmdline"
     check "$name: root= kept" "grep -q 'root=UUID=abc' <<<\"\$all\""
     check "$name: GRUB file untouched" "! grep -q splash $T/etc/default/grub"
     check "$name: plymouth hook and rebuild" "grep -q 'udev plymouth' $T/etc/mkinitcpio.conf && grep -q 'plymouth-set-default-theme -R lennox' $T/calls"
     "${env[@]}" bash "$TOOL" enable --yes >/dev/null 2>&1
-    all="$(cat "$T/etc/kernel/cmdline" "$T"/etc/cmdline.d/*.conf 2>/dev/null)"
-    check "$name: second run adds nothing twice" "[ \"\$(grep -ow splash <<<\"\$all\" | wc -l)\" = 1 ]"
+    check "$name: second run adds nothing twice" "! grep -q 'splash.*splash' $T/etc/kernel/cmdline $T/etc/cmdline.d/*.conf 2>/dev/null"
     "${env[@]}" bash "$TOOL" disable --yes >/dev/null 2>&1
     all="$(cat "$T/etc/kernel/cmdline" "$T"/etc/cmdline.d/*.conf 2>/dev/null)"
     check "$name: disable removes splash" "! grep -qw splash <<<\"\$all\""
@@ -77,6 +84,7 @@ uki_case() {   # uki_case NAME STYLE(file|dir|none)
 uki_case "uki cmdline file" file
 uki_case "uki cmdline.d" dir
 uki_case "uki no cmdline file" none
+uki_case "uki both places" both
 
 T="$(mktemp -d)"; mkdir -p "$T/etc" "$T/bin" "$T/theme"; printf 'HOOKS=(base udev)\n' > "$T/etc/mkinitcpio.conf"
 check "unknown boot loader: stops, changes nothing" "! env PATH=\"$T/bin:\$PATH\" LENNOX_ROOT=$T LENNOX_SUDO= PLYMOUTH_THEME_SRC=$T/theme bash $TOOL enable --yes >/dev/null 2>&1 && ! grep -q plymouth $T/etc/mkinitcpio.conf"

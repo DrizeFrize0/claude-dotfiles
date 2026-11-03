@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.29.2 · 2026-11-04 · No boot messages
+
+- The startup animation now checks the real boot file instead of just the settings files: the quiet and splash options must be inside the rebuilt file, and if they are not it tells you. That was why boot messages still showed even though the animation was installed. The options also go into every place Arch reads them from (both cmdline.d and /etc/kernel/cmdline), plus a quieter console (loglevel=3, no udev noise, no blinking cursor)
+- lennox-boot-animation status shows the options inside your boot file next to the ones running now
+- To fix an existing setup: lennox-boot-animation enable --yes again, then restart
+
 ## 1.29.1 · 2026-11-04 · Boot menu: no doubles
 
 - The boot menu showed Arch twice and the power, restart and firmware buttons twice. Now there is one Arch Linux, one Windows and one row of buttons. After upgrading, run lennox-bootmenu restyle
