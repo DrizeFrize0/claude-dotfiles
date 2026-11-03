@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.28.0 · 2026-11-04 · A boot menu
+
+- New tool: lennox-bootmenu. Sets up a graphical boot menu (rEFInd) so the laptop asks whether to start Arch Linux or Windows, instead of going straight to Windows. It shows its plan first, saves your current boot entries, never touches Windows, and lennox-bootmenu disable --yes takes it out and puts the old boot order back
+- It refuses to continue when it is unsafe: Secure Boot on, no Linux boot file found, or not started in UEFI mode
+
 ## 1.27.0 · 2026-11-04 · Sound that stays fixed, game mode by itself, better ping
 
 - Bluetooth headphones no longer start in bad quality: the laptop stops offering the phone-call mode, so the headphones connect in full quality every time and you no longer need to disconnect and reconnect them. Better SBC quality is on too

@@ -39,6 +39,7 @@ bash tests/test_boot_animation.sh | grep -q FAIL && { bash tests/test_boot_anima
 bash tests/overlay_smoke.sh | grep FAIL && fail=1 || echo ok overlays
 python3 -W ignore tests/test_game_ping.py 2>&1 | tail -3 | grep -q "^OK" && echo ok game+ping || { python3 tests/test_game_ping.py 2>&1 | tail -15; fail=1; }
 bash tests/test_sound_guard.sh | grep -q FAIL && { bash tests/test_sound_guard.sh | grep FAIL; fail=1; } || echo ok sound guard
+bash tests/test_bootmenu.sh | grep -q FAIL && { bash tests/test_bootmenu.sh | grep FAIL; fail=1; } || echo ok boot menu
 
 hdr "css (gtk3/gtk4)"
 C=$SP/csscheck.py; P=$R/dotfiles/.config
