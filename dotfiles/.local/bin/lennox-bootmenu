@@ -106,14 +106,14 @@ use_graphics_for linux,windows
 enable_mouse
 enable_touch
 hideui hints
-showtools shutdown,reboot,firmware
 big_icon_size 128
 small_icon_size 48
 default_selection "Arch Linux"
 # Only Arch and Windows: no kernel lists, no leftovers from other installs
 scan_all_linux_kernels false
 scanfor internal,external,manual
-dont_scan_dirs ESP:/EFI/BOOT,ESP:/EFI/systemd,ESP:/grub,ESP:/EFI/grub
+# EFI/Linux holds your Arch file: it gets its own entry below, so the automatic one is hidden
+dont_scan_dirs ESP:/EFI/BOOT,ESP:/EFI/systemd,ESP:/EFI/Linux,ESP:/grub,ESP:/EFI/grub
 dont_scan_files grubx64.efi,shimx64.efi,mmx64.efi,BOOTX64.EFI,core.efi,grub.efi,systemd-bootx64.efi,$(basename "$1")
 CONF
     if [[ "$2" == yes ]]; then

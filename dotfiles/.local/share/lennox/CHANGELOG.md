@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.29.1 · 2026-11-04 · Boot menu: no doubles
+
+- The boot menu showed Arch twice and the power, restart and firmware buttons twice. Now there is one Arch Linux, one Windows and one row of buttons. After upgrading, run lennox-bootmenu restyle
+
 ## 1.29.0 · 2026-11-04 · A nicer boot menu and a welcome
 
 - The boot menu is cleaner and prettier: a night-sky background, a glowing selection, and only Arch Linux and Windows (the extra Linux entries are hidden). After upgrading, run lennox-bootmenu restyle to apply it
