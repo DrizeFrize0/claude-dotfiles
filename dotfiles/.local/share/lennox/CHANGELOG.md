@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.28.4 · 2026-11-04 · Clean up old boot entries
+
+- lennox-bootmenu clean lists the boot entries that point to partitions that no longer exist (left over from old installs), and lennox-bootmenu clean --yes removes them after saving a backup. Windows, the boot menu, USB drives and the laptop's own entries are never touched, and nothing is removed if the partitions can't be read
+
 ## 1.28.3 · 2026-11-04 · The boot menu status is right
 
 - lennox-bootmenu status now finds the boot partition and sees rEFInd on it even though only the administrator may open /boot (it said "not found" and "not installed" although the menu was installed)

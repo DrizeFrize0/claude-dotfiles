@@ -4,6 +4,7 @@
 #   lennox-bootmenu plan           what "enable" would do (changes nothing)
 #   lennox-bootmenu enable --yes   install it, make it the first thing the laptop starts
 #   lennox-bootmenu disable --yes  take it out again and put the old boot order back
+#   lennox-bootmenu clean [--yes]  list (then remove) boot entries of partitions that no longer exist
 # It never touches Windows. Your own way in (F9 boot menu > boot from EFI file) keeps working.
 # Tests point LENNOX_ESP, LENNOX_SUDO, LENNOX_SB_FILE and LENNOX_STATE at a fake system.
 SUDO="${LENNOX_SUDO-sudo}"
@@ -143,11 +144,42 @@ disable() {
     echo "Done."
 }
 
+# Boot entries whose disk partition no longer exists (old installs): "NUM<TAB>name". Windows, rEFInd, USB
+# and firmware entries are never listed, and nothing is listed if the partitions can't be read.
+PARTUUIDS="${LENNOX_PARTUUID_DIR:-/dev/disk/by-partuuid}"
+dead_entries() {
+    local known line num name guid
+    known="$(ls "$PARTUUIDS" 2>/dev/null | tr 'A-F' 'a-f')"
+    [[ "$(grep -c . <<<"$known")" -ge 3 ]] || return 0
+    while IFS= read -r line; do
+        [[ "$line" == *PciRoot\(* || "$line" == *USB\(* ]] && continue
+        [[ "$line" =~ ^Boot([0-9A-Fa-f]{4})\*?[[:space:]]+([^[:cntrl:]]*)[[:cntrl:]]+HD\([0-9]+,GPT,([0-9a-fA-F-]{36}) ]] || continue
+        num="${BASH_REMATCH[1]}"; name="${BASH_REMATCH[2]}"; guid="${BASH_REMATCH[3],,}"
+        [[ "$name" =~ [Ww]indows|rEFInd ]] && continue
+        grep -qx "$guid" <<<"$known" || printf '%s\t%s\n' "$num" "$name"
+    done < <(efibootmgr -v 2>/dev/null)
+}
+
+clean() {
+    local list num name stamp
+    list="$(dead_entries)"
+    if [[ -z "$list" ]]; then echo "No dead boot entries (or the partitions couldn't be read): nothing to clean."; return 0; fi
+    echo "Boot entries that point to partitions that no longer exist:"
+    while IFS=$'\t' read -r num name; do echo "  Boot$num  $name"; done <<<"$list"
+    if [[ "${1:-}" != --yes ]]; then echo; echo "Nothing was removed. To remove them: lennox-bootmenu clean --yes"; return 0; fi
+    stamp="$STATE/efi-backup-$(date +%F-%H%M)-before-clean.txt"
+    efibootmgr -v > "$stamp" 2>/dev/null && echo "Saved your boot entries first: $stamp"
+    while IFS=$'\t' read -r num name; do
+        $SUDO efibootmgr -B -b "$num" >/dev/null && echo "Removed Boot$num  $name"
+    done <<<"$list"
+}
+
 case "${1:-status}" in
+    clean) clean "${2:-}" ;;
     status) status ;;
     plan) plan ;;
     enable|disable)
         [[ "${2:-}" == --yes ]] || { echo "This changes how the laptop starts. See what it does: lennox-bootmenu plan"; echo "Then: lennox-bootmenu $1 --yes"; exit 1; }
         "$1" ;;
-    *) echo "usage: lennox-bootmenu status | plan | enable --yes | disable --yes" >&2; exit 2 ;;
+    *) echo "usage: lennox-bootmenu status | plan | enable --yes | disable --yes | clean [--yes]" >&2; exit 2 ;;
 esac
