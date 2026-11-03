@@ -7,6 +7,7 @@ Settings > Daily care > Greeting turns it off.
 """
 
 import getpass
+import os
 import math
 import random
 import sys
@@ -51,6 +52,13 @@ class Window(Gtk.Window):
         title = Gtk.Label(label=f"{G.hello(time.localtime().tm_hour)}, {name}", css_classes=["login-title"])
         sub = Gtk.Label(label=time.strftime("%A %-d %B  ·  %H:%M"), css_classes=["login-sub"])
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
+        logo = os.path.expanduser("~/.config/lennox/assets/logo/lennox-logo-256.png")
+        if os.path.exists(logo):                       # the Lennox logo above the words
+            picture = Gtk.Image.new_from_paintable(O.Gdk.Texture.new_from_filename(logo))
+            picture.set_pixel_size(128)               # an Image is drawn exactly this big
+            picture.set_halign(Gtk.Align.CENTER)
+            picture.set_margin_bottom(14)
+            box.append(picture)
         box.append(title)
         box.append(sub)
         self.box = box

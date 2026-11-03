@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.30.0 · 2026-11-04 · The Lennox logo
+
+- A Lennox logo: a rounded tile with a glowing blue-to-violet gradient, a bold L and a small spark. It lives in ~/.config/lennox/assets/logo (a scalable SVG and 128, 256 and 512 pixel pictures)
+- The boot menu shows it above the entries and as the icon of the Arch Linux entry (run lennox-bootmenu restyle), and the welcome animation at login shows it above your name
+- Fixed: the boot menu showed every entry several times. Each restyle added the same include line to the menu's settings again, because the file can only be read by the administrator and the check could not see it. The line is now removed and added exactly once, so running restyle again repairs a menu that is already doubled
+
 ## 1.29.5 · 2026-11-04 · Boot menu picture on ImageMagick 7
 
 - lennox-bootmenu restyle works with ImageMagick 7 (it uses magick when it exists), finds a font file by itself so the LENNOX name is drawn on the boot menu background, and no longer prints the deprecation warnings

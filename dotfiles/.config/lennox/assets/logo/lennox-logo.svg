@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7cc0ff"/>
+      <stop offset="0.55" stop-color="#5b7cff"/>
+      <stop offset="1" stop-color="#6a3df0"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="116" height="116" rx="30" fill="url(#body)"/>
+  <rect x="6" y="6" width="116" height="62" rx="30" fill="url(#shine)"/>
+  <!-- the L, with soft corners -->
+  <path d="M47 33 V93 H88" fill="none" stroke="#ffffff" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- a spark, like a star over the corner of the L -->
+  <path d="M93 26 L97 37 L108 41 L97 45 L93 56 L89 45 L78 41 L89 37 Z" fill="#ffffff"/>
+</svg>

@@ -95,6 +95,8 @@ pick_font() {
     [[ -f "$f" ]] && echo "$f"
 }
 
+LOGO_DIR="${LENNOX_LOGO_DIR:-$HOME/.config/lennox/assets/logo}"
+
 make_art() {   # make_art DIR
     command -v magick >/dev/null || command -v convert >/dev/null || return 0
     local dir="$1" tmp font; tmp="$(mktemp -d)"; font="$(pick_font)"
@@ -105,11 +107,16 @@ make_art() {   # make_art DIR
         im "$tmp/banner.png" -font "$font" -pointsize 54 -kerning 18 -fill '#cfe0ff' -gravity south -annotate +0+64 'LENNOX' "$tmp/named.png" \
             && [[ -s "$tmp/named.png" ]] && mv -f "$tmp/named.png" "$tmp/banner.png"
     fi
+    if [[ -f "$LOGO_DIR/lennox-logo-512.png" ]]; then    # the Lennox logo above the entries
+        im "$tmp/banner.png" \( "$LOGO_DIR/lennox-logo-512.png" -resize 190x190 \) -gravity north -geometry +0+250 -composite "$tmp/logo-banner.png" \
+            && [[ -s "$tmp/logo-banner.png" ]] && mv -f "$tmp/logo-banner.png" "$tmp/banner.png"
+    fi
+    [[ -f "$LOGO_DIR/lennox-logo-128.png" ]] && cp "$LOGO_DIR/lennox-logo-128.png" "$tmp/lennox-icon.png"
     im -size 144x144 xc:none -fill 'rgba(130,170,255,0.20)' -stroke 'rgba(175,205,255,0.95)' -strokewidth 3 \
         -draw 'roundrectangle 5,5 138,138 22,22' "$tmp/selection_big.png"
     im -size 64x64 xc:none -fill 'rgba(130,170,255,0.20)' -stroke 'rgba(175,205,255,0.95)' -strokewidth 2 \
         -draw 'roundrectangle 3,3 60,60 12,12' "$tmp/selection_small.png"
-    $SUDO cp "$tmp/banner.png" "$tmp/selection_big.png" "$tmp/selection_small.png" "$dir/" && rm -rf "$tmp"
+    $SUDO cp "$tmp"/*.png "$dir/" && rm -rf "$tmp"
 }
 
 # The partition GUID of the disk part that holds Windows' boot manager (from the laptop's own boot list)
@@ -117,7 +124,7 @@ windows_guid() {
     efibootmgr -v 2>/dev/null | grep -i 'Windows Boot Manager' | grep -oiE 'HD\([0-9]+,GPT,[0-9a-f-]{36}' | head -1 | sed -E 's/.*,GPT,//'
 }
 
-lennox_conf() {   # lennox_conf UKI_PATH_ON_ESP ART_DIR_READABLE(yes|no) WINDOWS_GUID_OR_EMPTY
+lennox_conf() {   # lennox_conf UKI_PATH_ON_ESP ART(yes|no) WINDOWS_GUID_OR_EMPTY LOGO_ICON(yes|no)
     cat <<CONF
 # Lennox boot menu look (lennox-bootmenu). Changes here are kept; 'disable' removes the file.
 timeout 8
@@ -145,7 +152,7 @@ CONF
     cat <<CONF
 
 menuentry "Arch Linux" {
-    icon /EFI/refind/icons/os_arch.png
+    icon $([[ "$4" == yes ]] && echo /EFI/refind/lennox-icon.png || echo /EFI/refind/icons/os_arch.png)
     loader $1
 }
 CONF
@@ -162,13 +169,16 @@ CONF
 }
 
 write_look() {   # write_look ESP UKI
-    local dir="$1/EFI/refind" art=no
+    local dir="$1/EFI/refind" art=no icon=no
     if make_art "$dir"; then
         # the banner file names the files make_art wrote (renamed to what the config says)
         $SUDO mv -f "$dir/banner.png" "$dir/lennox-banner.png" && art=yes
     fi
-    lennox_conf "${2#"$1"}" "$art" "$(windows_guid)" | $SUDO tee "$dir/lennox.conf" >/dev/null
-    grep -qx 'include lennox.conf' "$dir/refind.conf" 2>/dev/null || echo 'include lennox.conf' | $SUDO tee -a "$dir/refind.conf" >/dev/null
+    as_reader "$dir" test -f "$dir/lennox-icon.png" && icon=yes
+    lennox_conf "${2#"$1"}" "$art" "$(windows_guid)" "$icon" | $SUDO tee "$dir/lennox.conf" >/dev/null
+    # The include line exactly once, however many times this ran before (the file may only be readable by root)
+    $SUDO sed -i '/^include lennox\.conf$/d' "$dir/refind.conf" 2>/dev/null
+    echo 'include lennox.conf' | $SUDO tee -a "$dir/refind.conf" >/dev/null
 }
 
 enable() {

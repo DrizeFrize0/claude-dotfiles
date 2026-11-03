@@ -121,5 +121,21 @@ T="$(mktemp -d)"; mk "$T"
 check "enable and restyle print no shell errors (command not found, syntax)" "! $(env_for "$T") bash $TOOL enable --yes 2>&1 | grep -qi 'not found\|syntax error\|unbound'; ! $(env_for "$T") bash $TOOL restyle 2>&1 | grep -qi 'not found\|syntax error\|unbound'"
 rm -rf "$T"
 
+# The include line was added once per run (the old bug): the menu then showed every entry several times
+T="$(mktemp -d)"; mk "$T"
+mkdir -p "$T/esp/EFI/refind"; printf 'timeout 5\ninclude lennox.conf\ninclude lennox.conf\ninclude lennox.conf\ninclude lennox.conf\n' > "$T/esp/EFI/refind/refind.conf"
+LOGOENV="env LENNOX_LOGO_DIR=$SP/../dotfiles/.config/lennox/assets/logo"
+$(env_for "$T") LENNOX_LOGO_DIR=$SP/../dotfiles/.config/lennox/assets/logo bash "$TOOL" restyle >/dev/null 2>&1
+check "restyle leaves the include line exactly once, even from 4 copies" "[ \"\$(grep -c '^include lennox.conf' $T/esp/EFI/refind/refind.conf)\" = 1 ] && grep -q '^timeout 5' $T/esp/EFI/refind/refind.conf"
+for i in 1 2 3; do $(env_for "$T") LENNOX_LOGO_DIR=$SP/../dotfiles/.config/lennox/assets/logo bash "$TOOL" restyle >/dev/null 2>&1; done
+check "three more restyles: still once" "[ \"\$(grep -c '^include lennox.conf' $T/esp/EFI/refind/refind.conf)\" = 1 ]"
+check "the Lennox logo is the Arch entry's icon" "[ -f $T/esp/EFI/refind/lennox-icon.png ] && grep -q 'icon /EFI/refind/lennox-icon.png' $T/esp/EFI/refind/lennox.conf"
+check "the logo is on the banner (picture changed)" "[ \$(stat -c %s $T/esp/EFI/refind/lennox-banner.png) -gt 100000 ]"
+rm -rf "$T"
+T="$(mktemp -d)"; mk "$T"
+$(env_for "$T") LENNOX_LOGO_DIR=/nonexistent bash "$TOOL" enable --yes >/dev/null 2>&1
+check "no logo files: falls back to the stock Arch icon" "grep -q 'icon /EFI/refind/icons/os_arch.png' $T/esp/EFI/refind/lennox.conf"
+rm -rf "$T"
+
 check "does not use mountpoint (it needs to open /boot/.., which only root may)" "! grep -q 'mountpoint -q' $TOOL"
 exit $fail
