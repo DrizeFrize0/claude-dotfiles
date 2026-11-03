@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.29.4 · 2026-11-04 · Exactly two entries
+
+- The boot menu now has two fixed entries, Arch Linux and Windows, and no automatic scanning, so boot files on your other disk partitions (old installs) can no longer show up as extra Linux entries. Windows is found from the laptop's own boot list; if it can't be found, the menu keeps scanning so Windows still shows. After upgrading, run lennox-bootmenu restyle
+
 ## 1.29.3 · 2026-11-04 · Boot options in every place
 
 - The startup animation also edits a kernel options file that the mkinitcpio preset names with --cmdline (the build reads only that file when it is named), and puts the original back on disable. With this, quiet and splash reach the boot file whichever place your Arch reads its options from

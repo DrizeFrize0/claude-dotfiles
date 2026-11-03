@@ -97,7 +97,12 @@ make_art() {   # make_art DIR
     $SUDO cp "$tmp/banner.png" "$tmp/selection_big.png" "$tmp/selection_small.png" "$dir/" && rm -rf "$tmp"
 }
 
-lennox_conf() {   # lennox_conf UKI_PATH_ON_ESP ART_DIR_READABLE(yes|no)
+# The partition GUID of the disk part that holds Windows' boot manager (from the laptop's own boot list)
+windows_guid() {
+    efibootmgr -v 2>/dev/null | grep -i 'Windows Boot Manager' | grep -oiE 'HD\([0-9]+,GPT,[0-9a-f-]{36}' | head -1 | sed -E 's/.*,GPT,//'
+}
+
+lennox_conf() {   # lennox_conf UKI_PATH_ON_ESP ART_DIR_READABLE(yes|no) WINDOWS_GUID_OR_EMPTY
     cat <<CONF
 # Lennox boot menu look (lennox-bootmenu). Changes here are kept; 'disable' removes the file.
 timeout 8
@@ -111,7 +116,7 @@ small_icon_size 48
 default_selection "Arch Linux"
 # Only Arch and Windows: no kernel lists, no leftovers from other installs
 scan_all_linux_kernels false
-scanfor internal,external,manual
+$([[ -n "$3" ]] && echo "# Two fixed entries (below) and no scanning: other disks' boot files can't show up" && echo "scanfor manual" || echo "scanfor internal,external,manual")
 # EFI/Linux holds your Arch file: it gets its own entry below, so the automatic one is hidden
 dont_scan_dirs ESP:/EFI/BOOT,ESP:/EFI/systemd,ESP:/EFI/Linux,ESP:/grub,ESP:/EFI/grub
 dont_scan_files grubx64.efi,shimx64.efi,mmx64.efi,BOOTX64.EFI,core.efi,grub.efi,systemd-bootx64.efi,$(basename "$1")
@@ -129,6 +134,16 @@ menuentry "Arch Linux" {
     loader $1
 }
 CONF
+    if [[ -n "$3" ]]; then
+        cat <<CONF
+
+menuentry "Windows" {
+    icon /EFI/refind/icons/os_win.png
+    volume $3
+    loader /EFI/Microsoft/Boot/bootmgfw.efi
+}
+CONF
+    fi
 }
 
 write_look() {   # write_look ESP UKI
@@ -137,7 +152,7 @@ write_look() {   # write_look ESP UKI
         # the banner file names the files make_art wrote (renamed to what the config says)
         $SUDO mv -f "$dir/banner.png" "$dir/lennox-banner.png" && art=yes
     fi
-    lennox_conf "${2#"$1"}" "$art" | $SUDO tee "$dir/lennox.conf" >/dev/null
+    lennox_conf "${2#"$1"}" "$art" "$(windows_guid)" | $SUDO tee "$dir/lennox.conf" >/dev/null
     grep -qx 'include lennox.conf' "$dir/refind.conf" 2>/dev/null || echo 'include lennox.conf' | $SUDO tee -a "$dir/refind.conf" >/dev/null
 }
 

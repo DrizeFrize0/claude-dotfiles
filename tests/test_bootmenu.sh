@@ -60,6 +60,18 @@ $(env_for "$T") bash "$TOOL" enable --yes >/dev/null 2>&1
 check "uses it as the Arch entry" "grep -q 'loader /archlinux.efi' $T/esp/EFI/refind/lennox.conf"
 rm -rf "$T"
 
+# With the laptop's real boot list: Windows becomes a fixed entry and nothing else is scanned
+T="$(mktemp -d)"; mk "$T"
+printf 'BootOrder: 0000\nBoot0000* Windows Boot Manager\tHD(1,GPT,0242629d-8edd-4521-95df-fae734237d94,0x800,0x64000)/\\EFI\\Microsoft\\Boot\\bootmgfw.efi\n' > "$T/entries"
+$(env_for "$T") bash "$TOOL" enable --yes >/dev/null 2>&1
+check "Windows is a fixed entry with its partition GUID" "grep -q 'volume 0242629d-8edd-4521-95df-fae734237d94' $T/esp/EFI/refind/lennox.conf && grep -q 'loader /EFI/Microsoft/Boot/bootmgfw.efi' $T/esp/EFI/refind/lennox.conf"
+check "nothing is scanned: only the two fixed entries" "grep -q '^scanfor manual' $T/esp/EFI/refind/lennox.conf && ! grep -q '^scanfor internal' $T/esp/EFI/refind/lennox.conf"
+rm -rf "$T"
+T="$(mktemp -d)"; mk "$T"
+$(env_for "$T") bash "$TOOL" enable --yes >/dev/null 2>&1
+check "Windows not found in the boot list: keeps scanning (so Windows still shows)" "grep -q '^scanfor internal,external,manual' $T/esp/EFI/refind/lennox.conf && ! grep -q 'menuentry \"Windows\"' $T/esp/EFI/refind/lennox.conf"
+rm -rf "$T"
+
 # Like the real laptop: the file is arch-linux.efi, and GRUB files are on the partition too
 T="$(mktemp -d)"; mk "$T"; mv "$T/esp/EFI/Linux/archlinux.efi" "$T/esp/EFI/Linux/arch-linux.efi"; mkdir -p "$T/esp/grub/x86_64-efi"; : > "$T/esp/grub/x86_64-efi/core.efi"; : > "$T/esp/grub/x86_64-efi/grub.efi"
 check "picks arch-linux.efi, ignores GRUB's own files" "[ \"\$($(env_for "$T") bash $TOOL status | grep -c 'efi$')\" = 1 ] || $(env_for "$T") bash $TOOL status | grep -q '/EFI/Linux/arch-linux.efi'"
