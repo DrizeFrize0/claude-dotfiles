@@ -15,7 +15,7 @@ find_esp() {
     if [[ -n "${LENNOX_ESP:-}" ]]; then echo "$LENNOX_ESP"; return; fi
     local d first=""
     for d in /efi /boot /boot/efi; do
-        if mountpoint -q "$d" 2>/dev/null && [[ "$(findmnt -no FSTYPE "$d" 2>/dev/null)" == vfat ]]; then
+        if [[ "$(findmnt -rno FSTYPE -M "$d" 2>/dev/null)" == vfat ]]; then
             [[ -n "$(find_ukis "$d")" ]] && { echo "$d"; return; }      # the one that holds your Arch file
             first="${first:-$d}"
         fi
@@ -46,7 +46,7 @@ status() {
     if [[ -n "$esp" ]]; then
         echo "Linux boot files:"; find_ukis "$esp" | sed "s#^$esp#  #"
     fi
-    echo "rEFInd installed:     $([[ -d "$esp/EFI/refind" ]] && echo yes || echo no)"
+    echo "rEFInd installed:     $([[ -n "$esp" ]] && as_reader "$esp" test -d "$esp/EFI/refind" && echo yes || echo no)"
     echo; echo "Boot entries (efibootmgr):"; efibootmgr 2>/dev/null | sed 's/^/  /' || echo "  (efibootmgr isn't installed)"
     echo; echo "Disks:"; lsblk -o NAME,SIZE,FSTYPE,PARTTYPENAME,MOUNTPOINT 2>/dev/null | grep -iE "NAME|EFI|vfat|ntfs|ext4|btrfs" | sed 's/^/  /'
 }
@@ -128,7 +128,7 @@ enable() {
 disable() {
     local esp backup order; esp="$(find_esp)"
     backup="$(ls -t "$STATE"/efi-backup-*.txt 2>/dev/null | tail -1)"      # the oldest: from before rEFInd
-    if [[ -n "$esp" && -d "$esp/EFI/refind" ]]; then
+    if [[ -n "$esp" ]] && as_reader "$esp" test -d "$esp/EFI/refind"; then
         $SUDO rm -rf "$esp/EFI/refind"
         echo "Removed rEFInd from $esp"
     fi

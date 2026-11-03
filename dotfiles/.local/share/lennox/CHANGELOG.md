@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.28.3 · 2026-11-04 · The boot menu status is right
+
+- lennox-bootmenu status now finds the boot partition and sees rEFInd on it even though only the administrator may open /boot (it said "not found" and "not installed" although the menu was installed)
+
 ## 1.28.2 · 2026-11-04 · The boot menu can read /boot
 
 - lennox-bootmenu now reads the boot partition with sudo. On Arch that partition can only be read by the administrator, so as a normal user the tool saw an empty folder and said there was no Arch boot file. It also ignores GRUB's own files and prefers the files in EFI/Linux

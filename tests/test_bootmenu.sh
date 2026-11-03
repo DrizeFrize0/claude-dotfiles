@@ -72,4 +72,5 @@ T="$(mktemp -d)"; mk "$T"; rm -f "$T/esp/EFI/Linux/archlinux.efi"
 check "no Linux file: stops" "! $(env_for "$T") bash $TOOL enable --yes >/dev/null 2>&1 && [ ! -d $T/esp/EFI/refind ]"
 check "no Linux file: says what IS there" "$(env_for "$T") bash $TOOL enable --yes 2>&1 | grep -q 'bootmgfw.efi'"
 rm -rf "$T"
+check "does not use mountpoint (it needs to open /boot/.., which only root may)" "! grep -q 'mountpoint -q' $TOOL"
 exit $fail
