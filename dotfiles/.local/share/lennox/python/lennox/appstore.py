@@ -17,17 +17,16 @@ import sys
 import urllib.parse
 import urllib.request
 
+from . import sh
+
 AUR_RPC = "https://aur.archlinux.org/rpc/v5/search/{}?by=name-desc"
 SOURCES = {"arch": "Arch", "aur": "AUR", "flathub": "Flathub"}
 LIMIT = 25
 
 
 def _run(argv, timeout=30):
-    try:
-        p = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False)
-        return p.returncode, p.stdout
-    except (OSError, subprocess.TimeoutExpired):
-        return 1, ""
+    code, text, _err = sh.run(argv, timeout)
+    return code, text
 
 
 def aur_helper():

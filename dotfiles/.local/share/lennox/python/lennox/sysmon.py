@@ -15,6 +15,7 @@ import sys
 import time
 
 from .widgets import data
+from . import sh
 
 WARM = 75   # °C: the bar item turns orange
 HOT = 88    # °C: red, and the laptop is close to slowing itself down
@@ -24,11 +25,7 @@ PROC = os.environ.get("LENNOX_PROC", "/proc")
 
 
 def _read(path, default=None):
-    try:
-        with open(path, encoding="utf-8") as f:
-            return f.read().strip()
-    except OSError:
-        return default
+    return sh.read_text(path, default)
 
 
 def nvidia_device():

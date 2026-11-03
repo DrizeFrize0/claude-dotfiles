@@ -23,6 +23,7 @@ import sys
 import time
 
 from . import settings as S
+from . import sh
 
 STATE = os.path.join(S.STATE_DIR, "focus.json")
 LOG = os.path.join(S.STATE_DIR, "focus_log.json")
@@ -139,12 +140,11 @@ def _quiet(argv, timeout=10):
         return None
 
 
-def _island(icon, text, seconds=4):
-    _quiet([os.path.expanduser("~/.local/bin/lennox-widgets"), "island", "event", icon, text, str(seconds)], 3)
+_island = sh.island
 
 
 def _notify(title, body, icon="emblem-ok-symbolic"):
-    _quiet(["notify-send", "-a", "Lennox", "-i", icon, title, body], 5)
+    sh.notify(title, body, icon)
 
 
 def _sound(path, settings):

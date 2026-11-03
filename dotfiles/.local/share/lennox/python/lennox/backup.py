@@ -22,6 +22,7 @@ import time
 
 from . import VERSION
 from . import settings as S
+from . import sh
 
 HOME = os.path.expanduser("~")
 # Paths in your home that are saved (when they exist)
@@ -141,12 +142,11 @@ def restore(path, home=HOME):
     return restored, wallpaper
 
 
-def _bin(name):
-    return os.path.join(HOME, ".local", "bin", name)
+_bin = sh.bin_path
 
 
 def _notify(title, body, icon="document-save-symbolic"):
-    subprocess.run(["notify-send", "-a", "Lennox", "-i", icon, title, body], capture_output=True, check=False)
+    sh.notify(title, body, icon)
 
 
 def main(argv):

@@ -36,3 +36,10 @@ if i.accel_profile == "adaptive" or i.accel_profile == "flat" then
 end
 
 hl.config({ input = input })
+
+-- A click on the mouse wheel starts "autoscroll" in browsers and Discord: the page
+-- then keeps scrolling by itself as the mouse moves. Swallow that click (Settings >
+-- Keyboard & Touchpad turns this off).
+if i.block_middle_click then
+    hl.bind("mouse:274", hl.dsp.no_op(), { description = "Wheel click does nothing (no autoscroll)" })
+end

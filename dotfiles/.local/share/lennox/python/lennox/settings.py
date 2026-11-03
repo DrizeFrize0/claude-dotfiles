@@ -100,6 +100,7 @@ DEFAULTS = {
         "accel_profile": "",
         "natural_scroll": False,
         "follow_mouse": 1,
+        "block_middle_click": True,    # the wheel click does nothing (stops pages from scrolling by themselves)
     },
     "touchpad": {
         "natural_scroll": True,

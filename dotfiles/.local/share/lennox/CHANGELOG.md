@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.24.1 · 2026-11-03 · No more self-scrolling
+
+- Pages in the browser and Discord no longer scroll by themselves. A click on the mouse wheel starts "autoscroll", and after that the page follows your mouse. Wheel clicks are now ignored. Settings > Keyboard & Touchpad > Ignore wheel clicks turns this off
+- Cleaner code: the helpers that ten tools each had their own copy of now live in one place, and a few unused leftovers are gone. Nothing was removed from what Lennox does
+
 ## 1.24.0 · 2026-11-03 · Daily care
 
 - New page: Daily care (Settings > Everyday)

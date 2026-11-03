@@ -46,7 +46,6 @@ class Page:
         self.folder_row.add_suffix(choose)
         self.folder_row.add_prefix(Gtk.Image.new_from_icon_name("folder-symbolic"))
         where.add(self.folder_row)
-        self.drives = []
         for drive in drive_suggestions():
             target = os.path.join(drive, "Lennox backups")
             row = rows.button_row(f"Use {os.path.basename(drive) or drive}", target, "Use",

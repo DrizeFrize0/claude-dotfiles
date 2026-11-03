@@ -159,7 +159,7 @@ class ClockWindow(Adw.ApplicationWindow):
                            row_spacing=6, homogeneous=True)
         for label, seconds in TIMER_PRESETS:
             button = Gtk.Button(label=label)
-            button.connect("clicked", lambda _b, s=seconds, lab=label: self._start_timer(s, ""))
+            button.connect("clicked", lambda _b, s=seconds: self._start_timer(s, ""))
             flow.append(button)
         presets.add(flow)
         self.timer_custom = Adw.EntryRow(title="Custom: 20m, 1h30m, 90s… then a label", show_apply_button=True)

@@ -21,6 +21,7 @@ import sys
 import time
 
 from . import settings as S
+from . import sh
 
 PROFILES = os.path.join(S.CONFIG_DIR, "game-profiles.json")
 STATE = os.path.join(S.RUNTIME_DIR, "gameprofile.json")
@@ -88,15 +89,7 @@ def match_client(clients, profiles):
 
 # ---------------------------------------------------------------- doing it
 
-def _out(argv, timeout=4):
-    try:
-        return subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False).stdout.strip()
-    except (OSError, subprocess.TimeoutExpired):
-        return ""
-
-
-def _bin(name):
-    return os.path.join(os.path.expanduser("~"), ".local", "bin", name)
+_out, _bin = sh.out, sh.bin_path
 
 
 def _read_state():

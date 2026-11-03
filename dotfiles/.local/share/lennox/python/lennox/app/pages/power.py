@@ -30,7 +30,6 @@ class Page:
         battery.add(rows.spin_row(store, "power.low_battery_warning", "Warn me at", "Percent", lower=5, upper=50))
         battery.add(rows.spin_row(store, "power.critical_battery", "Urgent warning at", "Percent", lower=2, upper=20))
         page.add(battery)
-        self.battery_group = battery
 
         idle = Adw.PreferencesGroup(title="When you're away", description="Minutes. 0 means never.")
         idle.add(rows.spin_row(store, "idle.dim_minutes", "Dim the screen after", lower=0, upper=240))

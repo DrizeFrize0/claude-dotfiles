@@ -13,11 +13,11 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 import time
 
 from . import settings as S
+from . import sh
 
 HOME = os.path.expanduser("~")
 TRASH = os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.join(HOME, ".local", "share"), "Trash")
@@ -64,11 +64,7 @@ def parse_size(text):
 
 
 def _run(argv, timeout=60):
-    try:
-        p = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False)
-        return p.returncode, p.stdout, p.stderr
-    except (OSError, subprocess.TimeoutExpired) as e:
-        return 1, "", str(e)
+    return sh.run(argv, timeout)
 
 
 def _tree_size(path):

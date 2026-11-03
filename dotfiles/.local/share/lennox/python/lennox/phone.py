@@ -13,18 +13,14 @@ up on the desktop, and the phone can send files and use the PC as a remote.
 import json
 import re
 import shutil
-import subprocess
 import sys
+
+from . import sh
 
 CLI = "kdeconnect-cli"
 
 
-def _run(argv, timeout=10, data=None):
-    try:
-        p = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False, input=data)
-        return p.returncode, p.stdout, p.stderr
-    except (OSError, subprocess.TimeoutExpired) as e:
-        return 1, "", str(e)
+_run = sh.run
 
 
 def parse_devices(text):

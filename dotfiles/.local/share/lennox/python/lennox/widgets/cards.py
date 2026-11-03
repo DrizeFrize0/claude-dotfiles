@@ -181,7 +181,6 @@ class WeatherCard(Card):
         self.detailed = detailed
         self.hide_on_error = hide_on_error
         self._busy = False
-        self._last_ok = 0.0
 
         top = Gtk.Box(spacing=14)
         self.icon = Gtk.Image(pixel_size=48, icon_name="weather-few-clouds-symbolic")

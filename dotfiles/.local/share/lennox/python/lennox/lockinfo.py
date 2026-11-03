@@ -9,12 +9,12 @@ Settings > Widgets > Lock screen turns each line on or off.
 
 import json
 import os
-import subprocess
 import sys
 import time
 
 from . import clock as C
 from . import settings as S
+from . import sh
 
 PHONE_CACHE = os.path.join(S.RUNTIME_DIR, "lock-phone.json")
 PHONE_EVERY = 60
@@ -27,10 +27,7 @@ def esc(text):
 
 
 def _run(argv, timeout=3):
-    try:
-        return subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False).stdout.strip()
-    except (OSError, subprocess.TimeoutExpired):
-        return ""
+    return sh.out(argv, timeout)
 
 
 def music():

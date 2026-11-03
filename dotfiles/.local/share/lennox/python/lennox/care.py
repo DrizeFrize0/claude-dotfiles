@@ -20,6 +20,7 @@ import threading
 import time
 
 from . import settings as S
+from . import sh
 
 LOCK = os.path.join(S.RUNTIME_DIR, "care-watch.lock")
 TICK = 30                                   # seconds between looks
@@ -115,14 +116,6 @@ def prayer_line(now, settings):
 
 # ---------------------------------------------------------------- heat
 
-def _read(path):
-    try:
-        with open(path, encoding="utf-8") as f:
-            return f.read().strip()
-    except OSError:
-        return ""
-
-
 def cpu_temp(root="/sys/class/hwmon"):
     """The CPU package temperature in C (None if the laptop doesn't say)."""
     best = None
@@ -192,23 +185,8 @@ class Water:
 
 # ---------------------------------------------------------------- doing it
 
-def _run(argv, timeout=5):
-    try:
-        return subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False).stdout.strip()
-    except (OSError, subprocess.TimeoutExpired):
-        return ""
-
-
-def _bin(name):
-    return os.path.join(os.path.expanduser("~"), ".local", "bin", name)
-
-
-def _island(icon, text, seconds="5"):
-    subprocess.run([_bin("lennox-widgets"), "island", "event", icon, text, seconds], capture_output=True, check=False)
-
-
-def _notify(title, body, icon):
-    subprocess.run(["notify-send", "-a", "Lennox", "-i", icon, title, body], capture_output=True, check=False)
+_island, _notify, _bin = sh.island, sh.notify, sh.bin_path
+_read, _run = sh.read_text, sh.out
 
 
 def _heat_alert(text):

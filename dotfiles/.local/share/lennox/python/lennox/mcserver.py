@@ -89,7 +89,7 @@ def srv_lookup(host, nameserver=None):
         rtype, _cls, _ttl, rdlen = struct.unpack(">HHIH", reply[i:i + 10])
         i += 10
         if rtype == 33:
-            priority, weight, port = struct.unpack(">HHH", reply[i:i + 6])
+            priority, _weight, port = struct.unpack(">HHH", reply[i:i + 6])
             target = _read_name(reply, i + 6)
             if best is None or priority < best[0]:
                 best = (priority, target, port)

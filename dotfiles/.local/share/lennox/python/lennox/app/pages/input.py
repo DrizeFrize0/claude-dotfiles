@@ -101,6 +101,8 @@ class Page:
         pointer.add(rows.combo_row(store, "input.accel_profile", "Acceleration",
                                    [("", "Default"), ("adaptive", "Adaptive"), ("flat", "Flat (best for games)")]))
         pointer.add(rows.switch_row(store, "input.natural_scroll", "Natural scrolling for the mouse wheel"))
+        pointer.add(rows.switch_row(store, "input.block_middle_click", "Ignore wheel clicks",
+                                    "Stops pages in the browser and Discord from scrolling by themselves after a click on the wheel"))
         pointer.add(rows.combo_row(store, "input.follow_mouse", "Focus follows the mouse",
                                    [(1, "Yes (ML4W default)"), (2, "Only on click"), (0, "Never")]))
         page.add(pointer)
