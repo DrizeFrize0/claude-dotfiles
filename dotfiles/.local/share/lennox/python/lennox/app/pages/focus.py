@@ -30,6 +30,12 @@ class Page:
         page.add(now)
 
         setup = Adw.PreferencesGroup(title="How it works")
+        self.subject_row = Adw.ComboRow(title="Subject", subtitle="What this session is for. Shows up in your week below")
+        self.subject_row.connect("notify::selected", self._on_subject)
+        self._subjects = []
+        setup.add(self.subject_row)
+        setup.add(rows.entry_row(store, "focus.subjects", "Your subjects (commas between)",
+                                 on_applied=lambda *_a: self._fill_subjects()))
         setup.add(rows.spin_row(store, "focus.minutes", "Session length", "Minutes (SUPER + F12 starts this)",
                                 lower=5, upper=240, step=5))
         setup.add(rows.spin_row(store, "focus.break_minutes", "Break after it", "Minutes (0 = no break)",
@@ -55,12 +61,31 @@ class Page:
         self.chart = Gtk.Box(spacing=10, homogeneous=True, margin_top=12, margin_bottom=6, height_request=110)
         stats.add(self.chart)
         page.add(stats)
+        self.by_subject = Adw.PreferencesGroup(title="This week by subject")
+        self.by_subject.set_visible(False)
+        self.subject_rows = []
+        page.add(self.by_subject)
         self.widget = page
         self.timer = None
 
     # ------------------------------------------------------------ now
 
+    def _fill_subjects(self):
+        self._subjects = [""] + [w.strip() for w in self.ctx.store.get("focus.subjects").split(",") if w.strip()]
+        current = self.ctx.store.get("focus.subject")
+        if current and current not in self._subjects:
+            self._subjects.append(current)
+        self._filling = True
+        self.subject_row.set_model(Gtk.StringList.new([s or "No subject" for s in self._subjects]))
+        self.subject_row.set_selected(self._subjects.index(current) if current in self._subjects else 0)
+        self._filling = False
+
+    def _on_subject(self, row, _p):
+        if not getattr(self, "_filling", False) and row.get_selected() < len(self._subjects):
+            self.ctx.store.set("focus.subject", self._subjects[row.get_selected()])
+
     def refresh(self):
+        self._fill_subjects()
         run_async([lennox_bin("lennox-focus"), "status"], self._got_status)
         run_async([lennox_bin("lennox-focus"), "stats"], self._got_stats)
         if self.timer is None:
@@ -134,6 +159,14 @@ class Page:
         self.week_row.value_label.set_label(_hours(st["week"]))
         self.streak_row.value_label.set_label(f"{st['streak']} day" + ("s" if st["streak"] != 1 else "")
                                               if st["streak"] else "Focus today to start one")
+        for row in self.subject_rows:
+            self.by_subject.remove(row)
+        self.subject_rows = []
+        for name, minutes in (st.get("subjects") or {}).items():
+            row = rows.info_row(name, _hours(minutes))
+            self.by_subject.add(row)
+            self.subject_rows.append(row)
+        self.by_subject.set_visible(bool(self.subject_rows))
         child = self.chart.get_first_child()
         while child:
             nxt = child.get_next_sibling()

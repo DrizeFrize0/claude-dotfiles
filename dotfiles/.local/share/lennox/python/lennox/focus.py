@@ -84,11 +84,11 @@ def status(state, now):
             "round": state.get("round", 1), "rounds": state.get("rounds", 1)}
 
 
-def log_session(log, start, end):
+def log_session(log, start, end, subject=""):
     """Adds a focus session (only if it lasted a minute or more); keeps LOG_DAYS of history."""
     minutes = int((end - start) // 60)
     if minutes >= 1:
-        log.append({"start": int(start), "minutes": minutes})
+        log.append({"start": int(start), "minutes": minutes, **({"subject": subject} if subject else {})})
     cutoff = end - LOG_DAYS * 86400
     return [x for x in log if x.get("start", 0) >= cutoff]
 
@@ -110,7 +110,13 @@ def stats(log, now):
         day -= 86400
     days = [{"day": _day(now - i * 86400), "minutes": by_day.get(_day(now - i * 86400), 0)}
             for i in range(6, -1, -1)]
+    week_start = _day(now - 6 * 86400)
+    subjects = {}
+    for x in log:
+        if x.get("subject") and _day(x["start"]) >= week_start:
+            subjects[x["subject"]] = subjects.get(x["subject"], 0) + x["minutes"]
     return {"today": by_day.get(today, 0),
+            "subjects": dict(sorted(subjects.items(), key=lambda kv: -kv[1])),
             "sessions_today": sum(1 for x in log if _day(x["start"]) == today),
             "week": sum(d["minutes"] for d in days),     # the last 7 days, today included
             "streak": streak, "days": days}
@@ -209,8 +215,8 @@ def _end_focus(state, settings):
         _dnd(state.pop("dnd_before"))
 
 
-def _record(start, end):
-    _write(LOG, log_session(_read(LOG, []), start, end))
+def _record(start, end, subject=""):
+    _write(LOG, log_session(_read(LOG, []), start, end, subject))
 
 
 def _spawn_runner():
@@ -222,7 +228,7 @@ def _spawn_runner():
         pass
 
 
-def start(minutes=None, now=None):
+def start(minutes=None, now=None, subject=None):
     now = time.time() if now is None else now
     settings = S.load()
     current = load_state()
@@ -231,11 +237,12 @@ def start(minutes=None, now=None):
     if current:                                   # a break: end it first
         save_state(None)
     minutes = int(minutes or settings["focus"]["minutes"])
-    state = {"phase": "focus", "start": now, "end": now + minutes * 60, "minutes": minutes,
+    subject = (settings["focus"]["subject"] if subject is None else subject).strip()[:40]
+    state = {"phase": "focus", "start": now, "subject": subject, "end": now + minutes * 60, "minutes": minutes,
              "round": 1, "rounds": max(1, int(settings["focus"]["rounds"])), "length": minutes}
     _begin_focus(state, settings)
     save_state(state)
-    _island("find-location-symbolic", f"Focus · {minutes} min")
+    _island("find-location-symbolic", f"Focus · {minutes} min" + (f" · {subject}" if subject else ""))
     _spawn_runner()
     return state
 
@@ -247,7 +254,7 @@ def stop(now=None, quiet=False):
         return None
     settings = S.load()
     if state["phase"] == "focus":
-        _record(state["start"], min(now, state["end"]))
+        _record(state["start"], min(now, state["end"]), state.get("subject", ""))
         _end_focus(state, settings)
         if not quiet:
             done = int((min(now, state["end"]) - state["start"]) // 60)
@@ -274,7 +281,7 @@ def step(now, settings):
         if now < state["end"]:
             _close_blocked(settings)
             return True
-        _record(state["start"], state["end"])
+        _record(state["start"], state["end"], state.get("subject", ""))
         _end_focus(state, settings)
         _sound(SOUND_END, settings)
         rnd, rounds = state.get("round", 1), state.get("rounds", 1)
@@ -358,7 +365,7 @@ def restore():
         return
     settings = S.load()
     if state["phase"] == "focus":
-        _record(state["start"], state["end"])
+        _record(state["start"], state["end"], state.get("subject", ""))
     if state.get("sites"):
         _sites(False, settings)
     save_state(None)
@@ -367,12 +374,13 @@ def restore():
 def main(argv):
     mode = argv[1] if len(argv) > 1 else "status"
     words = [a for a in argv[2:] if not a.startswith("--")]
+    subject = next((a.split("=", 1)[1] for a in argv[2:] if a.startswith("--subject=")), None)
     arg = words[0] if words else None
     if arg is not None and not arg.isdigit():
         print("Minutes must be a number", file=sys.stderr)
         return 2
     if mode == "start":
-        start(int(arg) if arg else None)
+        start(int(arg) if arg else None, subject=subject)
     elif mode == "stop":
         stop(quiet="--quiet" in argv)
     elif mode == "toggle":
@@ -394,7 +402,7 @@ def main(argv):
     elif mode == "restore":
         restore()
     else:
-        print("usage: lennox-focus start [MIN] | stop | toggle | more [MIN] | status | stats", file=sys.stderr)
+        print("usage: lennox-focus start [MIN] [--subject=NAME] | stop | toggle | more [MIN] | status | stats", file=sys.stderr)
         return 2
     return 0
 

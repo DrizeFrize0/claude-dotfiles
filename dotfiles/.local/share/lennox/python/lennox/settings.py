@@ -173,6 +173,10 @@ DEFAULTS = {
         "lock": True,
         "login": False,
     },
+    "greeting": {
+        "on": True,                    # a friendly hello a little after login
+        "name": "",                    # what to call you (empty: your user name)
+    },
     "care": {
         "water": False,                # a nudge to drink water
         "water_minutes": 60,           # minutes at the laptop between nudges
@@ -197,6 +201,8 @@ DEFAULTS = {
         "long_break_minutes": 15,      # the break after the last round of a set
         "block_apps": "vesktop, discord, steam",          # closed while focusing (app names)
         "block_sites": "youtube.com, tiktok.com, instagram.com, reddit.com, x.com, twitch.tv",
+        "subject": "",                 # what the next session is for (logged with it)
+        "subjects": "Math, Physics, Chemistry, English, Arabic",   # the list to pick from
         "quiet": True,                 # notifications wait in the panel
         "sound": True,                 # a soft sound at the end of focus and of the break
     },

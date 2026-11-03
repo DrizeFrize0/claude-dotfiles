@@ -33,6 +33,7 @@ if [ -n "$EXTRA_LUA" ]; then while IFS='|' read -r name lua; do run "$lua" "" "$
 
 hdr "daily care (prayer, heat, water)"
 python3 -W error tests/test_care.py 2>&1 | tail -3 | grep -q "^OK" && echo ok || { python3 tests/test_care.py 2>&1 | tail -15; fail=1; }
+python3 -W ignore tests/test_focus_subjects.py 2>&1 | tail -3 | grep -q "^OK" && echo ok focus || { python3 tests/test_focus_subjects.py 2>&1 | tail -15; fail=1; }
 
 hdr "css (gtk3/gtk4)"
 C=$SP/csscheck.py; P=$R/dotfiles/.config

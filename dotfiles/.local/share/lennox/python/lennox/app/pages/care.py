@@ -15,6 +15,12 @@ class Page:
         store = ctx.store
         page = Adw.PreferencesPage()
 
+        hello = Adw.PreferencesGroup(title="Greeting", description="A short hello a few seconds after you log in: "
+                                     "the weather, your next prayer and alarm, and your focus streak.")
+        hello.add(rows.switch_row(store, "greeting.on", "Say hello at login"))
+        hello.add(rows.entry_row(store, "greeting.name", "What should I call you? (empty: your user name)"))
+        page.add(hello)
+
         water = Adw.PreferencesGroup(
             title="Water", description="A gentle nudge after every stretch at the laptop. It waits while "
                                         "you're gaming, focusing or the screen is locked.")

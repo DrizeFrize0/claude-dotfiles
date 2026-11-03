@@ -63,6 +63,7 @@ wind-down at 23:00 with weekly sleep stats.
 ## Release 5: Queued
 
 - **Done in 1.16 to 1.22:** the island and bar redesign.
+- **Done in 1.25:** study timer with a subject, startup greeting.
 - **Done in 1.24:** water reminder, temperature alerts, prayer times (a bar item
   for prayer times and fan profiles are still open).
 
@@ -71,8 +72,6 @@ wind-down at 23:00 with weekly sleep stats.
   Builds on the Cleanup page.
 - **Desktop pet:** a small animated cat that walks along the bottom of the
   screen, sleeps when you're idle or focusing, and can be turned off.
-- **Study timer with a subject:** pick a subject (Math, Physics...) before a
-  focus session, then see the hours per subject this week. Builds on Focus.
 - **Auto profiles by place or time:** one rule per Wi-Fi network or time of
   day (school: quiet, no sounds; home: music up; night: dim).
 - **Download manager in the bar:** progress of browser downloads, and a click
@@ -90,8 +89,6 @@ wind-down at 23:00 with weekly sleep stats.
   late on gym days").
 - **Screensaver:** a calm animation (stars, rain on glass) after a few idle
   minutes, before the lock screen.
-- **Startup greeting:** a short friendly message at login with the weather,
-  next prayer, your streaks and what's coming up.
 - **Easter eggs:** hidden key combos that do something silly (a cat jumping
   across the screen).
 - **Theme of the season:** automatic colors and wallpaper for Ramadan, Eid and

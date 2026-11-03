@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.25.0 · 2026-11-04 · Study subjects and a hello
+
+- Focus sessions can have a subject (Math, Physics, Chemistry, English, Arabic, or your own list). Pick it on the Focus page, or start one with lennox-focus start 50 --subject=Math. The page shows this week's hours for each subject
+- A friendly hello a few seconds after you log in: the weather, your next prayer and alarm, and your focus streak. Settings > Daily care > Greeting changes your name or turns it off
+
 ## 1.24.1 · 2026-11-03 · No more self-scrolling
 
 - Pages in the browser and Discord no longer scroll by themselves. A click on the mouse wheel starts "autoscroll", and after that the page follows your mouse. Wheel clicks are now ignored. Settings > Keyboard & Touchpad > Ignore wheel clicks turns this off

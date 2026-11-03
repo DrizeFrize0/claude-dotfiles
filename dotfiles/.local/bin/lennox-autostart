@@ -88,6 +88,8 @@ fi
 setsid -f lennox-gameprofile watch >/dev/null 2>&1 </dev/null
 # Daily care: water reminder, heat alerts, prayer times (each has its own switch)
 setsid -f lennox-care watch >/dev/null 2>&1 </dev/null
+# A friendly hello once the desktop is up (Lennox Settings > Daily care)
+(sleep 15 && lennox-greeting show) >/dev/null 2>&1 &
 # The login sound (off unless turned on in Lennox Settings > Sound)
 lennox-sound-fx login >/dev/null 2>&1 &
 # Focus mode: a session that was running before a restart picks up again
