@@ -15,6 +15,10 @@ hl.config({
         key_press_enables_dpms     = true,
         middle_click_paste         = false,
         vrr                        = 2,
+        -- Speed: no reload watcher, no animated resizing
+        disable_autoreload            = true,
+        animate_manual_resizes        = false,
+        animate_mouse_windowdragging  = false,
     },
 
     cursor = {

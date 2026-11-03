@@ -3,6 +3,13 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.23.0 · 2026-11-03 · Speed pass
+
+- Fast mode: lighter blur and shadows, and windows you are not using stay solid instead of see-through, so the graphics chip does much less work. It turns on by itself when you upgrade. Settings > Power > Speed turns it off again
+- The desktop no longer watches the config for edits, and no longer animates dragging and resizing windows
+- New installs start with the lighter blur and shadow
+- Discord (Vesktop) laggy? Settings > Power > Speed can switch it to its other window mode (and back)
+
 ## 1.22.2 · 2026-10-31 · A better rescue
 
 - lennox-rescue now checks step by step: is the desktop running, the Hyprland version, anything holding the keyboard, the main key, parts of the config that failed to load, and whether the Windows key itself works

@@ -46,6 +46,20 @@ class Page:
         idle.add(self.awake_row)
         page.add(idle)
 
+        speed = Adw.PreferencesGroup(
+            title="Speed",
+            description="Everything feels slow? Fast mode uses lighter blur and solid windows when they're not "
+                        "in front. Same look, much less work for the graphics chip.")
+        speed.add(rows.button_row("Fast mode", "Lighter blur, no see-through unfocused windows", "Turn on",
+                                  lambda: run_async([lennox_bin("lennox-speed"), "apply"]), icon="speedometer-symbolic"))
+        speed.add(rows.button_row("Back to the old look", "Put your earlier blur and opacity back", "Undo",
+                                  lambda: run_async([lennox_bin("lennox-speed"), "undo"])))
+        speed.add(rows.button_row("Discord (Vesktop) laggy?", "Try its other window mode, then reopen it", "Use X11",
+                                  lambda: run_async([lennox_bin("lennox-speed"), "vesktop", "x11"])))
+        speed.add(rows.button_row("Discord back to normal", "Remove that change", "Reset",
+                                  lambda: run_async([lennox_bin("lennox-speed"), "vesktop", "reset"])))
+        page.add(speed)
+
         panic = Adw.PreferencesGroup(
             title="Panic key",
             description="SUPER + CTRL + BACKSPACE when somebody walks in. After you unlock, your windows "

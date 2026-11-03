@@ -531,6 +531,13 @@ personalize() {
             && ok "Switched to the new Lennox bar (the ML4W bars are still in Lennox Settings > Bar)"
         touch "$marker"
     fi
+    # Once: the speed pass (lighter blur, solid unfocused windows). Undo
+    # any time with `lennox-speed undo`.
+    marker="$HOME/.config/lennox/.speed-v1-done"
+    if [[ ! -f "$marker" ]]; then
+        lennox-speed apply >/dev/null 2>&1 && ok "Snappier desktop: lighter blur (undo: lennox-speed undo)"
+        touch "$marker"
+    fi
     # Once: the clean microphone (noise suppression, echo cancelling, steady
     # volume). Turning it off later in Lennox Settings > Sound sticks.
     marker="$HOME/.config/lennox/.clean-mic-done"
