@@ -60,6 +60,13 @@ $(env_for "$T") bash "$TOOL" enable --yes >/dev/null 2>&1
 check "uses it as the Arch entry" "grep -q 'loader /archlinux.efi' $T/esp/EFI/refind/lennox.conf"
 rm -rf "$T"
 
+# Like the real laptop: the file is arch-linux.efi, and GRUB files are on the partition too
+T="$(mktemp -d)"; mk "$T"; mv "$T/esp/EFI/Linux/archlinux.efi" "$T/esp/EFI/Linux/arch-linux.efi"; mkdir -p "$T/esp/grub/x86_64-efi"; : > "$T/esp/grub/x86_64-efi/core.efi"; : > "$T/esp/grub/x86_64-efi/grub.efi"
+check "picks arch-linux.efi, ignores GRUB's own files" "[ \"\$($(env_for "$T") bash $TOOL status | grep -c 'efi$')\" = 1 ] || $(env_for "$T") bash $TOOL status | grep -q '/EFI/Linux/arch-linux.efi'"
+$(env_for "$T") bash "$TOOL" enable --yes >/dev/null 2>&1
+check "Arch entry points at arch-linux.efi" "grep -q 'loader /EFI/Linux/arch-linux.efi' $T/esp/EFI/refind/lennox.conf && grep -q 'dont_scan_files arch-linux.efi' $T/esp/EFI/refind/lennox.conf"
+rm -rf "$T"
+
 # No UKI on the partition: stops
 T="$(mktemp -d)"; mk "$T"; rm -f "$T/esp/EFI/Linux/archlinux.efi"
 check "no Linux file: stops" "! $(env_for "$T") bash $TOOL enable --yes >/dev/null 2>&1 && [ ! -d $T/esp/EFI/refind ]"

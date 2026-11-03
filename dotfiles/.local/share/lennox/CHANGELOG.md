@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.28.2 · 2026-11-04 · The boot menu can read /boot
+
+- lennox-bootmenu now reads the boot partition with sudo. On Arch that partition can only be read by the administrator, so as a normal user the tool saw an empty folder and said there was no Arch boot file. It also ignores GRUB's own files and prefers the files in EFI/Linux
+
 ## 1.28.1 · 2026-11-04 · The boot menu finds your Arch file
 
 - lennox-bootmenu now looks for your Arch boot file (like archlinux.efi) anywhere on the boot partition, and checks every FAT partition that is mounted to find the one that holds it. When it still finds nothing, it lists the .efi files that are there and tells you what to try, instead of just stopping
