@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Daily care: water reminder, heat alerts, prayer times.
+#   lennox-care watch | prayer [--json] | heat
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.care "$@"

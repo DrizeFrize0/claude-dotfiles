@@ -31,6 +31,9 @@ if [ -n "$EXTRA_LUA" ]; then while IFS='|' read -r name lua; do run "$lua" "" "$
 
 [ "$1" = quick ] && { echo; [ $fail = 0 ] && echo "QUICK SWEEP PASSED" || echo "QUICK SWEEP FAILED"; exit $fail; }
 
+hdr "daily care (prayer, heat, water)"
+python3 -W error tests/test_care.py 2>&1 | tail -3 | grep -q "^OK" && echo ok || { python3 tests/test_care.py 2>&1 | tail -15; fail=1; }
+
 hdr "css (gtk3/gtk4)"
 C=$SP/csscheck.py; P=$R/dotfiles/.config
 out=$(xvfb-run -a /usr/bin/python3.12 $C 3.0 $P/waybar/themes/*/style.css $P/nwg-dock-hyprland/style.css $P/gtk-3.0/gtk.css 2>&1; xvfb-run -a /usr/bin/python3.12 $C 4.0 $P/swaync/style.css $P/gtk-4.0/gtk.css $CSS4_EXTRA 2>&1)

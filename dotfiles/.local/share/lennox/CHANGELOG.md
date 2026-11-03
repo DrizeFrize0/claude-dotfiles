@@ -3,6 +3,13 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.24.0 · 2026-11-03 · Daily care
+
+- New page: Daily care (Settings > Everyday)
+- Water reminder: a gentle nudge after every hour (you choose) at the laptop. It waits while you game, focus or the screen is locked. Off until you turn it on
+- Heat alerts: a warning when the processor or graphics chip stays too hot for a minute, with a one-tap button to switch to Quiet mode. On by default. The graphics chip is only checked while it is awake in a game, so this never wakes it
+- Prayer times: reminders before each prayer and when it is time, with the Arabic names, worked out on the laptop without internet. Set for Amman by default; any place works. Off until you turn it on
+
 ## 1.23.0 · 2026-11-03 · Speed pass
 
 - Fast mode: lighter blur and shadows, and windows you are not using stay solid instead of see-through, so the graphics chip does much less work. It turns on by itself when you upgrade. Settings > Power > Speed turns it off again

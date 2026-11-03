@@ -172,6 +172,18 @@ DEFAULTS = {
         "lock": True,
         "login": False,
     },
+    "care": {
+        "water": False,                # a nudge to drink water
+        "water_minutes": 60,           # minutes at the laptop between nudges
+        "heat": True,                  # warn when the CPU or GPU gets too hot
+        "heat_cpu": 92,                # degrees C
+        "heat_gpu": 85,
+        "prayer": False,               # prayer time reminders
+        "prayer_at_time": True,        # also when the time comes
+        "prayer_remind": 10,           # minutes before
+        "prayer_lat": 31.95,           # Amman
+        "prayer_lon": 35.93,
+    },
     "panic": {
         "hide": True,                  # hide every window (they come back after unlocking)
         "mute": True,                  # pause the music and mute the sound
@@ -247,6 +259,12 @@ CHOICES = {
 
 # Inclusive ranges for numeric settings
 RANGES = {
+    ("care", "water_minutes"): (15, 240),
+    ("care", "heat_cpu"): (70, 105),
+    ("care", "heat_gpu"): (65, 100),
+    ("care", "prayer_remind"): (0, 60),
+    ("care", "prayer_lat"): (-66.0, 66.0),
+    ("care", "prayer_lon"): (-180.0, 180.0),
     ("appearance", "gaps_in"): (0, 40),
     ("appearance", "gaps_out"): (0, 60),
     ("appearance", "border_size"): (0, 8),
