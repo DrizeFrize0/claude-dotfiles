@@ -54,11 +54,14 @@ uki_case() {   # uki_case NAME STYLE(file|dir|none)
     case "$style" in
         file) mkdir -p "$T/etc/kernel"; printf 'root=UUID=abc rw rootflags=subvol=@\n' > "$T/etc/kernel/cmdline" ;;
         dir) mkdir -p "$T/etc/cmdline.d"; printf 'root=UUID=abc rw\n' > "$T/etc/cmdline.d/root.conf" ;;
+        preset) mkdir -p "$T/etc/kernel" "$T/etc/lennoxtest"; printf 'root=UUID=abc rw\n' > "$T/etc/lennoxtest/my-cmdline"
+                printf 'root=UUID=zzz ignored\n' > "$T/etc/kernel/cmdline"
+                printf 'default_uki="/boot/EFI/Linux/arch-linux.efi"\ndefault_options="--cmdline /etc/lennoxtest/my-cmdline"\n' > "$T/etc/mkinitcpio.d/linux.preset" ;;
         both) mkdir -p "$T/etc/cmdline.d" "$T/etc/kernel"; printf 'root=UUID=abc rw\n' > "$T/etc/cmdline.d/root.conf"
               printf 'root=UUID=abc rw\n' > "$T/etc/kernel/cmdline" ;;
     esac
     # A fake mkinitcpio: the boot file's options come from cmdline.d first, else /etc/kernel/cmdline, else the running ones
-    printf '#!/bin/sh\nif [ -n "$(ls %s/etc/cmdline.d/*.conf 2>/dev/null)" ]; then cat %s/etc/cmdline.d/*.conf; elif [ -f %s/etc/kernel/cmdline ]; then cat %s/etc/kernel/cmdline; else cat %s/proc-cmdline; fi > %s/uki-cmdline\n' "$T" "$T" "$T" "$T" "$T" "$T" > "$T/bin/mkinitcpio"
+    printf '#!/bin/sh\nif [ -f %s/etc/lennoxtest/my-cmdline ]; then cat %s/etc/lennoxtest/my-cmdline; elif [ -n "$(ls %s/etc/cmdline.d/*.conf 2>/dev/null)" ]; then cat %s/etc/cmdline.d/*.conf; elif [ -f %s/etc/kernel/cmdline ]; then cat %s/etc/kernel/cmdline; else cat %s/proc-cmdline; fi > %s/uki-cmdline\n' "$T" "$T" "$T" "$T" "$T" "$T" "$T" "$T" > "$T/bin/mkinitcpio"
     printf '#!/bin/sh\ncat %s/uki-cmdline 2>/dev/null\n' "$T" > "$T/bin/objcopy"
     chmod +x "$T/bin/mkinitcpio" "$T/bin/objcopy"
     cp "$T/proc-cmdline" "$T/uki-cmdline"
@@ -70,7 +73,7 @@ uki_case() {   # uki_case NAME STYLE(file|dir|none)
     local all; all="$(cat "$T/etc/kernel/cmdline" "$T"/etc/cmdline.d/*.conf 2>/dev/null)"
     check "$name: splash added to the kernel options" "grep -qw splash <<<\"\$all\" && grep -qw quiet <<<\"\$all\""
     check "$name: the REBUILT boot file really contains quiet and splash" "grep -qw splash $T/uki-cmdline && grep -qw quiet $T/uki-cmdline && grep -q 'root=UUID=abc' $T/uki-cmdline"
-    check "$name: root= kept" "grep -q 'root=UUID=abc' <<<\"\$all\""
+    check "$name: root= kept" "grep -q 'root=UUID=abc' $T/uki-cmdline"
     check "$name: GRUB file untouched" "! grep -q splash $T/etc/default/grub"
     check "$name: plymouth hook and rebuild" "grep -q 'udev plymouth' $T/etc/mkinitcpio.conf && grep -q 'plymouth-set-default-theme -R lennox' $T/calls"
     "${env[@]}" bash "$TOOL" enable --yes >/dev/null 2>&1
@@ -85,6 +88,7 @@ uki_case "uki cmdline file" file
 uki_case "uki cmdline.d" dir
 uki_case "uki no cmdline file" none
 uki_case "uki both places" both
+uki_case "uki preset names its own cmdline file" preset
 
 T="$(mktemp -d)"; mkdir -p "$T/etc" "$T/bin" "$T/theme"; printf 'HOOKS=(base udev)\n' > "$T/etc/mkinitcpio.conf"
 check "unknown boot loader: stops, changes nothing" "! env PATH=\"$T/bin:\$PATH\" LENNOX_ROOT=$T LENNOX_SUDO= PLYMOUTH_THEME_SRC=$T/theme bash $TOOL enable --yes >/dev/null 2>&1 && ! grep -q plymouth $T/etc/mkinitcpio.conf"

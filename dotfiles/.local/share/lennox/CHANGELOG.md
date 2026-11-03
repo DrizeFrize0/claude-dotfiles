@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.29.3 · 2026-11-04 · Boot options in every place
+
+- The startup animation also edits a kernel options file that the mkinitcpio preset names with --cmdline (the build reads only that file when it is named), and puts the original back on disable. With this, quiet and splash reach the boot file whichever place your Arch reads its options from
+
 ## 1.29.2 · 2026-11-04 · No boot messages
 
 - The startup animation now checks the real boot file instead of just the settings files: the quiet and splash options must be inside the rebuilt file, and if they are not it tells you. That was why boot messages still showed even though the animation was installed. The options also go into every place Arch reads them from (both cmdline.d and /etc/kernel/cmdline), plus a quieter console (loglevel=3, no udev noise, no blinking cursor)

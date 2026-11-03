@@ -24,6 +24,13 @@ SPLASH_ARGS="quiet splash loglevel=3 rd.udev.log_level=3 systemd.show_status=aut
 
 # The boot file mkinitcpio builds (from its preset), and what kernel options really are inside it
 uki_path() { sed -n -E 's/^[a-z_]*_uki=//p' "$ROOT"/etc/mkinitcpio.d/*.preset 2>/dev/null | head -1 | tr -d "\"'"; }
+# Files a preset names with --cmdline FILE (the build then reads that file and nothing else)
+preset_cmdline_files() {
+    local f
+    for f in $(grep -ohE -- '--cmdline[= ]+[^ "'"'"']+' "$ROOT"/etc/mkinitcpio.d/*.preset 2>/dev/null | sed -E 's/--cmdline[= ]+//'); do
+        [[ -f "$ROOT$f" ]] && echo "$ROOT$f"
+    done
+}
 uki_cmdline() {   # the options baked into the boot file ("" if they can't be read)
     local f; f="$(uki_path)"; f="${LENNOX_UKI_FILE:-$ROOT$f}"
     command -v objcopy >/dev/null && [[ -n "$f" ]] || return 0
@@ -86,6 +93,12 @@ enable() {
                 if compgen -G "$CMDLINE_D/*.conf" >/dev/null; then
                     echo "$SPLASH_ARGS" | $SUDO tee "$CMDLINE_D/90-lennox-splash.conf" >/dev/null; did=1
                 fi
+                local pf
+                for pf in $(preset_cmdline_files); do
+                    [[ -f "$pf.lennox-backup" ]] || $SUDO cp "$pf" "$pf.lennox-backup"
+                    grep -qw splash "$pf" || $SUDO sed -i -E "1 s/[[:space:]]*\$/ $SPLASH_ARGS/" "$pf"
+                    did=1
+                done
                 if [[ -f "$CMDLINE" ]]; then
                     [[ -f "$CMDLINE.lennox-backup" ]] || $SUDO cp "$CMDLINE" "$CMDLINE.lennox-backup"
                     grep -qw splash "$CMDLINE" || $SUDO sed -i -E "1 s/[[:space:]]*\$/ $SPLASH_ARGS/" "$CMDLINE"
@@ -127,6 +140,8 @@ enable() {
 }
 
 disable() {
+    local pf
+    for pf in $(preset_cmdline_files); do [[ -f "$pf.lennox-backup" ]] && $SUDO cp "$pf.lennox-backup" "$pf"; done
     [[ -f "$CMDLINE.lennox-backup" ]] && $SUDO cp "$CMDLINE.lennox-backup" "$CMDLINE"
     [[ -f "$CMDLINE.lennox-created" ]] && $SUDO rm -f "$CMDLINE" "$CMDLINE.lennox-created"
     $SUDO rm -f "$CMDLINE_D/90-lennox-splash.conf"
