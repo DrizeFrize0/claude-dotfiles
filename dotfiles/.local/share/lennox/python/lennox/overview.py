@@ -351,6 +351,8 @@ class App(Gtk.Application):
 
 
 def main(argv):
+    from . import achievements
+    achievements.tick("overview")
     return App().run(argv[:1])
 
 

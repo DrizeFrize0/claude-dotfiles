@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Downloads in the bar.
+#   lennox-downloads waybar | open
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.downloads "$@"

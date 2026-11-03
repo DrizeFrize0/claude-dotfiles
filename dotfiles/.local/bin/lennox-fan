@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Fan and noise profiles: silent, normal, turbo.
+#   lennox-fan status | apply | set silent|normal|turbo
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.fan "$@"

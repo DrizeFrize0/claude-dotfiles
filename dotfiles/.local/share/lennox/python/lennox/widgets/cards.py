@@ -12,6 +12,7 @@ import threading
 
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango
 
+from .. import discordwidget
 from . import data
 from .mpris import Mpris
 
@@ -243,6 +244,38 @@ class WeatherCard(Card):
             box.append(label(f"{day['high']}° / {day['low']}°", ("small",), xalign=0.5))
             self.days.append(box)
         self.days.set_visible(self.detailed and bool(result["days"]))
+
+
+class DiscordCard(Card):
+    """How many people are online in your Discord server (its public widget, no login)."""
+
+    def __init__(self, store):
+        super().__init__(None)
+        self.store = store
+        row = Gtk.Box(spacing=12)
+        row.append(Gtk.Image(pixel_size=34, icon_name="user-available-symbolic"))
+        text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER, hexpand=True)
+        self.title = label(classes=("weather-temp",))
+        self.sub = label(classes=("dim", "small"), ellipsize=Pango.EllipsizeMode.END, max_width_chars=30)
+        text.append(self.title)
+        text.append(self.sub)
+        row.append(text)
+        self.append(row)
+        self.every(3 * 60, self.refresh)
+
+    def refresh(self, force=False):
+        server = self.store.get("discord.server_id")
+        self.set_visible(bool(server))
+        if server:
+            in_thread(lambda: discordwidget.status(server), self._show)
+
+    def _show(self, result):
+        if isinstance(result, Exception) or not result.get("ok"):
+            self.title.set_label("Discord")
+            self.sub.set_label(result.get("error", "Unavailable") if isinstance(result, dict) else "Unavailable")
+            return
+        self.title.set_label(f"{result['online']} online")
+        self.sub.set_label((result["name"] + " · " + ", ".join(result["names"][:3])) if result["names"] else result["name"])
 
 
 # ---------------------------------------------------------------- media

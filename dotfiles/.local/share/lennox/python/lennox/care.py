@@ -219,9 +219,58 @@ def locked():
     return subprocess.run(["pidof", "hyprlock"], capture_output=True, check=False).returncode == 0
 
 
+def prayer_bar(now, settings):
+    """JSON for the bar: the next prayer (empty when prayer times are off)."""
+    c = settings["care"]
+    if not c["prayer"]:
+        return {"text": ""}
+    found = next_prayer(now, c["prayer_lat"], c["prayer_lon"], tz_hours(now.timestamp()))
+    if not found:
+        return {"text": ""}
+    name, at = found
+    left = int((at - now).total_seconds() // 60)
+    en, ar = NAMES[name]
+    soon = left <= c["prayer_remind"]
+    return {"text": f"󰥔 {ar} {at.strftime('%H:%M')}", "class": "soon" if soon else "",
+            "tooltip": prayer_line(now, settings) + "\n" + "\n".join(
+                f"{NAMES[n][0]} {NAMES[n][1]}  {t.strftime('%H:%M')}"
+                for n, t in prayer_times(now.date(), c["prayer_lat"], c["prayer_lon"], tz_hours(now.timestamp())).items())}
+
+
+def daily_chores(state, settings, now_dt):
+    """Once-a-day and once-an-hour jobs that ride on the same watcher."""
+    today = now_dt.strftime("%Y-%m-%d")
+    if state.get("chores_day") != today:
+        state["chores_day"] = today
+        try:
+            from . import seasons, wotd
+            seasons.check(now_dt.date())
+            if settings["wallpaper"]["daily"]:
+                wotd.apply(now_dt.date())
+        except Exception:  # noqa: BLE001  a missing picture must not stop the reminders
+            pass
+    hour = now_dt.strftime("%Y-%m-%d %H")
+    if state.get("trophy_hour") != hour:
+        state["trophy_hour"] = hour
+        try:
+            from . import achievements
+            achievements.check()
+        except Exception:  # noqa: BLE001
+            pass
+    mood = settings["mood"]
+    if mood["on"] and state.get("mood_day") != today and now_dt.strftime("%H:%M") >= mood["time"] and not locked():
+        state["mood_day"] = today
+        from . import mood as M
+        if M.today() not in M.load():
+            M.ask()
+
+
 def step(state, settings, now_dt):
     """One look. `state` holds Heat, Water and the prayer reminders already sent."""
     c = settings["care"]
+    daily_chores(state, settings, now_dt)
+    if not (c["water"] or c["heat"] or c["prayer"]):
+        return                                  # nothing to watch: no processes started
     away = locked()
     gaming = busy()
     if c["water"] and state["water"].look(not away and not gaming, c["water_minutes"]):
@@ -263,9 +312,7 @@ def watch():
     while True:
         try:
             settings = S.load()
-            c = settings["care"]
-            if c["water"] or c["heat"] or c["prayer"]:
-                step(state, settings, datetime.datetime.now())
+            step(state, settings, datetime.datetime.now())
         except Exception:  # noqa: BLE001  a flaky tool must never stop the watcher
             pass
         time.sleep(TICK)
@@ -287,10 +334,12 @@ def main(argv):
             for name, at in times.items():
                 print(f"{NAMES[name][0]:8} {NAMES[name][1]:8} {at.strftime('%H:%M')}")
             print("Next:", prayer_line(now, settings))
+    elif mode == "bar":
+        print(json.dumps(prayer_bar(datetime.datetime.now(), settings), ensure_ascii=False))
     elif mode == "heat":
         print(json.dumps({"cpu": cpu_temp(), "gpu": gpu_temp()}))
     else:
-        print("usage: lennox-care watch | prayer [--json] | heat", file=sys.stderr)
+        print("usage: lennox-care watch | prayer [--json] | bar | heat", file=sys.stderr)
         return 2
     return 0
 

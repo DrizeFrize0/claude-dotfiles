@@ -81,7 +81,7 @@ def restart(program, args=()):
 
 # ---------------------------------------------------------------- hyprland
 
-LUA_SECTIONS = ("appearance", "display", "input", "touchpad", "keybinds")
+LUA_SECTIONS = ("appearance", "display", "input", "touchpad", "keybinds", "cursorfx")
 
 
 def lua_value(value):
@@ -148,6 +148,9 @@ def render_hypridle(s):
         out.append("}")
         out.append("")
 
+    saver = s["screensaver"]
+    if saver["on"] and (idle["lock_minutes"] <= 0 or saver["minutes"] < idle["lock_minutes"]):
+        listener(saver["minutes"], f"{BIN}/lennox-screensaver {saver['style']}")
     listener(idle["dim_minutes"], "brightnessctl -s set 10%", "brightnessctl -r")
     listener(idle["lock_minutes"], "loginctl lock-session")
     listener(idle["screen_off_minutes"], dpms_off, f"{dpms_on} && brightnessctl -r")
@@ -520,7 +523,28 @@ def apply_theme(s, reload=True):
         spawn([os.path.join(BIN, "lennox-wallpaper"), "--restore", "--theme-only", "--quiet"])
 
 
+def apply_fan(s, reload=True):
+    if reload and in_session():
+        spawn([os.path.join(BIN, "lennox-fan"), "apply"])
+
+
+def apply_overlays(s, reload=True):
+    """The music wallpaper and the cursor effects start or stop right away."""
+    if reload and in_session():
+        spawn([os.path.join(BIN, "lennox-visualizer"), "sync"])
+        spawn([os.path.join(BIN, "lennox-cursorfx"), "sync"])
+        spawn([os.path.join(BIN, "lennox-pet"), "sync"])
+
+
+def apply_seasons(s, reload=True):
+    if reload and in_session():
+        spawn([os.path.join(BIN, "lennox-seasons"), "check"])
+
+
 PARTS = {
+    "fan": apply_fan,
+    "overlays": apply_overlays,
+    "seasons": apply_seasons,
     "hypr": apply_hypr,
     "idle": apply_idle,
     "night": apply_night,

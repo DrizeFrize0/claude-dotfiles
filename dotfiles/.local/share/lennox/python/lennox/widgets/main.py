@@ -101,6 +101,8 @@ class DesktopWindow(Gtk.ApplicationWindow):
             self.cards.append(cards.MediaCard(self.app.mpris, hide_when_idle=True))
         if st.get("widgets.show_system"):
             self.cards.append(cards.SystemCard(title=None))
+        if st.get("discord.server_id"):
+            self.cards.append(cards.DiscordCard(st))
         for card in self.cards:
             if not isinstance(card, cards.ClockCard):
                 card.set_size_request(320, -1)
@@ -210,6 +212,7 @@ class DashboardWindow(Gtk.ApplicationWindow):
             cards.WeatherCard(st, detailed=True),
             cards.CalendarCard(),
             cards.SystemCard(),
+            cards.DiscordCard(st),
             cards.NotesCard(),
         ]
         for card in self.cards:
@@ -337,6 +340,7 @@ class App(Gtk.Application):
                 self.island = IslandWindow(self, LS if layer_shell_ready(None) else None, place)
             self.island.state["show_music"] = bool(self.settings.get("widgets.island_music"))
             self.island.state["h24"] = bool(self.settings.get("bar.clock_24h"))
+            self.island.state["lyrics"] = bool(self.settings.get("lyrics.on"))
             self.island.render()
         elif self.island is not None:
             self.island.destroy()

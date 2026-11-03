@@ -291,6 +291,22 @@
     "on-click": "~/.local/bin/lennox-open system_monitor",
     "hide-empty-text": true
   },
+  "custom/prayer": {
+    "exec": "~/.local/bin/lennox-care bar",
+    "return-type": "json",
+    "interval": 60,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-settings --page care",
+    "hide-empty-text": true
+  },
+  "custom/downloads": {
+    "exec": "~/.local/bin/lennox-downloads waybar",
+    "return-type": "json",
+    "interval": 3,
+    "format": "{text}",
+    "on-click": "~/.local/bin/lennox-downloads open",
+    "hide-empty-text": true
+  },
   "custom/aispend": {
     "exec": "~/.local/bin/lennox-aispend waybar",
     "return-type": "json",

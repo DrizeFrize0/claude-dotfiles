@@ -59,7 +59,9 @@ window#waybar > box {
 /* The 1px gradient edge takes 2px of height: every module gives 1px back
    on each side, so the bar (and the island sitting in it) keeps its height */
 #custom-lennox-launcher { margin: 4px 4px 4px 1px; }
-#custom-sysmon, #custom-aispend, #custom-clocknext, #custom-perf, #custom-mcserver { margin: 4px 1px; }
+#custom-sysmon, #custom-aispend,
+#custom-prayer,
+#custom-downloads, #custom-clocknext, #custom-perf, #custom-mcserver { margin: 4px 1px; }
 
 /* ---------------------------------------------------- Hover glow */
 

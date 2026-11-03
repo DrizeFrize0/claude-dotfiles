@@ -5,6 +5,7 @@
 #   lennox-panic          do it
 # Lennox Settings > Power & Battery > Panic key chooses what it does.
 export PATH="$HOME/.local/bin:$PATH"
+(lennox-achieve tick panic >/dev/null 2>&1 &)
 
 RUNTIME="${XDG_RUNTIME_DIR:-/tmp}/lennox"
 SAVED="$RUNTIME/panic-windows.json"

@@ -60,53 +60,22 @@ wind-down at 23:00 with weekly sleep stats.
 - **Settings backup (recommended):** one switch keeps settings, keybinds,
   wallpapers and clips' list backed up, restored by the installer.
 
-## Release 5: Queued
+## Release 5: done (1.24 to 1.26)
 
-- **Done in 1.16 to 1.22:** the island and bar redesign.
-- **Done in 1.25:** study timer with a subject, startup greeting.
-- **Done in 1.24:** water reminder, temperature alerts, prayer times (a bar item
-  for prayer times and fan profiles are still open).
+Everything on the Release 5 list is built: island and bar redesign, water
+reminder, temperature alerts, prayer times (also in the bar), study subjects,
+startup greeting, storage view, desktop pet, auto profiles, downloads in the
+bar, wallpaper of the day, Discord widget, fan profiles, mood diary and the
+"why am I tired" report, screensaver, easter eggs, seasonal themes, music
+wallpaper, lyrics, cursor effects, startup animation, mini-games, trophies,
+Ask Claude, Date & time.
 
-- **Storage view:** a simple map of what's using the disk (folders sized
-  as bars, biggest first), with a safe delete button and "open in Files".
-  Builds on the Cleanup page.
-- **Desktop pet:** a small animated cat that walks along the bottom of the
-  screen, sleeps when you're idle or focusing, and can be turned off.
-- **Auto profiles by place or time:** one rule per Wi-Fi network or time of
-  day (school: quiet, no sounds; home: music up; night: dim).
-- **Download manager in the bar:** progress of browser downloads, and a click
-  opens the finished file.
-- **Wallpaper of the day:** a fresh wallpaper each morning from a collection
-  you choose.
-- **Discord status widget:** how many friends are online in your Discord
-  server, on the desktop.
-- **Fan and noise profiles + controller:** a Silent profile that caps power so
-  the fans stay quiet at night, with a page to see temperatures and fan
-  speeds and pick a profile (where the laptop allows fan control).
-- **Mood and sleep diary:** one tap each night for how the day was, then a
-  weekly graph next to the sleep stats.
-- **"Why am I tired" report:** weekly tips from your own data (like "you slept
-  late on gym days").
-- **Screensaver:** a calm animation (stars, rain on glass) after a few idle
-  minutes, before the lock screen.
-- **Easter eggs:** hidden key combos that do something silly (a cat jumping
-  across the screen).
-- **Theme of the season:** automatic colors and wallpaper for Ramadan, Eid and
-  other occasions you pick.
-- **Music visualizer wallpaper:** the wallpaper pulses and flows with what's
-  playing, in your theme colors.
-- **Lyrics in the island:** synced lyrics scroll in the island while a song
-  plays; Arabic shows right-to-left.
-- **Cursor effects:** a glowing trail, click ripples, or a spotlight for
-  screen sharing.
-- **Boot and login animation:** a custom Lennox startup animation.
-- **Mini-games in the island:** a tiny snake or flappy-bird for a quick break.
-- **Achievements:** silly badges for using Lennox ("Night owl", "Used
-  SUPER + TAB 100 times") on a trophy page.
-- **Ask Claude from anywhere:** a launcher box that sends a question to Claude
-  and shows the answer in a small window.
+Known limits, honestly:
+- The startup animation (Plymouth) and the cursor/click effects were tested on
+  fake systems and headless windows, not on real hardware yet.
+- Fan profiles cap the processor; real fan speed control only exists where the
+  laptop exposes it.
+- Lyrics need the internet once per song; Discord needs the server's widget on.
 
 ## Ideas offered, not yet asked for
 
-- Date & time page in Lennox Settings (time zone picker, 12/24 hour,
-  internet sync), so the clock never needs the terminal.

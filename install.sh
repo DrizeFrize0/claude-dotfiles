@@ -369,6 +369,10 @@ install_system_files() {
     install_system_file etc/systemd/system/lennox-autoupdate.timer 644
     install_system_file usr/local/bin/lennox-focus-hosts 755
     install_system_file etc/polkit-1/rules.d/50-lennox-focus.rules 644
+    install_system_file usr/local/bin/lennox-cpucap 755
+    install_system_file usr/share/plymouth/themes/lennox/lennox.plymouth 644
+    install_system_file usr/share/plymouth/themes/lennox/lennox.script 644
+    install_system_file etc/polkit-1/rules.d/50-lennox-cpucap.rules 644
     if [[ ! -f /etc/lennox/autoupdate.conf ]]; then
         install_system_file etc/lennox/autoupdate.conf 644
     fi

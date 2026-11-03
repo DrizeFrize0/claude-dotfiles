@@ -3,6 +3,25 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.26.0 · 2026-11-04 · Everything in Release 5
+
+- Extras page (Settings > Everyday) with a switch for each of these:
+- Desktop pet: a small cat walks along the bottom of the screen, and sleeps while you focus, when you are away, or after 5 quiet minutes
+- Music wallpaper: the bottom of the desktop pulses with what is playing, in your theme colors (uses cava, installed by the upgrade)
+- Cursor effects: a glowing trail or a spotlight for screen sharing, and a ring on every click
+- Lyrics in the island: synced lyrics under the song title, Arabic right to left
+- Screensaver: stars, rain on glass or aurora, after a few idle minutes before the lock screen. Any key closes it
+- Theme of the season: colors change for Ramadan, Eid, Halloween, New Year and Independence Day, then go back. Add pictures to a folder for a wallpaper too
+- Wallpaper of the day, and profiles by Wi-Fi network or time of day (like quiet mode and low volume at school)
+- Fan and noise profiles: Silent, Normal, Turbo, with the temperature and fan speed shown
+- Discord: how many people are online in your server, on the desktop and the dashboard
+- Downloads and the next prayer now show in the bar
+- Ask Claude from anywhere with SUPER + SHIFT + A (needs an API key file, or Claude Code installed)
+- Snake and Flappy for a quick break (SUPER + SHIFT + G), and a few hidden surprises
+- Startup animation: a Lennox animation at boot. It only changes anything when you turn it on, and it shows you what first
+- New pages: Storage (what is using the disk, biggest first, safe delete to the trash), Trophies (badges for using Lennox), Date & time (time zone, automatic time, 12 or 24 hour clock)
+- Daily care now has a mood diary (one tap each evening) and a "why am I tired" report from your own sleep, mood and focus
+
 ## 1.25.0 · 2026-11-04 · Study subjects and a hello
 
 - Focus sessions can have a subject (Math, Physics, Chemistry, English, Arabic, or your own list). Pick it on the Focus page, or start one with lennox-focus start 50 --subject=Math. The page shows this week's hours for each subject

@@ -32,6 +32,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Graphene, Gsk, Gtk, Pango  # noqa: E402
 
 from .. import clock as C  # noqa: E402
+from .. import lyrics  # noqa: E402
 from .. import sounds  # noqa: E402
 from . import data  # noqa: E402
 from .cards import scaled_texture  # noqa: E402
@@ -783,13 +784,14 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.place = place
         self.state = {"ringing": [], "event": None, "call_since": None, "next_up": None, "music": None,
                       "stopwatch_running": False, "stopwatch_elapsed": 0, "show_music": True,
-                      "fullscreen": False, "place": place, "h24": True}
+                      "fullscreen": False, "place": place, "h24": True, "lyrics": True}
         self.kind = None
         self.shown = None
         self.hovering = False
         self.pinned = False
         self._hover_source = 0
         self.music_seen = None          # (time, position) for a smooth progress bar
+        self.lyrics = lyrics.Follower()  # the line being sung, shown under the title
         self.timer_id = None
         self.focus_phase = None
         self.add_css_class("lennox-island-window")
@@ -1059,7 +1061,8 @@ class IslandWindow(Gtk.ApplicationWindow):
         page.set(icon=None if art else "audio-x-generic-symbolic", text=info["title"], art=art)
         self.bars.set_playing(True)
         self.music_title.set_label(info["title"])
-        self.music_artist.set_label(info.get("artist") or "")
+        artist = info.get("artist") or ""
+        self.music_artist.set_label(artist)
         texture = scaled_texture(art, 44) if art else None
         if texture is not None:
             if self.cover.get_paintable() is not texture:
@@ -1071,6 +1074,8 @@ class IslandWindow(Gtk.ApplicationWindow):
         if length and self.music_seen:
             seen_at, pos = self.music_seen
             pos = min(length, pos + (now - seen_at))
+            if self.state.get("lyrics", True):
+                self.music_artist.set_label(self.lyrics.line(artist, info["title"], length, pos) or artist)
             self.progress.set_fraction(pos / length)
             page.art_ring.set_fraction(pos / length)
             self.pos_label.set_label(C.countdown(pos))

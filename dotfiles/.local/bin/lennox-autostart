@@ -88,6 +88,10 @@ fi
 setsid -f lennox-gameprofile watch >/dev/null 2>&1 </dev/null
 # Daily care: water reminder, heat alerts, prayer times (each has its own switch)
 setsid -f lennox-care watch >/dev/null 2>&1 </dev/null
+# Profiles by Wi-Fi network or time of day (off until you add rules in Settings > Extras)
+setsid -f lennox-autoprofile watch >/dev/null 2>&1 </dev/null
+# Desktop extras that are switched on: the pet, the music wallpaper, cursor effects
+(sleep 5 && lennox-pet sync; lennox-visualizer sync; lennox-cursorfx sync) >/dev/null 2>&1 &
 # A friendly hello once the desktop is up (Lennox Settings > Daily care)
 (sleep 15 && lennox-greeting show) >/dev/null 2>&1 &
 # The login sound (off unless turned on in Lennox Settings > Sound)

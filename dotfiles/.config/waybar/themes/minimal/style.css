@@ -132,7 +132,9 @@ tooltip label {
 
 /* System monitor (lennox-sysmon) and AI spend (lennox-aispend) */
 #custom-sysmon,
-#custom-aispend {
+#custom-aispend,
+#custom-prayer,
+#custom-downloads {
     padding: 0 9px;
     margin: 5px 1px;
     border-radius: 14px;

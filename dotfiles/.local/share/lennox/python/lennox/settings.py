@@ -49,6 +49,8 @@ DEFAULTS = {
         "transition": "grow",
         "lockscreen_blur": "50x30",
         "auto_change_minutes": 0,
+        "daily": False,                # a fresh wallpaper each morning (from the folder below)
+        "daily_folder": "",            # empty: the Lennox wallpapers
         "live_pause_battery": True,    # live (video) wallpaper: a still picture on battery
     },
     "bar": {
@@ -173,6 +175,45 @@ DEFAULTS = {
         "lock": True,
         "login": False,
     },
+    "seasons": {
+        "on": False,                   # colors and wallpaper follow the occasions below
+        "ramadan": True,
+        "eid": True,
+        "halloween": False,
+        "newyear": False,
+        "jordan_day": False,           # 25 May
+    },
+    "screensaver": {
+        "on": False,                   # a calm animation before the screen locks
+        "minutes": 4,                  # idle minutes before it starts
+        "style": "stars",
+    },
+    "pet": {"on": False},              # a small cat walks along the bottom of the screen
+    "visualizer": {"on": False},       # the wallpaper area pulses with the music
+    "cursorfx": {
+        "on": False,
+        "style": "trail",              # trail | spotlight
+        "ripple": True,                # a ring on every click
+    },
+    "lyrics": {"on": True},            # synced lyrics in the island while music plays
+    "discord": {
+        "server_id": "",               # a server whose widget is switched on (Server Settings > Widget)
+    },
+    "fan": {
+        "profile": "normal",           # silent | normal | turbo
+    },
+    "mood": {
+        "on": False,                   # ask how the day was, every evening
+        "time": "22:00",
+    },
+    "ask": {
+        "model": "claude-haiku-5-5",   # what answers when you ask Claude from the launcher
+    },
+    "auto": {"on": False},             # profiles by Wi-Fi network or time of day (Settings > Extras)
+    "downloads": {
+        "on": True,                    # downloads in the bar
+        "folder": "",                  # empty: ~/Downloads
+    },
     "greeting": {
         "on": True,                    # a friendly hello a little after login
         "name": "",                    # what to call you (empty: your user name)
@@ -261,11 +302,15 @@ CHOICES = {
     ("games", "overlay"): ["hidden", "shown"],
     ("input", "accel_profile"): ["", "adaptive", "flat"],
     ("keybinds", "main_mod"): ["SUPER", "ALT"],
+    ("screensaver", "style"): ["stars", "rain", "aurora"],
+    ("cursorfx", "style"): ["trail", "spotlight"],
+    ("fan", "profile"): ["silent", "normal", "turbo"],
     ("gpu", "mode"): ["auto", "integrated", "hybrid"],
 }
 
 # Inclusive ranges for numeric settings
 RANGES = {
+    ("screensaver", "minutes"): (1, 60),
     ("care", "water_minutes"): (15, 240),
     ("care", "heat_cpu"): (70, 105),
     ("care", "heat_gpu"): (65, 100),
@@ -365,7 +410,7 @@ LOOKS = {
         "appearance.blur_size": 4, "bar.style": "modern"})),
 }
 
-TIME_KEYS = {("night", "start"), ("night", "end"), ("night", "winddown_time"), ("night", "bedtime_goal")}
+TIME_KEYS = {("mood", "time"), ("night", "start"), ("night", "end"), ("night", "winddown_time"), ("night", "bedtime_goal")}
 
 # Which `lennox-apply` part(s) must run after a setting in a section changes
 APPLY_PARTS = {
@@ -384,6 +429,13 @@ APPLY_PARTS = {
     "games": ["games"],
     "cleanup": ["cleanup"],
     "backup": ["backup"],
+    "screensaver": ["idle"],
+    "fan": ["fan"],
+    "pet": ["overlays"],
+    "visualizer": ["overlays"],
+    "cursorfx": ["overlays", "hypr"],
+    "seasons": ["seasons"],
+    "downloads": ["bar"],
 }
 THEME_KEYS = {"appearance.color_mode", "appearance.color_scheme", "appearance.theme"}
 

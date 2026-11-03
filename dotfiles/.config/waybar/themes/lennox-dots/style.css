@@ -74,7 +74,9 @@ window#waybar {
 #custom-updates, #custom-system, #custom-tools, #cpu, #memory, #disk, #custom-gpu, #language,
 #custom-cliphist, #custom-idle, #custom-nightlight, #custom-gamemode, #power-profiles-daemon,
 #network, #bluetooth, #pulseaudio, #battery, #custom-notification, #custom-exit,
-#custom-sysmon, #custom-aispend, #custom-clocknext, #custom-perf, #custom-mcserver, #mpris {
+#custom-sysmon, #custom-aispend,
+#custom-prayer,
+#custom-downloads, #custom-clocknext, #custom-perf, #custom-mcserver, #mpris {
     font-size: 12px;
     margin: 2px 1px;
     padding: 0 7px;

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# A small cat on the desktop.
+#   lennox-pet start | stop | sync | across
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.pet "$@"

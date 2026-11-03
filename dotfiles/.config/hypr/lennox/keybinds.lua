@@ -117,6 +117,13 @@ for dir, delta in pairs(resize_step) do
         { repeating = true, description = "Resize the window (" .. dir .. ")" })
 end
 
+-- Ask Claude from anywhere, a quick game, and a few hidden surprises
+hl.bind(key("SHIFT + A"), run("lennox-ask"), { description = "Ask Claude" })
+hl.bind(key("SHIFT + G"), run("lennox-minigame menu"), { description = "A quick game (snake, flappy)" })
+hl.bind(key("CTRL + SHIFT + C"), run("lennox-egg cat"), { description = "A surprise" })
+hl.bind(key("CTRL + SHIFT + R"), run("lennox-egg rain"), { description = "A surprise" })
+hl.bind(key("CTRL + SHIFT + S"), run("lennox-egg stars"), { description = "A surprise" })
+
 hl.bind(key("mouse:272"), hl.dsp.window.drag(),   { mouse = true, description = "Move a window with the mouse" })
 hl.bind(key("mouse:273"), hl.dsp.window.resize(), { mouse = true, description = "Resize a window with the mouse" })
 

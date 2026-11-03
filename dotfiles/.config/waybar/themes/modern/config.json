@@ -22,6 +22,8 @@
     "network",
     "battery",
     "custom/mcserver",
+    "custom/downloads",
+    "custom/prayer",
     "custom/aispend",
     "custom/sysmon",
     "group/hardware",

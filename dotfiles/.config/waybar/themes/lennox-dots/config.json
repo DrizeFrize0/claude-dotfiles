@@ -25,6 +25,8 @@
   "modules-right": [
     "custom/updates",
     "custom/mcserver",
+    "custom/downloads",
+    "custom/prayer",
     "custom/aispend",
     "custom/sysmon",
     "group/hardware",

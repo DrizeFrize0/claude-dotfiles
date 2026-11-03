@@ -43,3 +43,9 @@ hl.config({ input = input })
 if i.block_middle_click then
     hl.bind("mouse:274", hl.dsp.no_op(), { description = "Wheel click does nothing (no autoscroll)" })
 end
+
+-- Cursor effects: a ring on every click (the click still goes through to the app)
+if LENNOX.cursorfx and LENNOX.cursorfx.on and LENNOX.cursorfx.ripple then
+    hl.bind("mouse:272", hl.dsp.exec_cmd("kill -USR1 $(cat \"$XDG_RUNTIME_DIR/lennox/cursorfx.pid\" 2>/dev/null) 2>/dev/null"),
+            { non_consuming = true, description = "Click ripple (cursor effects)" })
+end

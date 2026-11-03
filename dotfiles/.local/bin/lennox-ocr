@@ -4,6 +4,7 @@
 #   lennox-ocr            pick an area on the screen
 #   lennox-ocr FILE       read text from an image file instead
 export PATH="$HOME/.local/bin:$PATH"
+(lennox-achieve tick ocr >/dev/null 2>&1 &)
 
 command -v tesseract >/dev/null || {
     notify-send -a Lennox -i dialog-error "Text copy isn't installed" "Run: lennox upgrade"

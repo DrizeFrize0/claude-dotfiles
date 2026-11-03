@@ -6,6 +6,7 @@ from gi.repository import Adw
 
 from .. import rows
 from ... import care as C
+from ... import mood as M
 from ... import settings as S
 
 
@@ -20,6 +21,15 @@ class Page:
         hello.add(rows.switch_row(store, "greeting.on", "Say hello at login"))
         hello.add(rows.entry_row(store, "greeting.name", "What should I call you? (empty: your user name)"))
         page.add(hello)
+
+        diary = Adw.PreferencesGroup(title="Mood and sleep", description="One tap each evening for how the day was. Everything stays on this laptop.")
+        diary.add(rows.switch_row(store, "mood.on", "Ask me every evening"))
+        diary.add(rows.time_row(store, "mood.time", "Ask at"))
+        self.week_row = rows.info_row("This week", "…")
+        diary.add(self.week_row)
+        self.tip_rows = []
+        self.diary = diary
+        page.add(diary)
 
         water = Adw.PreferencesGroup(
             title="Water", description="A gentle nudge after every stretch at the laptop. It waits while "
@@ -58,6 +68,17 @@ class Page:
     def refresh(self):
         cpu = C.cpu_temp()
         self.temp_row.value_label.set_text(f"Processor {cpu:.0f}°C" if cpu is not None else "The laptop doesn't report it")
+        week = M.week(M.load())
+        self.week_row.value_label.set_label("  ".join(M.FACES[d["mood"] - 1] if d["mood"] else "·" for d in week))
+        for row in self.tip_rows:
+            self.diary.remove(row)
+        self.tip_rows = []
+        for tip in M.report_text():
+            row = rows.info_row("Why am I tired?" if not self.tip_rows else "", "")
+            row.set_subtitle(tip)
+            row.value_label.set_visible(False)
+            self.diary.add(row)
+            self.tip_rows.append(row)
         for row in self.prayer_rows:
             self.prayer_group.remove(row)
         self.prayer_rows = []
