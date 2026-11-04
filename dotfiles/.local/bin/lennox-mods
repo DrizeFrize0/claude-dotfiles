@@ -30,6 +30,14 @@ find_cmd() {
     echo "How to tell them apart: a path with 'labymod' in it is LabyMod's. A path with 'horizon' (or the launcher's name) is Horizon's."
     echo "A path ending in .minecraft/mods is the standard Minecraft one."
     echo
+    echo "Mods folders that are EMPTY (a launcher's own folder is often here, until you put mods in it):"
+    local empties=0 dir
+    while IFS= read -r dir; do
+        [[ -n "$dir" && "$(count_jars "$dir")" -eq 0 ]] || continue
+        printf '      0 files  %s\n' "$dir"; empties=1
+    done < <(find "$ROOTS" -maxdepth 9 -type d \( -iname mods -o -iname addons \) -prune 2>/dev/null | sort -u)
+    [[ $empties == 1 ]] || echo "  (none)"
+    echo
     echo "Horizon on this laptop:"
     local any=0 line
     while IFS= read -r line; do [[ -n "$line" ]] && { echo "  $line"; any=1; }; done < <(
@@ -37,6 +45,12 @@ find_cmd() {
           command -v pacman >/dev/null && pacman -Qs horizon 2>/dev/null | grep -i '^local' | sed 's/^/package: /'
           find "$ROOTS" -maxdepth 4 \( -iname '*horizon*' \) ! -ipath '*/.cache/*' ! -ipath '*/node_modules/*' ! -ipath '*/wallpapers/*' 2>/dev/null | head -12 | sed 's/^/found:   /'
         } 2>/dev/null)
+    local hd
+    for hd in "$ROOTS/.local/share/horizon" "$ROOTS/.local/share/horizon-launcher" "$ROOTS/.local/share/Horizon" "$ROOTS/.config/horizon"; do
+        [[ -d "$hd" ]] || continue
+        echo "  Inside $hd (folders, two levels):"
+        find "$hd" -maxdepth 2 -type d ! -name '.horizon-cache' 2>/dev/null | sed "s#^$hd#     .#" | head -20
+    done
     [[ $any == 1 ]] || echo "  (nothing named Horizon found: where did you install it from? A download in ~/Downloads, an AppImage, the AUR?)"
     echo
     echo "Then: lennox-mods copy FROM TO   (FROM = LabyMod's folder above, TO = Horizon's folder above)"
@@ -44,11 +58,18 @@ find_cmd() {
 
 copy_cmd() {
     local from="$1" to="$2" yes="$3" jar n=0 skipped=0
-    [[ -d "$from" ]] || { echo "Not a folder: $from" >&2; exit 1; }
+    if [[ ! -d "$from" ]]; then
+        echo "Not a folder: $from" >&2
+        [[ "$from" == *PATH* || "$from" == [A-Z_]* ]] && echo "Use the real paths from 'lennox-mods find' (copy one of the lines that starts with a number), not the words in capital letters." >&2
+        exit 1
+    fi
     [[ "$from" != "$to" ]] || { echo "Both folders are the same." >&2; exit 1; }
     [[ -d "$to" ]] || { echo "The destination folder doesn't exist yet: $to" >&2; echo "Start an instance of that launcher once (or create the folder) and run this again." >&2; exit 1; }
     while IFS= read -r jar; do
         if [[ -e "$to/$(basename "$jar")" ]]; then skipped=$((skipped + 1)); continue; fi
+        case "$(basename "$jar" | tr 'A-Z' 'a-z')" in
+            labymod*|*laby-mod*) echo "skipped (LabyMod's own file, it only works inside LabyMod)  $(basename "$jar")"; continue ;;
+        esac
         if [[ "$yes" == --yes ]]; then cp -- "$jar" "$to/" && echo "copied  $(basename "$jar")"; else echo "would copy  $(basename "$jar")"; fi
         n=$((n + 1))
     done < <(find "$from" -maxdepth 1 -type f -iname '*.jar' | sort)

@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.30.4 · 2026-11-04 · lennox-mods shows empty folders and skips LabyMod's own files
+
+- lennox-mods find now also lists mods folders that are empty (a new launcher's folder is empty until you add mods) and looks inside Horizon's data folders
+- lennox-mods copy skips LabyMod's own files (they only work inside LabyMod) and explains when you type the placeholder words instead of real paths
+
 ## 1.30.3 · 2026-11-04 · lennox-mods finds the folders for you
 
 - lennox-mods find now lists every folder named mods or addons that has files in it, anywhere in your home folder, plus where Horizon is installed (Flatpak, package, or any folder or file with its name). You no longer need to know where LabyMod or Horizon keep their files

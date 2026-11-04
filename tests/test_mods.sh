@@ -14,7 +14,7 @@ check "find lists LabyMod's addons with a count" "grep -q '3 files.*labymod-neo/
 check "find lists Horizon's mods folder" "grep -q '1 files.*HorizonLauncher/instances/main/mods' <<<\"\$OUT\""
 check "find lists the folder that is not named after either" "grep -q '2 files.*mods' <<<\"\$OUT\" || true"
 check "find shows where Horizon is on the laptop" "grep -q 'found:.*HorizonLauncher' <<<\"\$OUT\""
-check "empty mods folders are not listed" "! grep -q '0 files' <<<\"\$OUT\"" 
+check "the first list (where the mods are) has no empty folders" "! MOD_ROOTS=\$T bash \$TOOL find | sed -n '1,/^$/p' | grep -q '0 files'"
 A="$T/.minecraft/labymod-neo/addons"; B="$T/.local/share/HorizonLauncher/instances/main/mods"
 DRY="$(bash "$TOOL" copy "$A" "$B")"
 check "without --yes nothing is copied" "[ \"\$(ls $B | wc -l)\" = 1 ] && grep -q 'would copy  sodium.jar' <<<\"\$DRY\""
@@ -23,5 +23,12 @@ check "copy puts the missing mods in" "[ -f $B/sodium.jar ] && [ -f $B/iris.jar 
 check "the original files stay (copy, not move)" "[ \"\$(ls $A/*.jar | wc -l)\" = 3 ]"
 check "non-jar files are not copied" "[ ! -f $B/readme.txt ]"
 check "existing mods are left alone" "[ \"\$(bash $TOOL copy $A $B --yes | grep -c 'copied  ')\" = 0 ]"
+mkdir -p "$T/.local/share/horizon/instances/x"; : > "$T/labymod-1.jar" 2>/dev/null
+check "empty mods folders are listed in their own section" "MOD_ROOTS=$T bash $TOOL find | grep -q '0 files.*emptymods/mods'"
+check "Horizon's own folders are shown" "MOD_ROOTS=$T bash $TOOL find | grep -q 'Inside .*share/horizon'"
+check "placeholder words get a helpful message" "bash $TOOL copy LABYMOD_PATH HORIZON_PATH 2>&1 | grep -q 'real paths'"
+: > "$A/LabyMod-4.2.jar"; : > "$A/labymod-loader.jar"
+OUTC="$(bash $TOOL copy $A $B --yes)"
+check "LabyMod's own files are skipped" "[ ! -f $B/LabyMod-4.2.jar ] && [ ! -f $B/labymod-loader.jar ] && grep -q 'skipped (LabyMod' <<<\"\$OUTC\""
 check "missing destination: stops with a message" "! bash $TOOL copy $A $T/nope --yes >/dev/null 2>&1"
 rm -rf "$T"; exit $fail
