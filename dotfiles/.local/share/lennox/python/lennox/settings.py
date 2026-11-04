@@ -225,6 +225,7 @@ DEFAULTS = {
         "water": False,                # a nudge to drink water
         "water_minutes": 60,           # minutes at the laptop between nudges
         "heat": True,                  # warn when the CPU or GPU gets too hot
+        "heat_auto": True,             # and switch to Quiet mode by itself (not while gaming)
         "heat_cpu": 92,                # degrees C
         "heat_gpu": 85,
         "prayer": False,               # prayer time reminders

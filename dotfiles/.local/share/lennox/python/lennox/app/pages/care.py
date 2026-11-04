@@ -44,6 +44,7 @@ class Page:
                                       "switch to Quiet mode. The graphics chip is only checked while it's awake "
                                       "(in a game), so this never wakes it.")
         heat.add(rows.switch_row(store, "care.heat", "Warn me when it gets too hot"))
+        heat.add(rows.switch_row(store, "care.heat_auto", "Switch to Quiet mode by itself", "Not while you are gaming: then you get a button instead"))
         heat.add(rows.spin_row(store, "care.heat_cpu", "Processor limit", "Degrees C", lower=70, upper=105))
         heat.add(rows.spin_row(store, "care.heat_gpu", "Graphics limit", "Degrees C", lower=65, upper=100))
         self.temp_row = rows.info_row("Right now", "…")

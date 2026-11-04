@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.31.0 · 2026-11-04 · Why is it hot?
+
+- New tool: lennox-heat. It shows the processor temperature and speed, what is using the processor most, the power settings, the fans, and whether Lennox extras, a live wallpaper, game mode or the NVIDIA chip could be adding heat, and tells you what to do about each. lennox-heat cool applies the safe steps right away (Quiet power mode, game mode off, extras off, turbo off) and shows the temperature drop. If nothing in the software explains it, it says so and lists the hardware causes (dust, thermal paste, blocked vents, BIOS fan setting)
+- The heat alert now switches to Quiet mode by itself when the processor is too hot and you are not gaming (a switch in Settings > Daily care turns this off). While gaming you still get the button instead
+
 ## 1.30.5 · 2026-11-04 · Where does Horizon keep Minecraft?
 
 - lennox-mods horizon works out which folder Horizon uses for Minecraft. It checks a running game's own command line (the surest sign), what Horizon's settings files say about folders, and the folders Horizon created, and says what to do if it simply uses the standard .minecraft folder

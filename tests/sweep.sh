@@ -42,6 +42,7 @@ bash tests/test_sound_guard.sh | grep -q FAIL && { bash tests/test_sound_guard.s
 bash tests/test_bootmenu.sh | grep -q FAIL && { bash tests/test_bootmenu.sh | grep FAIL; fail=1; } || echo ok boot menu
 bash tests/test_sessions.sh | grep -q FAIL && { bash tests/test_sessions.sh | grep FAIL; fail=1; } || echo ok sessions
 bash tests/test_mods.sh | grep -q FAIL && { bash tests/test_mods.sh | grep FAIL; fail=1; } || echo ok mods
+python3 -W ignore tests/test_heat.py 2>&1 | tail -3 | grep -q "^OK" && echo ok heat || { python3 tests/test_heat.py 2>&1 | tail -15; fail=1; }
 
 hdr "css (gtk3/gtk4)"
 C=$SP/csscheck.py; P=$R/dotfiles/.config

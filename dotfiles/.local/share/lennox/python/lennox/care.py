@@ -204,6 +204,15 @@ def _heat_alert(text):
     _island("temperature-symbolic", "Getting hot: " + text, "6")
 
 
+def _heat_auto(text):
+    """Too hot and not gaming: switch to Quiet mode right away (Settings > Daily care turns this off)."""
+    if sh.out([_bin("lennox-perf"), "status"]) != "quiet":
+        subprocess.run([_bin("lennox-perf"), "quiet"], capture_output=True, check=False)
+    _notify("It was too hot: switched to Quiet mode", f"{text}. The fans can catch up. Settings > Extras > Fan and noise changes it back; "
+            "lennox-heat shows what is heating it.", "temperature-symbolic")
+    _island("temperature-symbolic", "Too hot: Quiet mode", "6")
+
+
 def busy():
     """Gaming or focusing: no reminders then."""
     if _run([_bin("lennox-mode"), "game", "status"]) == "on":
@@ -282,7 +291,7 @@ def step(state, settings, now_dt):
             temps["GPU"] = gpu_temp()
         text = state["heat"].look(now_dt.timestamp(), temps, {"CPU": c["heat_cpu"], "GPU": c["heat_gpu"]})
         if text:
-            _heat_alert(text)
+            _heat_auto(text) if c["heat_auto"] and not gaming else _heat_alert(text)
     if c["prayer"] and not away:
         for day in (now_dt.date(), now_dt.date() + datetime.timedelta(days=1)):
             times = prayer_times(day, c["prayer_lat"], c["prayer_lon"], tz_hours(now_dt.timestamp()))
