@@ -30,5 +30,11 @@ check "placeholder words get a helpful message" "bash $TOOL copy LABYMOD_PATH HO
 : > "$A/LabyMod-4.2.jar"; : > "$A/labymod-loader.jar"
 OUTC="$(bash $TOOL copy $A $B --yes)"
 check "LabyMod's own files are skipped" "[ ! -f $B/LabyMod-4.2.jar ] && [ ! -f $B/labymod-loader.jar ] && grep -q 'skipped (LabyMod' <<<\"\$OUTC\""
+mkdir -p "$T/.local/share/horizon" && printf '{"gameDir": "/home/x/Games/hz", "mods": "/home/x/Games/hz/mods"}\n' > "$T/.local/share/horizon/settings.json"
+HOUT="$(MOD_ROOTS=$T bash $TOOL horizon)"
+check "horizon: reads folder clues from Horizon's settings" "grep -q 'gameDir.*Games/hz' <<<\"\$HOUT\""
+check "horizon: lists the folders Horizon made" "grep -q 'share/horizon/instances' <<<\"\$HOUT\" || grep -q 'share/horizon' <<<\"\$HOUT\""
+check "horizon: says what to do when there is no game running" "grep -q 'no game running' <<<\"\$HOUT\" || grep -q 'game folder is' <<<\"\$HOUT\""
+check "horizon: mentions the standard folder" "grep -q '.minecraft/mods' <<<\"\$HOUT\""
 check "missing destination: stops with a message" "! bash $TOOL copy $A $T/nope --yes >/dev/null 2>&1"
 rm -rf "$T"; exit $fail

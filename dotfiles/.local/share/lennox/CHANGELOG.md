@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.30.5 · 2026-11-04 · Where does Horizon keep Minecraft?
+
+- lennox-mods horizon works out which folder Horizon uses for Minecraft. It checks a running game's own command line (the surest sign), what Horizon's settings files say about folders, and the folders Horizon created, and says what to do if it simply uses the standard .minecraft folder
+
 ## 1.30.4 · 2026-11-04 · lennox-mods shows empty folders and skips LabyMod's own files
 
 - lennox-mods find now also lists mods folders that are empty (a new launcher's folder is empty until you add mods) and looks inside Horizon's data folders
