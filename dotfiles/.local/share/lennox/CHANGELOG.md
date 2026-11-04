@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.30.2 · 2026-11-04 · Find and copy Minecraft mods
+
+- New tool: lennox-mods. lennox-mods find shows where LabyMod and your launchers (like Horizon) keep their mods and how many each has, and lennox-mods copy FROM TO copies the mods across. It only copies (never moves or deletes), skips mods that are already there, and shows what it would do until you add --yes
+
 ## 1.30.1 · 2026-11-04 · The Night logo
 
 - The Lennox logo is now Night 4: a warm full moon on a deep navy tile with a bold L cut out of it and a few stars. It is used in the boot menu (above the entries and as the Arch Linux icon) and in the welcome animation at login. After upgrading, run lennox-bootmenu restyle to update the boot menu

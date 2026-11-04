@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Find your Minecraft mods folders and copy mods between them (it only copies, never moves or deletes).
+#   lennox-mods find                      where LabyMod and your launchers keep mods, and how many each holds
+#   lennox-mods copy FROM TO [--yes]      copy every .jar in FROM to TO (shows what it would do without --yes)
+# LABYMOD_ROOTS / MOD_ROOTS can point the search somewhere else (tests do).
+
+ROOTS="${MOD_ROOTS:-$HOME}"
+
+count_jars() { find "$1" -maxdepth 1 -type f -iname '*.jar' 2>/dev/null | wc -l; }
+
+list() {   # list LABEL FIND-ARGS...
+    local label="$1" dir n; shift
+    echo "$label"
+    local found=0
+    while IFS= read -r dir; do
+        [[ -n "$dir" ]] || continue
+        n="$(count_jars "$dir")"
+        printf '  %3s mods  %s\n' "$n" "$dir"
+        found=1
+    done < <(find "$ROOTS" -maxdepth 7 -type d "$@" 2>/dev/null | sort -u)
+    [[ $found == 1 ]] || echo "  (nothing found)"
+}
+
+find_cmd() {
+    list "LabyMod (its mods are called addons, and live next to LabyMod's own files):" \
+        \( -ipath '*labymod*' \( -name addons -o -name mods \) \)
+    echo
+    list "Mods folders of other launchers (Horizon and any other with its name in the path):" \
+        \( -ipath '*horizon*' -name mods \)
+    echo
+    list "The standard Minecraft mods folder:" \( -path '*/.minecraft/mods' \)
+    echo
+    echo "Launcher folders that mention Horizon (in case its mods folder doesn't exist yet: start an instance once, or create it):"
+    find "$ROOTS" -maxdepth 5 -type d -ipath '*horizon*' ! -ipath '*/.cache/*' ! -ipath '*/node_modules/*' 2>/dev/null | head -12 | sed 's/^/  /'
+}
+
+copy_cmd() {
+    local from="$1" to="$2" yes="$3" jar n=0 skipped=0
+    [[ -d "$from" ]] || { echo "Not a folder: $from" >&2; exit 1; }
+    [[ "$from" != "$to" ]] || { echo "Both folders are the same." >&2; exit 1; }
+    [[ -d "$to" ]] || { echo "The destination folder doesn't exist yet: $to" >&2; echo "Start an instance of that launcher once (or create the folder) and run this again." >&2; exit 1; }
+    while IFS= read -r jar; do
+        if [[ -e "$to/$(basename "$jar")" ]]; then skipped=$((skipped + 1)); continue; fi
+        if [[ "$yes" == --yes ]]; then cp -- "$jar" "$to/" && echo "copied  $(basename "$jar")"; else echo "would copy  $(basename "$jar")"; fi
+        n=$((n + 1))
+    done < <(find "$from" -maxdepth 1 -type f -iname '*.jar' | sort)
+    echo
+    if [[ "$yes" == --yes ]]; then echo "$n copied, $skipped already there (left alone). Nothing was removed from $from."
+    else echo "$n would be copied, $skipped already there. Nothing was changed: add --yes to do it."; fi
+}
+
+case "${1:-find}" in
+    find) find_cmd ;;
+    copy) [[ $# -ge 3 ]] || { echo "usage: lennox-mods copy FROM TO [--yes]" >&2; exit 2; }; copy_cmd "$2" "$3" "${4:-}" ;;
+    *) echo "usage: lennox-mods find | copy FROM TO [--yes]" >&2; exit 2 ;;
+esac
