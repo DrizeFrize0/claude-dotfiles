@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.30.1 · 2026-11-04 · The Night logo
+
+- The Lennox logo is now Night 4: a warm full moon on a deep navy tile with a bold L cut out of it and a few stars. It is used in the boot menu (above the entries and as the Arch Linux icon) and in the welcome animation at login. After upgrading, run lennox-bootmenu restyle to update the boot menu
+
 ## 1.30.0 · 2026-11-04 · The Lennox logo
 
 - A Lennox logo: a rounded tile with a glowing blue-to-violet gradient, a bold L and a small spark. It lives in ~/.config/lennox/assets/logo (a scalable SVG and 128, 256 and 512 pixel pictures)
