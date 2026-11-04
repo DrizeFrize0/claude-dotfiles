@@ -14,6 +14,7 @@ import signal
 import socket
 import subprocess
 import sys
+import time
 
 LAYER_SHELL = False
 if not os.environ.get("LENNOX_WIDGETS_NO_LAYER"):
@@ -161,6 +162,20 @@ class Canvas(Gtk.Widget):
 
     def do_snapshot(self, snapshot):
         self.draw(snapshot, self.get_width(), self.get_height())
+
+
+class Cached:
+    """fn() remembered for `ttl` seconds: for checks that must not run on every frame (starting a program, reading a file)."""
+
+    def __init__(self, fn, ttl, clock=time.monotonic):
+        self.fn, self.ttl, self.clock = fn, ttl, clock
+        self.at, self.value = None, None
+
+    def __call__(self):
+        now = self.clock()
+        if self.at is None or now - self.at >= self.ttl:
+            self.at, self.value = now, self.fn()
+        return self.value
 
 
 def css(text):

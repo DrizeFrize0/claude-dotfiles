@@ -8,6 +8,8 @@ picks the style (hypridle starts it).
 
 import math
 import random
+import signal
+import subprocess
 import sys
 import time
 
@@ -34,13 +36,14 @@ class Stars:
         r, g, b = O.accent()
         for x, y, size, phase, _v in self.stars:
             a = 0.35 + 0.65 * (0.5 + 0.5 * math.sin(self.t * 1.3 + phase))
-            O.disc(snap, x * w, y * h, size, O.rgba(0.85 + 0.15 * r, 0.9 + 0.1 * g, 1.0, a))
+            side = size * 2
+            O.fill(snap, x * w, y * h, side, side, O.rgba(0.85 + 0.15 * r, 0.9 + 0.1 * g, 1.0, a))     # a square: no clip node per star
 
 
 class Rain:
     """Drops running down dark glass, each leaving a thin trail."""
 
-    def __init__(self, n=70, rng=random):
+    def __init__(self, n=45, rng=random):
         self.rng = rng
         self.drops = [self._new(True) for _ in range(n)]
 
@@ -58,8 +61,8 @@ class Rain:
         O.fill(snap, 0, 0, w, h, O.rgba(0.02, 0.03, 0.06))
         r, g, b = O.accent()
         for x, y, v, size, trail in self.drops:
-            O.fill(snap, x * w - size / 4, (y - trail) * h, size / 2, trail * h, O.rgba(r, g, b, 0.10), size / 4)
-            O.disc(snap, x * w, y * h, size, O.rgba(0.8 + 0.2 * r, 0.9, 1.0, 0.55))
+            O.fill(snap, x * w - size / 4, (y - trail) * h, size / 2, trail * h, O.rgba(r, g, b, 0.10))
+            O.fill(snap, x * w - size / 2, y * h, size, size * 1.6, O.rgba(0.8 + 0.2 * r, 0.9, 1.0, 0.55))
 
 
 class Aurora:
@@ -74,7 +77,7 @@ class Aurora:
     def draw(self, snap, w, h):
         O.fill(snap, 0, 0, w, h, O.rgba(0.01, 0.02, 0.05))
         colors = [(0.2, 1.0, 0.6), (0.5, 0.4, 1.0), (0.2, 0.8, 1.0)]
-        n = 70
+        n = 26
         for i, (r, g, b) in enumerate(colors):
             for k in range(n):
                 x = (k + 0.5) / n * w + math.sin(self.t * 0.4 + k * 0.17 + i * 2) * 50
@@ -87,6 +90,8 @@ class Aurora:
 
 
 STYLES = {"stars": Stars, "rain": Rain, "aurora": Aurora}
+FPS = {"stars": 15, "rain": 20, "aurora": 12}      # calm scenes do not need 60: this keeps the processor nearly idle
+MAX_MINUTES = 12                                    # it never stays on longer than this, whatever happens
 
 
 class Window(Gtk.Window):
@@ -95,7 +100,8 @@ class Window(Gtk.Window):
         self.add_css_class("lennox-overlay")
         O.css(O.TRANSPARENT)
         self.scene = STYLES.get(style, Stars)()
-        self.canvas = O.Canvas(self.scene.draw, lambda dt, _w, _h: self.scene.step(dt), fps=30)
+        self.style = style
+        self.canvas = O.Canvas(self.scene.draw, lambda dt, _w, _h: self.scene.step(dt), fps=FPS[style if style in FPS else "stars"])
         self.set_child(self.canvas)
         if not O.configure(self, "lennox-screensaver", "overlay", "exclusive"):
             self.set_default_size(960, 600)
@@ -112,8 +118,15 @@ class Window(Gtk.Window):
         motion.connect("motion", self._moved)
         self.add_controller(motion)
         self.canvas.start()
-        if seconds:
-            GLib.timeout_add_seconds(seconds, lambda: self.close() or False)
+        GLib.timeout_add_seconds(seconds or MAX_MINUTES * 60, lambda: self.close() or False)
+        GLib.timeout_add_seconds(3, self._locked_check)
+
+    def _locked_check(self):
+        """The lock screen took over (or the session ended): there is nobody to show this to."""
+        if subprocess.run(["pidof", "hyprlock"], capture_output=True, check=False).returncode == 0:
+            self.close()
+            return False
+        return True
 
     def _moved(self, _c, x, y):
         if time.monotonic() < self.armed_at:
@@ -126,6 +139,9 @@ class Window(Gtk.Window):
 
 
 def main(argv):
+    if len(argv) > 1 and argv[1] == "stop":                 # hypridle runs this when you come back
+        O.stop("screensaver")
+        return 0
     args = [a for a in argv[1:] if not a.startswith("--")]
     seconds = 0
     if "--seconds" in argv:
@@ -136,8 +152,10 @@ def main(argv):
     if style not in STYLES:
         print("usage: lennox-screensaver [stars|rain|aurora] [--seconds N]", file=sys.stderr)
         return 2
+    O.claim("screensaver")
     app = Gtk.Application(application_id="dev.lennox.Screensaver")
     app.connect("activate", lambda a: (Window(style, seconds).set_application(a), a.get_windows()[0].present()))
+    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, lambda: app.quit() or False)
     return app.run([])
 
 

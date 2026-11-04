@@ -150,7 +150,7 @@ def render_hypridle(s):
 
     saver = s["screensaver"]
     if saver["on"] and (idle["lock_minutes"] <= 0 or saver["minutes"] < idle["lock_minutes"]):
-        listener(saver["minutes"], f"{BIN}/lennox-screensaver {saver['style']}")
+        listener(saver["minutes"], f"{BIN}/lennox-screensaver {saver['style']}", f"{BIN}/lennox-screensaver stop")
     listener(idle["dim_minutes"], "brightnessctl -s set 10%", "brightnessctl -r")
     listener(idle["lock_minutes"], "loginctl lock-session")
     listener(idle["screen_off_minutes"], dpms_off, f"{dpms_on} && brightnessctl -r")

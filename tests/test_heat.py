@@ -49,6 +49,18 @@ class Diagnose(unittest.TestCase):
     def test_throttling(self):
         self.assertIn("slowed itself down", whats(snap(throttled=42)))
 
+    def test_lennox_part_is_named(self):
+        import subprocess
+        orig = heat.sh.out
+        heat.sh.out = lambda *a, **k: "94.0 python3 python3 -m lennox.screensaver stars\n 3.0 spotify spotify\n"
+        try:
+            rows = heat.top_processes()
+        finally:
+            heat.sh.out = orig
+        self.assertEqual(rows[0][1], "lennox screensaver")
+        self.assertEqual(rows[1][1], "spotify")
+        self.assertTrue(subprocess)
+
     def test_report_mentions_hardware_tips_when_hot(self):
         self.assertIn("thermal paste", heat.report(snap()))
         self.assertNotIn("thermal paste", heat.report(snap(temp=45.0)))

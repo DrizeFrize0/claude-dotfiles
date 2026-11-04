@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.31.1 · 2026-11-04 · The screensaver and pet no longer heat the laptop
+
+- Found with lennox-heat: a screensaver left running and the desktop pet were using a lot of processor time and heating the laptop. The screensaver now draws far less (stars and aurora use a fraction of the work, and the calm scenes run at 12 to 20 pictures a second), ends when the lock screen appears or when you come back, never runs longer than 12 minutes, and can only run once. The pet no longer starts a program on every frame, and cursor effects slow down to a trickle while the mouse is still
+- lennox-heat now names which Lennox part is using the processor, and lennox-heat cool also stops a screensaver that is still running
+
 ## 1.31.0 · 2026-11-04 · Why is it hot?
 
 - New tool: lennox-heat. It shows the processor temperature and speed, what is using the processor most, the power settings, the fans, and whether Lennox extras, a live wallpaper, game mode or the NVIDIA chip could be adding heat, and tells you what to do about each. lennox-heat cool applies the safe steps right away (Quiet power mode, game mode off, extras off, turbo off) and shows the temperature drop. If nothing in the software explains it, it says so and lists the hardware causes (dust, thermal paste, blocked vents, BIOS fan setting)

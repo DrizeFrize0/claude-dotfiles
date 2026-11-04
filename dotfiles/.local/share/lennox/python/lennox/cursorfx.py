@@ -48,6 +48,7 @@ class Window(Gtk.Window):
         self.style, self.ripples_on = settings["style"], settings["ripple"]
         self.fx = Effects()
         self.pos = (-100, -100)
+        self.last_seen, self.still_since = None, time.monotonic()
         self.canvas = O.Canvas(self.draw, self.step, fps=60)
         self.set_child(self.canvas)
         O.configure(self, "lennox-cursorfx", "overlay", "none")
@@ -61,6 +62,12 @@ class Window(Gtk.Window):
             if self.style == "trail":
                 self.fx.move(pos[0], pos[1], now)
         self.fx.prune(now)
+        # Nothing moving or fading: look 8 times a second instead of 60 (a still mouse costs almost nothing)
+        moved = pos is not None and pos != self.last_seen
+        self.last_seen = pos
+        if moved or self.fx.busy(now):
+            self.still_since = now
+        self.canvas.interval = 1_000_000 // (60 if now - self.still_since < 1.0 else 8)
 
     def ripple(self):
         self.fx.ripple(self.pos[0], self.pos[1], time.monotonic())

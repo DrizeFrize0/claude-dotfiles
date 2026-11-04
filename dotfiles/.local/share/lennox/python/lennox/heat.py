@@ -8,6 +8,7 @@ Nothing here is permanent: Settings turns everything back on.
 
 import glob
 import os
+import subprocess
 import sys
 import time
 
@@ -31,7 +32,11 @@ def top_processes(n=6):
         parts = line.split(None, 2)
         if len(parts) >= 2 and parts[1] != "ps":
             try:
-                rows.append((float(parts[0]), parts[1], parts[2][:60] if len(parts) > 2 else ""))
+                args = parts[2] if len(parts) > 2 else ""
+                label = parts[1]
+                if "-m lennox." in args:                         # which Lennox part is it?
+                    label = "lennox " + args.split("-m lennox.", 1)[1].split()[0]
+                rows.append((float(parts[0]), label, args[:60]))
             except ValueError:
                 pass
     return rows[:n]
@@ -142,6 +147,8 @@ def cool():
     for name in running_extras():
         sh.run([sh.bin_path(f"lennox-{name}"), "stop"])
         steps.append(f"Stopped: {name}")
+    if subprocess.run(["pkill", "-f", "python3 -m lennox.screensaver"], capture_output=True, check=False).returncode == 0:
+        steps.append("Stopped: a screensaver that was still running")
     if os.path.exists(fan.HELPER):
         sh.run(["pkexec", fan.HELPER, "silent"], 15)
         steps.append("Processor held to 60% with turbo off (until you pick Normal in Settings > Extras > Fan and noise)")

@@ -98,12 +98,15 @@ class Window(Gtk.Window):
         O.css(O.TRANSPARENT)
         self.cat = Cat()
         self.last_pos, self.last_move = None, time.monotonic()
-        self.canvas = O.Canvas(self.draw, self.step, fps=15)
+        self.canvas = O.Canvas(self.draw, self.step, fps=12)
         self.set_child(self.canvas)
+        # Asked every 2 seconds, never every frame: each of these starts a program or reads a file
+        self.sleepy = O.Cached(self._sleepy, 2.0)
+        self.cursor = O.Cached(O.cursor_pos, 0.3)
         O.configure(self, "lennox-pet", "bottom", "none", ("bottom", "left", "right"), -1)
         O.click_through(self)
 
-    def asleep(self):
+    def _sleepy(self):
         try:
             with open(os.path.join(S.STATE_DIR, "focus.json"), encoding="utf-8") as f:
                 if json.load(f).get("phase") == "focus":
@@ -115,10 +118,10 @@ class Window(Gtk.Window):
         return time.monotonic() - self.last_move > SLEEP_AFTER
 
     def step(self, dt, w, _h):
-        pos = O.cursor_pos()
+        pos = self.cursor()
         if pos and pos != self.last_pos:
             self.last_pos, self.last_move = pos, time.monotonic()
-        self.cat.step(dt, self.asleep() and self.cat.state != "dash", w or 1280)
+        self.cat.step(dt, self.sleepy() and self.cat.state != "dash", w or 1280)
 
     def draw(self, snap, w, h):
         r, g, b = O.accent()
