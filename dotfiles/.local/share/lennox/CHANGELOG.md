@@ -3,6 +3,10 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.30.3 · 2026-11-04 · lennox-mods finds the folders for you
+
+- lennox-mods find now lists every folder named mods or addons that has files in it, anywhere in your home folder, plus where Horizon is installed (Flatpak, package, or any folder or file with its name). You no longer need to know where LabyMod or Horizon keep their files
+
 ## 1.30.2 · 2026-11-04 · Find and copy Minecraft mods
 
 - New tool: lennox-mods. lennox-mods find shows where LabyMod and your launchers (like Horizon) keep their mods and how many each has, and lennox-mods copy FROM TO copies the mods across. It only copies (never moves or deletes), skips mods that are already there, and shows what it would do until you add --yes

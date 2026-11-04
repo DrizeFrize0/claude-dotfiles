@@ -8,30 +8,38 @@ ROOTS="${MOD_ROOTS:-$HOME}"
 
 count_jars() { find "$1" -maxdepth 1 -type f -iname '*.jar' 2>/dev/null | wc -l; }
 
-list() {   # list LABEL FIND-ARGS...
+list() {   # list LABEL FIND-ARGS...  (only folders that hold jars are shown)
     local label="$1" dir n; shift
     echo "$label"
     local found=0
     while IFS= read -r dir; do
         [[ -n "$dir" ]] || continue
         n="$(count_jars "$dir")"
-        printf '  %3s mods  %s\n' "$n" "$dir"
+        [[ "$n" -gt 0 ]] || continue
+        printf '  %3s files  %s\n' "$n" "$dir"
         found=1
-    done < <(find "$ROOTS" -maxdepth 7 -type d "$@" 2>/dev/null | sort -u)
+    done < <(find "$ROOTS" -maxdepth 9 "$@" 2>/dev/null | sort -u)
     [[ $found == 1 ]] || echo "  (nothing found)"
 }
 
 find_cmd() {
-    list "LabyMod (its mods are called addons, and live next to LabyMod's own files):" \
-        \( -ipath '*labymod*' \( -name addons -o -name mods \) \)
+    # Every folder named mods or addons that holds .jar files, wherever it is: the surest way to find them
+    list "Every mods or addons folder that has files in it (this is where the mods are):" \
+        \( -type d \( -iname mods -o -iname addons \) \) -prune
     echo
-    list "Mods folders of other launchers (Horizon and any other with its name in the path):" \
-        \( -ipath '*horizon*' -name mods \)
+    echo "How to tell them apart: a path with 'labymod' in it is LabyMod's. A path with 'horizon' (or the launcher's name) is Horizon's."
+    echo "A path ending in .minecraft/mods is the standard Minecraft one."
     echo
-    list "The standard Minecraft mods folder:" \( -path '*/.minecraft/mods' \)
+    echo "Horizon on this laptop:"
+    local any=0 line
+    while IFS= read -r line; do [[ -n "$line" ]] && { echo "  $line"; any=1; }; done < <(
+        { command -v flatpak >/dev/null && flatpak list 2>/dev/null | grep -i horizon | sed 's/^/flatpak: /'
+          command -v pacman >/dev/null && pacman -Qs horizon 2>/dev/null | grep -i '^local' | sed 's/^/package: /'
+          find "$ROOTS" -maxdepth 4 \( -iname '*horizon*' \) ! -ipath '*/.cache/*' ! -ipath '*/node_modules/*' ! -ipath '*/wallpapers/*' 2>/dev/null | head -12 | sed 's/^/found:   /'
+        } 2>/dev/null)
+    [[ $any == 1 ]] || echo "  (nothing named Horizon found: where did you install it from? A download in ~/Downloads, an AppImage, the AUR?)"
     echo
-    echo "Launcher folders that mention Horizon (in case its mods folder doesn't exist yet: start an instance once, or create it):"
-    find "$ROOTS" -maxdepth 5 -type d -ipath '*horizon*' ! -ipath '*/.cache/*' ! -ipath '*/node_modules/*' 2>/dev/null | head -12 | sed 's/^/  /'
+    echo "Then: lennox-mods copy FROM TO   (FROM = LabyMod's folder above, TO = Horizon's folder above)"
 }
 
 copy_cmd() {
