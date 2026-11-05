@@ -61,6 +61,24 @@ class Diagnose(unittest.TestCase):
         self.assertEqual(rows[1][1], "spotify")
         self.assertTrue(subprocess)
 
+    def test_summary_short_spikes(self):
+        samples = [(50.0, "spotify", 8.0)] * 40 + [(98.0, "firefox", 150.0)] * 4 + [(52.0, "spotify", 8.0)] * 16
+        text = "\n".join(heat.summarize(samples))
+        self.assertIn("highest 98", text)
+        self.assertIn("firefox", text)
+        self.assertIn("SHORT spikes", text)
+        self.assertIn("lennox-fan set cool", text)
+
+    def test_summary_lasting_heat(self):
+        samples = [(97.0, "vesktop", 80.0)] * 50
+        text = "\n".join(heat.summarize(samples))
+        self.assertIn("The heat lasts", text)
+        self.assertNotIn("SHORT spikes", text)
+
+    def test_summary_no_spike_and_no_sensor(self):
+        self.assertIn("No real spike", "\n".join(heat.summarize([(48.0, "x", 1.0)] * 20)))
+        self.assertIn("doesn't report", "\n".join(heat.summarize([(None, "x", 1.0)] * 5)))
+
     def test_report_mentions_hardware_tips_when_hot(self):
         self.assertIn("thermal paste", heat.report(snap()))
         self.assertNotIn("thermal paste", heat.report(snap(temp=45.0)))

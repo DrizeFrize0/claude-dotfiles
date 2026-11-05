@@ -44,6 +44,7 @@ bash tests/test_sessions.sh | grep -q FAIL && { bash tests/test_sessions.sh | gr
 bash tests/test_mods.sh | grep -q FAIL && { bash tests/test_mods.sh | grep FAIL; fail=1; } || echo ok mods
 python3 -W ignore tests/test_heat.py 2>&1 | tail -3 | grep -q "^OK" && echo ok heat || { python3 tests/test_heat.py 2>&1 | tail -15; fail=1; }
 /usr/bin/python3.12 -W ignore tests/test_overlay_cache.py 2>&1 | tail -3 | grep -q "^OK" && echo ok overlay cache || { /usr/bin/python3.12 tests/test_overlay_cache.py 2>&1 | tail -15; fail=1; }
+bash tests/test_cpucap.sh | grep -q FAIL && { bash tests/test_cpucap.sh | grep FAIL; fail=1; } || echo ok cpucap
 
 hdr "css (gtk3/gtk4)"
 C=$SP/csscheck.py; P=$R/dotfiles/.config

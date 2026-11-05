@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.31.2 · 2026-11-05 · No more false heat alarms
+
+- Heat alerts now wait for 2 minutes of real heat in a row, and the processor limit is 95 degrees. A short spike to 98 that drops back to 50 a moment later (the processor racing for a second when something starts) is normal and no longer raises an alarm or switches to Quiet mode. The upgrade moves your old limit of 92 to 95
+- New fan profile "Cool" (Settings > Extras > Fan and noise): holds the processor to 80%, which trims those short spikes and costs almost nothing you can feel. The upgrade picks it for you if you were on Normal
+- New: lennox-heat watch records the temperature and the busiest program every second for a minute and tells you what causes the spikes, and whether they are short boosts or lasting heat
+
 ## 1.31.1 · 2026-11-04 · The screensaver and pet no longer heat the laptop
 
 - Found with lennox-heat: a screensaver left running and the desktop pet were using a lot of processor time and heating the laptop. The screensaver now draws far less (stars and aurora use a fraction of the work, and the calm scenes run at 12 to 20 pictures a second), ends when the lock screen appears or when you come back, never runs longer than 12 minutes, and can only run once. The pet no longer starts a program on every frame, and cursor effects slow down to a trickle while the mouse is still

@@ -564,6 +564,14 @@ personalize() {
         [[ "$(lennox-get night.winddown_time)" == "23:30" ]] && lennox-set night.winddown_time 23:00 --no-apply >/dev/null
         touch "$marker"
     fi
+    # Once: a processor limit of 95 (short boosts are normal), and the Cool profile that trims the spikes
+    marker="$HOME/.config/lennox/.heat-v2-done"
+    if [[ ! -f "$marker" ]]; then
+        [[ "$(lennox-get care.heat_cpu)" == 92 ]] && lennox-set care.heat_cpu 95 --no-apply >/dev/null
+        [[ "$(lennox-get fan.profile)" == normal ]] && lennox-set fan.profile cool >/dev/null 2>&1
+        ok "Heat alerts wait for 2 minutes of real heat; the Cool profile trims the short spikes"
+        touch "$marker"
+    fi
     # Once: headphones never start in call mode, microphones never sleep (needs the sound system restarted)
     marker="$HOME/.config/lennox/.audio-v2-done"
     if [[ ! -f "$marker" ]]; then

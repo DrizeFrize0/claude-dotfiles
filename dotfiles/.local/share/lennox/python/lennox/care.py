@@ -24,8 +24,8 @@ from . import sh
 
 LOCK = os.path.join(S.RUNTIME_DIR, "care-watch.lock")
 TICK = 30                                   # seconds between looks
-HEAT_STRIKES = 2                            # looks in a row above the limit before warning
-HEAT_COOLDOWN = 600                         # then stay quiet this long
+HEAT_STRIKES = 4                            # looks in a row (2 minutes) above the limit before warning: short boosts are normal
+HEAT_COOLDOWN = 900                         # then stay quiet this long
 PRAYERS = ["fajr", "dhuhr", "asr", "maghrib", "isha"]
 NAMES = {"fajr": ("Fajr", "الفجر"), "sunrise": ("Sunrise", "الشروق"), "dhuhr": ("Dhuhr", "الظهر"),
          "asr": ("Asr", "العصر"), "maghrib": ("Maghrib", "المغرب"), "isha": ("Isha", "العشاء")}

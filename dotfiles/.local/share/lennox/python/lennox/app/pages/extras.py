@@ -62,8 +62,8 @@ class Page:
         self.rule_rows = []
         page.add(auto)
 
-        fan = Adw.PreferencesGroup(title="Fan and noise", description="Silent keeps the fans quiet (power saver and the processor held to 60%). Turbo is for games.")
-        fan.add(rows.combo_row(store, "fan.profile", "Profile", [("silent", "Silent"), ("normal", "Normal"), ("turbo", "Turbo")]))
+        fan = Adw.PreferencesGroup(title="Fan and noise", description="Cool holds the processor to 80%: the short spikes to 98 degrees stop and you will barely feel it. Silent is quieter still (60%, turbo off). Turbo is for games.")
+        fan.add(rows.combo_row(store, "fan.profile", "Profile", [("silent", "Silent"), ("cool", "Cool (trims heat spikes)"), ("normal", "Normal"), ("turbo", "Turbo")]))
         self.fan_row = rows.info_row("Right now", "…")
         fan.add(self.fan_row)
         page.add(fan)

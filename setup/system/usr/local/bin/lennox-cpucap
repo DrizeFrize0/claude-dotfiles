@@ -2,14 +2,15 @@
 # Fan and noise profiles: caps the processor so the fans stay quiet (root, run
 # through pkexec without a password: see /etc/polkit-1/rules.d/50-lennox-cpucap.rules).
 # It only writes the two Intel power limits below, so it can't be used for anything else.
-#   lennox-cpucap silent|normal|turbo
+#   lennox-cpucap silent|cool|normal|turbo
 set -euo pipefail
 DIR="${LENNOX_PSTATE_DIR:-/sys/devices/system/cpu/intel_pstate}"
 [[ -d "$DIR" ]] || exit 0                     # another kind of processor: nothing to cap
 case "${1:-}" in
     silent) turbo=1; pct=60 ;;
+    cool) turbo=0; pct=80 ;;
     normal|turbo) turbo=0; pct=100 ;;
-    *) echo "usage: lennox-cpucap silent|normal|turbo" >&2; exit 2 ;;
+    *) echo "usage: lennox-cpucap silent|cool|normal|turbo" >&2; exit 2 ;;
 esac
 echo "$turbo" > "$DIR/no_turbo"
 echo "$pct" > "$DIR/max_perf_pct"

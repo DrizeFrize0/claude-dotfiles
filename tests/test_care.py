@@ -51,20 +51,29 @@ class Prayer(unittest.TestCase):
 
 
 class Heat(unittest.TestCase):
-    def test_two_looks_then_quiet(self):
+    def test_sustained_heat_then_quiet(self):
         h = care.Heat()
         lim = {"CPU": 90}
-        self.assertIsNone(h.look(0, {"CPU": 95}, lim))
-        self.assertIn("CPU is at 95", h.look(30, {"CPU": 95}, lim))
-        self.assertIsNone(h.look(60, {"CPU": 95}, lim))         # cooldown
-        self.assertIn("CPU", h.look(700, {"CPU": 95}, lim))         # still hot after the cooldown: warns again
+        n = care.HEAT_STRIKES
+        for k in range(n - 1):
+            self.assertIsNone(h.look(30 * k, {"CPU": 95}, lim))        # short boosts: no warning yet
+        self.assertIn("CPU is at 95", h.look(30 * n, {"CPU": 95}, lim))
+        self.assertIsNone(h.look(30 * n + 30, {"CPU": 95}, lim))     # cooldown
+        self.assertIn("CPU", h.look(30 * n + care.HEAT_COOLDOWN + 1, {"CPU": 95}, lim))   # still hot after the cooldown: warns again
+
+    def test_a_spike_never_warns(self):
+        h = care.Heat()
+        lim = {"CPU": 90}
+        for t, temp in enumerate((50, 98, 50, 97, 55, 99, 52, 98, 50, 98)):    # up and down: never 4 hot looks in a row
+            self.assertIsNone(h.look(t * 30, {"CPU": temp}, lim))
 
     def test_blip_resets(self):
         h = care.Heat()
         lim = {"CPU": 90}
-        self.assertIsNone(h.look(0, {"CPU": 95}, lim))
-        self.assertIsNone(h.look(30, {"CPU": 60}, lim))
-        self.assertIsNone(h.look(60, {"CPU": 95}, lim))
+        for t in range(care.HEAT_STRIKES - 1):
+            self.assertIsNone(h.look(t * 30, {"CPU": 95}, lim))
+        self.assertIsNone(h.look(300, {"CPU": 60}, lim))               # cooled down: the count starts over
+        self.assertIsNone(h.look(330, {"CPU": 95}, lim))
 
     def test_missing_reading(self):
         self.assertIsNone(care.Heat().look(0, {"CPU": None, "GPU": None}, {"CPU": 90}))

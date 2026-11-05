@@ -2,8 +2,9 @@
 
     python3 -m lennox.fan status        JSON: profile, temperature, fan speeds
     python3 -m lennox.fan apply         set the processor and power mode to the chosen profile
-    python3 -m lennox.fan set silent|normal|turbo
+    python3 -m lennox.fan set silent|cool|normal|turbo
 
+Cool = the processor held to 80%, which trims the short heat spikes (98 degrees for a second) and costs almost nothing you can feel.
 Silent = power-saver mode and the processor capped to 60% with turbo off, which
 keeps most laptops' fans down to a whisper. Turbo = performance mode. Fan
 *speeds* are shown where the laptop reports them; most can't be set directly.
@@ -18,7 +19,7 @@ from . import care
 from . import settings as S
 from . import sh
 
-PERF = {"silent": "quiet", "normal": "balanced", "turbo": "max"}
+PERF = {"silent": "quiet", "cool": "balanced", "normal": "balanced", "turbo": "max"}
 HELPER = "/usr/local/bin/lennox-cpucap"
 PSTATE = "/sys/devices/system/cpu/intel_pstate"
 
@@ -56,7 +57,7 @@ def main(argv):
         S.set_value("fan.profile", argv[2])
         apply(argv[2])
     else:
-        print("usage: lennox-fan status | apply | set silent|normal|turbo", file=sys.stderr)
+        print("usage: lennox-fan status | apply | set silent|cool|normal|turbo", file=sys.stderr)
         return 2
     return 0
 

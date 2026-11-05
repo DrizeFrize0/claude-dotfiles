@@ -2,6 +2,8 @@
 
     python3 -m lennox.heat [check]     what it sees and what to do
     python3 -m lennox.heat cool        the safe steps now: Quiet power mode, game mode off, extras off
+    python3 -m lennox.heat watch [S]   record the temperature and the busiest program every second for S seconds (60),
+                                       then say what causes the spikes
 
 Nothing here is permanent: Settings turns everything back on.
 """
@@ -94,7 +96,7 @@ def diagnose(s):
     if s["epp"] == "performance" and not s["game_mode"]:
         out.append(("The processor is told to favor performance (energy preference: performance)", "lennox-perf balanced"))
     if s["freq"] and s["freq"] > 3000 and s["load"] < 25 and not s["turbo_off"]:
-        out.append((f"The processor runs at {s['freq'] / 1000:.1f} GHz while almost nothing is happening", "lennox-fan set silent (turns turbo off and caps it)"))
+        out.append((f"The processor runs at {s['freq'] / 1000:.1f} GHz while almost nothing is happening", "lennox-fan set cool (trims the spikes), or silent (turbo off)"))
     if s["extras"]:
         out.append((f"Lennox extras are running: {', '.join(s['extras'])}", "Settings > Extras, or: lennox-heat cool"))
     if s["livewall"]:
@@ -155,10 +157,49 @@ def cool():
     return steps
 
 
+def summarize(samples, hot=85):
+    """samples: [(temp, program, cpu%)] one per second. Returns the lines of the answer."""
+    temps = [t for t, _p, _c in samples if t is not None]
+    if not temps:
+        return ["The laptop doesn't report its temperature, so there is nothing to record."]
+    peak, low = max(temps), min(temps)
+    over = [(t, p, c) for t, p, c in samples if t is not None and t >= hot]
+    lines = [f"Temperature over {len(samples)} seconds: lowest {low:.0f}°C, highest {peak:.0f}°C, over {hot}°C for {len(over)} seconds"]
+    if not over:
+        return lines + ["No real spike while recording. Do what usually makes it spike (open the browser, a game) while this runs."]
+    culprits = {}
+    for _t, program, cpu in over:
+        culprits[program] = culprits.get(program, 0) + cpu
+    ranked = sorted(culprits.items(), key=lambda kv: -kv[1])
+    lines.append("What was using the processor most while it was hot:")
+    lines += [f"  - {program}" for program, _c in ranked[:3]]
+    if len(over) <= 12 and low < 70:
+        lines += ["", "These are SHORT spikes: the processor races for a few seconds (turbo boost) when something starts, then calms down.",
+                  "That is normal and harmless. To trim them: lennox-fan set cool (holds the processor to 80%, you will barely feel it)."]
+    else:
+        lines += ["", "The heat lasts: something keeps the processor busy. Close the program above, then run lennox-heat cool."]
+    return lines
+
+
+def watch(seconds):
+    samples = []
+    print(f"Recording for {seconds} seconds: use the laptop the way it usually spikes (open the browser, start Spotify, a game)...")
+    for i in range(seconds):
+        top = top_processes(1)
+        samples.append((care.cpu_temp(), top[0][1] if top else "?", top[0][0] if top else 0.0))
+        if i % 10 == 9:
+            print(f"  {i + 1}s: {samples[-1][0]:.0f}°C, busiest: {samples[-1][1]}" if samples[-1][0] is not None else f"  {i + 1}s")
+        time.sleep(1)
+    print()
+    print("\n".join(summarize(samples)))
+
+
 def main(argv):
     mode = argv[1] if len(argv) > 1 else "check"
     if mode == "check":
         print(report(snapshot()))
+    elif mode == "watch":
+        watch(int(argv[2]) if len(argv) > 2 and argv[2].isdigit() else 60)
     elif mode == "cool":
         before = care.cpu_temp()
         steps = cool()
@@ -169,7 +210,7 @@ def main(argv):
         if before is not None and after is not None:
             print(f"Processor: {before:.0f}°C -> {after:.0f}°C (it keeps dropping for a minute or two)")
     else:
-        print("usage: lennox-heat [check | cool]", file=sys.stderr)
+        print("usage: lennox-heat [check | cool | watch [SECONDS]]", file=sys.stderr)
         return 2
     return 0
 

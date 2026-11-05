@@ -226,7 +226,7 @@ DEFAULTS = {
         "water_minutes": 60,           # minutes at the laptop between nudges
         "heat": True,                  # warn when the CPU or GPU gets too hot
         "heat_auto": True,             # and switch to Quiet mode by itself (not while gaming)
-        "heat_cpu": 92,                # degrees C
+        "heat_cpu": 95,                # degrees C (for 2 minutes in a row: short spikes are normal)
         "heat_gpu": 85,
         "prayer": False,               # prayer time reminders
         "prayer_at_time": True,        # also when the time comes
@@ -308,7 +308,7 @@ CHOICES = {
     ("keybinds", "main_mod"): ["SUPER", "ALT"],
     ("screensaver", "style"): ["stars", "rain", "aurora"],
     ("cursorfx", "style"): ["trail", "spotlight"],
-    ("fan", "profile"): ["silent", "normal", "turbo"],
+    ("fan", "profile"): ["silent", "cool", "normal", "turbo"],
     ("gpu", "mode"): ["auto", "integrated", "hybrid"],
 }
 
