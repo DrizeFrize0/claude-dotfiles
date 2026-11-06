@@ -30,6 +30,9 @@ run "desktop pet"         4 lennox.pet run
 run "snake"               4 lennox.minigames snake
 run "flappy"              4 lennox.minigames flappy
 run "login animation"     8 lennox.loginanim --force --seconds 2
+run "login: rain"         8 lennox.loginanim --force --seconds 2 --style rain
+run "login: aurora"       8 lennox.loginanim --force --seconds 2 --style aurora
+run "login: minimal"      8 lennox.loginanim --force --seconds 2 --style minimal
 run "ask window"          4 lennox.ask
 rm -rf "$T"
 exit $fail

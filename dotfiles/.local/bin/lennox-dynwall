@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# The wallpaper follows the time of day and the weather.
+#   lennox-dynwall check [--force]
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.dynwall "$@"

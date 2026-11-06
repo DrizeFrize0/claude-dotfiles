@@ -274,10 +274,28 @@ def daily_chores(state, settings, now_dt):
             M.ask()
 
 
+def extras_tick(state, settings, now_dt):
+    """The small recurring jobs, each cheap and each behind its own switch (every look is 30 seconds)."""
+    state["n"] = state.get("n", 0) + 1
+    try:
+        if settings["tidy"]["on"]:
+            from . import tidy
+            tidy.run()
+        if settings["dynwall"]["on"] and state["n"] % 10 == 1:                 # every 5 minutes: it only acts when the picture should change
+            from . import dynwall
+            dynwall.check(now_dt)
+        if settings["batterydoc"]["on"] and state["n"] % 2 == 0:               # once a minute, only while unplugged
+            from . import batterydoc
+            batterydoc.sample()
+    except Exception:  # noqa: BLE001  a missing folder or tool must never stop the reminders
+        pass
+
+
 def step(state, settings, now_dt):
     """One look. `state` holds Heat, Water and the prayer reminders already sent."""
     c = settings["care"]
     daily_chores(state, settings, now_dt)
+    extras_tick(state, settings, now_dt)
     if not (c["water"] or c["heat"] or c["prayer"]):
         return                                  # nothing to watch: no processes started
     away = locked()

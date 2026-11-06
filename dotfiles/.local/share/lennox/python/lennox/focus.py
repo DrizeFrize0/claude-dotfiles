@@ -284,6 +284,11 @@ def step(now, settings):
         _record(state["start"], state["end"], state.get("subject", ""))
         _end_focus(state, settings)
         _sound(SOUND_END, settings)
+        try:
+            from . import study
+            study.session_ended(state.get("subject", ""), int((state["end"] - state["start"]) // 60))
+        except Exception:  # noqa: BLE001  the recap is a bonus: it must never break the session
+            pass
         rnd, rounds = state.get("round", 1), state.get("rounds", 1)
         last = rnd >= rounds
         # Between rounds a short break; after the last round of a set, a long one

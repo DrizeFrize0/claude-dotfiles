@@ -540,6 +540,7 @@ def apply_overlays(s, reload=True):
         spawn([os.path.join(BIN, "lennox-visualizer"), "sync"])
         spawn([os.path.join(BIN, "lennox-cursorfx"), "sync"])
         spawn([os.path.join(BIN, "lennox-pet"), "sync"])
+        spawn([os.path.join(BIN, "lennox-musiccolors"), "sync"])
 
 
 def apply_seasons(s, reload=True):

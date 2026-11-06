@@ -46,6 +46,18 @@ class Page:
             season.add(rows.switch_row(store, f"seasons.{key}", title))
         page.add(season)
 
+        more = Adw.PreferencesGroup(title="Little helpers", description="Each one is off until you switch it on.")
+        more.add(rows.switch_row(store, "musiccolors.on", "Colors from your music",
+                                 "The desktop colors follow the cover of the song that is playing and come back a minute and a half after the music stops. "
+                                 "Each change reloads the colors for a moment"))
+        more.add(rows.switch_row(store, "dynwall.on", "Wallpaper that follows the day",
+                                 "Dawn, day, evening and night pictures, and a moody one when it rains in your city (uses the Lennox wallpapers in Settings > Wallpaper)"))
+        more.add(rows.switch_row(store, "tidy.on", "Tidy my downloads",
+                                 "New files go into folders inside Downloads (Images, Documents, Archives, Installers, Minecraft...) once they have finished downloading"))
+        more.add(rows.button_row("Tidy now", "Sorts what is in Downloads right now", "Tidy", lambda: run_async([lennox_bin("lennox-tidy"), "run", "--now"])))
+        more.add(rows.button_row("Undo the last tidy", "Puts the last batch of files back where they were", "Undo", lambda: run_async([lennox_bin("lennox-tidy"), "undo"])))
+        page.add(more)
+
         daily = Adw.PreferencesGroup(title="Wallpaper of the day")
         daily.add(rows.switch_row(store, "wallpaper.daily", "A new wallpaper every morning", "Takes turns through your wallpapers"))
         daily.add(rows.entry_row(store, "wallpaper.daily_folder", "Folder (empty: your Lennox wallpapers)"))

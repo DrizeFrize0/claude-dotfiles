@@ -1,6 +1,7 @@
 """Focus mode: start a session, choose what's blocked, see how much you focused."""
 
 import json
+import os
 import time
 
 from gi.repository import Adw, GLib, Gtk
@@ -50,6 +51,10 @@ class Page:
         setup.add(rows.switch_row(store, "focus.quiet", "Hold notifications",
                                   "They wait in the quick panel until the session ends"))
         setup.add(rows.switch_row(store, "focus.sound", "Sound at the end"))
+        setup.add(rows.switch_row(store, "focus.notes", "Study recap and notes",
+                                  "After each session: a 3-line recap (today, this week, your streak), and a line in ~/Documents/Study/notes.md"))
+        setup.add(rows.button_row("Open my study notes", "Plain text you can paste anywhere", "Open",
+                                  lambda: run_async(["xdg-open", os.path.expanduser("~/Documents/Study")])))
         page.add(setup)
 
         stats = Adw.PreferencesGroup(title="Your focus")

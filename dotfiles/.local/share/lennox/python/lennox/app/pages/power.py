@@ -47,6 +47,18 @@ class Page:
         auto.add(self.now_mode_row)
         page.add(auto)
 
+        doctor = Adw.PreferencesGroup(title="Battery doctor",
+                                      description="What uses the battery while you are unplugged. An estimate from a sample a minute: good for spotting the one "
+                                                  "program that eats the battery.")
+        doctor.add(rows.switch_row(store, "batterydoc.on", "Keep notes while unplugged"))
+        self.doctor_summary = rows.info_row("Last day", "…")
+        self.doctor_summary.value_label.set_wrap(True)
+        doctor.add(self.doctor_summary)
+        self.doctor_tips = rows.info_row("Tips", "…")
+        self.doctor_tips.value_label.set_wrap(True)
+        doctor.add(self.doctor_tips)
+        page.add(doctor)
+
         idle = Adw.PreferencesGroup(title="When you're away", description="Minutes. 0 means never.")
         idle.add(rows.spin_row(store, "idle.dim_minutes", "Dim the screen after", lower=0, upper=240))
         idle.add(rows.spin_row(store, "idle.lock_minutes", "Lock after", lower=0, upper=240))
@@ -86,7 +98,25 @@ class Page:
         page.add(panic)
         self.widget = page
 
+    def _got_doctor(self, ok, out, _err):
+        import json
+        try:
+            data = json.loads(out) if ok else None
+        except ValueError:
+            data = None
+        if not data:
+            return
+        r = data.get("result")
+        if r:
+            apps = ", ".join(f"{n} {s * 100:.0f}%" for n, s in r["apps"][:3]) or "nothing stands out"
+            life = f", a full battery lasts about {r['hours_left']:.1f} h" if r.get("hours_left") else ""
+            self.doctor_summary.value_label.set_label(f"{r['avg_w']:.1f} W on average{life}. Most: {apps}")
+        else:
+            self.doctor_summary.value_label.set_label("Not enough yet: it needs a few minutes on battery")
+        self.doctor_tips.value_label.set_label("  ".join(data.get("tips", [])))
+
     def refresh(self):
+        run_async([lennox_bin("lennox-batterydoc"), "report", "--json"], self._got_doctor)
         run_async([lennox_bin("lennox-powerauto"), "status"],
                   lambda ok, out, _e: self.now_mode_row.value_label.set_label(out.strip() if ok and out.strip() else "unknown"))
         batteries = [b for b in glob.glob("/sys/class/power_supply/BAT*")]

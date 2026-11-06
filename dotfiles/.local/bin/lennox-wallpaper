@@ -127,7 +127,8 @@ if $wallpaper && in_session && command -v awww >/dev/null; then
     done
 fi
 
-echo "$image" > "$CURRENT_FILE"
+# Colors from the cover of the playing song (lennox-musiccolors) change nothing but the colors
+[[ -n "${LENNOX_COLORS_ONLY:-}" ]] || echo "$image" > "$CURRENT_FILE"
 
 # A new still wallpaper replaces a live one (lennox-livewall sets LENNOX_LIVE_KEEP for its frame)
 if $wallpaper && [[ "$mode" != "restore" && -z "${LENNOX_LIVE_KEEP:-}" ]]; then
@@ -170,6 +171,7 @@ if [[ -f "$KITTY_COLORS" ]]; then
         || info "could not adjust the terminal colors"
 fi
 
+if [[ -z "${LENNOX_COLORS_ONLY:-}" ]]; then
 # ---------------------------------------------------------------- lock screen images
 if command -v magick >/dev/null; then
     blur="$(lennox-get wallpaper.lockscreen_blur 2>/dev/null || echo 50x30)"
@@ -187,6 +189,7 @@ SDDM_BG="/usr/share/sddm/themes/lennox/backgrounds"
 if [[ -w "$SDDM_BG" ]] && command -v magick >/dev/null; then
     magick "${image}[0]" -resize '2560x2560>' -quality 92 "$SDDM_BG/lennox.jpg.tmp.jpg" \
         && mv -f "$SDDM_BG/lennox.jpg.tmp.jpg" "$SDDM_BG/lennox.jpg"
+fi
 fi
 
 # ---------------------------------------------------------------- reload

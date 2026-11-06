@@ -50,6 +50,10 @@ class Page:
                                      "Eases in over 30 minutes, so it never feels sudden"))
         winddown.add(rows.switch_row(store, "night.winddown_quiet", "Quiet notifications",
                                      "Do not disturb until morning (urgent ones still come through)"))
+        winddown.add(rows.switch_row(store, "night.winddown_calm", "A calm moment at wind-down",
+                                     "A few seconds of the aurora when wind-down starts. Any key closes it"))
+        winddown.add(rows.switch_row(store, "night.morning_summary", "Good-morning summary",
+                                     "When the night light ends: how long you slept, the weather, your next prayer, your streak, the battery"))
         winddown.add(rows.switch_row(store, "night.winddown_reminders", "Bedtime reminders",
                                      "At bedtime, and once more 30 minutes later if you're still on"))
         winddown.add(rows.entry_row(store, "night.winddown_message", "Reminder message"))

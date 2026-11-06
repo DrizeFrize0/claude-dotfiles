@@ -136,6 +136,8 @@ DEFAULTS = {
         "winddown_dim": True,          # warmer, dimmer screen over 30 minutes
         "winddown_quiet": True,        # do not disturb until the night light ends
         "winddown_reminders": True,    # at bedtime, again 30 minutes later
+        "winddown_calm": True,         # a calm aurora for a few seconds when wind-down starts
+        "morning_summary": True,       # a short good-morning summary when the night light ends
         "sleep_stats": True,           # when you really stopped, weekly summary
         "smart_bedtime": False,        # move the bedtime by itself each week (toward the goal)
         "bedtime_goal": "23:00",       # the bedtime smart bedtime works toward
@@ -211,6 +213,13 @@ DEFAULTS = {
     "ask": {
         "model": "claude-haiku-5-5",   # what answers when you ask Claude from the launcher
     },
+    "musiccolors": {"on": False},      # the desktop colors follow the cover of the song that is playing
+    "dynwall": {"on": False},          # the wallpaper follows the time of day and the weather
+    "tidy": {
+        "on": False,                   # sort new downloads into folders (Images, Documents, ...)
+        "wait_seconds": 60,            # a file must be this old (finished downloading) before it is moved
+    },
+    "batterydoc": {"on": True},        # notes what uses the battery (a sample a minute while unplugged)
     "network": {
         "dns": "auto",                 # auto (what the network hands out) | fastest | cloudflare | google | quad9
     },
@@ -222,6 +231,7 @@ DEFAULTS = {
     "greeting": {
         "on": True,                    # a friendly hello a little after login
         "animation": True,             # a short welcome animation when the desktop starts
+        "style": "stars",              # stars | rain | aurora | minimal
         "name": "",                    # what to call you (empty: your user name)
     },
     "care": {
@@ -251,6 +261,7 @@ DEFAULTS = {
         "block_sites": "youtube.com, tiktok.com, instagram.com, reddit.com, x.com, twitch.tv",
         "subject": "",                 # what the next session is for (logged with it)
         "subjects": "Math, Physics, Chemistry, English, Arabic",   # the list to pick from
+        "notes": True,                 # a recap after each session, and a line in ~/Documents/Study/notes.md
         "quiet": True,                 # notifications wait in the panel
         "sound": True,                 # a soft sound at the end of focus and of the break
     },
@@ -317,6 +328,7 @@ CHOICES = {
     ("keybinds", "main_mod"): ["SUPER", "ALT"],
     ("screensaver", "style"): ["stars", "rain", "aurora"],
     ("network", "dns"): ["auto", "fastest", "cloudflare", "google", "quad9"],
+    ("greeting", "style"): ["stars", "rain", "aurora", "minimal"],
     ("power", "ac_mode"): ["performance", "balanced", "power-saver"],
     ("power", "battery_high_mode"): ["performance", "balanced", "power-saver"],
     ("power", "battery_low_mode"): ["performance", "balanced", "power-saver"],
@@ -328,6 +340,7 @@ CHOICES = {
 # Inclusive ranges for numeric settings
 RANGES = {
     ("screensaver", "minutes"): (1, 60),
+    ("tidy", "wait_seconds"): (10, 600),
     ("power", "threshold"): (20, 95),
     ("care", "water_minutes"): (15, 240),
     ("care", "heat_cpu"): (70, 105),
@@ -451,6 +464,7 @@ APPLY_PARTS = {
     "fan": ["fan"],
     "network": ["network"],
     "pet": ["overlays"],
+    "musiccolors": ["overlays"],
     "visualizer": ["overlays"],
     "cursorfx": ["overlays", "hypr"],
     "seasons": ["seasons"],

@@ -3,6 +3,16 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.35.0 · 2026-11-07 · Seven little helpers
+
+- Wind-down mode now has two more parts: a calm moment (a few seconds of the aurora when wind-down starts) and a good-morning summary when the night light ends (how long you slept, the weather, your next prayer, your streak, the battery). Settings > Night
+- Colors from your music: the desktop colors follow the cover of the song that is playing, and the wallpaper's colors return a minute and a half after the music stops. It never touches your wallpaper, lock screen or login screen, changes at most every 25 seconds, and waits while paused. Settings > Extras (off until you switch it on)
+- Study buddy: after each focus session a 3-line recap (this session, today and this week, your streak and subjects), and a line in ~/Documents/Study/notes.md grouped by day. Settings > Focus
+- Battery doctor: while unplugged it notes the battery's power every minute and which programs were busy, then tells you who uses the battery and about how long a full charge lasts, with tips. It is an estimate, good for spotting the one program that eats the battery. Settings > Power, or lennox-batterydoc report
+- Tidy downloads: new files go into folders inside Downloads (Images, Documents, Archives, Installers, Minecraft, Videos, Audio, Code) once they have finished downloading, and the last batch can be undone any time. Loose files only, never while a download is unfinished. Settings > Extras, or lennox-tidy (off until you switch it on)
+- Wallpaper that follows the day: dawn, day, evening and night pictures from the Lennox pack, and a moody one when it rains in your city. Settings > Extras (off until you switch it on)
+- Welcome styles: the animation at login can be Stars, Rain on glass, Aurora or Minimal, with a Preview button. Settings > Daily care
+
 ## 1.34.3 · 2026-11-06 · IPv6 off takes effect right away
 
 - Turning IPv6 off now restarts the connection (a couple of seconds without internet), because the address it already had otherwise stays until the next restart, and waits until the address is gone. If it stays, it says what to do (unplug the cable for a second)

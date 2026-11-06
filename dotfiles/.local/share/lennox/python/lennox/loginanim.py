@@ -38,13 +38,15 @@ def ease(x):
 
 
 class Window(Gtk.Window):
-    def __init__(self, total):
+    def __init__(self, total, style=None):
         super().__init__(title="Lennox welcome", decorated=False)
         self.add_css_class("lennox-overlay")
         O.css(O.TRANSPARENT + " label.login-title { font-size: 56px; font-weight: 800; color: #eef2ff; } "
               "label.login-sub { font-size: 20px; color: #a9bbea; }")
         self.total, self.t0 = total, time.monotonic()
+        self.style = style or S.load()["greeting"]["style"]
         self.stars = SS.Stars(160, random.Random())
+        self.scene = SS.STYLES[self.style]() if self.style in ("rain", "aurora") else None
         self.level = 0.0
         self.canvas = O.Canvas(self.draw, self.step, fps=40)
         settings = S.load()
@@ -76,6 +78,8 @@ class Window(Gtk.Window):
         t = time.monotonic() - self.t0
         self.level = ease(envelope(t, self.total))
         self.stars.step(dt)
+        if self.scene is not None:
+            self.scene.step(dt)
         # the text comes in a little after the sky and leaves a little before it
         self.box.set_opacity(ease(envelope(t - 0.35, self.total - 0.7)))
         if t > self.total:
@@ -83,6 +87,14 @@ class Window(Gtk.Window):
 
     def draw(self, snap, w, h):
         a = self.level
+        if self.scene is not None:                                  # rain or aurora: the screensaver's scene, faded with the animation
+            snap.push_opacity(a)
+            self.scene.draw(snap, w, h)
+            snap.pop()
+            return
+        if self.style == "minimal":                                 # just a calm dark screen
+            O.fill(snap, 0, 0, w, h, O.rgba(0.02, 0.025, 0.06, 0.97 * a))
+            return
         O.fill(snap, 0, 0, w, h, O.rgba(0.01, 0.015, 0.05, 0.97 * a))
         r, g, b = O.accent()
         # a soft glow behind the words
@@ -99,10 +111,11 @@ def main(argv):
     if "--seconds" in argv:
         i = argv.index("--seconds")
         total = float(argv[i + 1]) if i + 1 < len(argv) else total
+    style = argv[argv.index("--style") + 1] if "--style" in argv and argv.index("--style") + 1 < len(argv) else None
     if "--force" not in argv and not S.load()["greeting"]["animation"]:
         return 0
     app = Gtk.Application(application_id="dev.lennox.LoginAnim")
-    app.connect("activate", lambda a: (Window(total).set_application(a), a.get_windows()[0].present()))
+    app.connect("activate", lambda a: (Window(total, style).set_application(a), a.get_windows()[0].present()))
     return app.run([])
 
 

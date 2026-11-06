@@ -5,6 +5,7 @@ import datetime
 from gi.repository import Adw
 
 from .. import rows
+from ..util import lennox_bin, run_async
 from ... import care as C
 from ... import mood as M
 from ... import settings as S
@@ -18,7 +19,11 @@ class Page:
 
         hello = Adw.PreferencesGroup(title="Greeting", description="A short hello a few seconds after you log in: "
                                      "the weather, your next prayer and alarm, and your focus streak.")
-        hello.add(rows.switch_row(store, "greeting.animation", "Welcome animation at login", "Stars and your name fade in for a few seconds"))
+        hello.add(rows.switch_row(store, "greeting.animation", "Welcome animation at login", "Your name fades in for a few seconds"))
+        hello.add(rows.combo_row(store, "greeting.style", "Welcome style",
+                                 [("stars", "Stars"), ("rain", "Rain on glass"), ("aurora", "Aurora"), ("minimal", "Minimal")]))
+        hello.add(rows.button_row("Try it", "Plays it for 5 seconds", "Preview",
+                                  lambda: run_async([lennox_bin("lennox-login-anim"), "--force", "--seconds", "5"])))
         hello.add(rows.switch_row(store, "greeting.on", "Say hello at login"))
         hello.add(rows.entry_row(store, "greeting.name", "What should I call you? (empty: your user name)"))
         page.add(hello)

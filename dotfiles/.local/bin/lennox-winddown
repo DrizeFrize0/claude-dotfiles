@@ -117,6 +117,8 @@ case "${1:-preview}" in
             swaync-client -dn >/dev/null 2>&1 && touch "$RUNTIME/winddown-dnd"
         fi
         on winddown_dim && setsid -f "$0" ramp >/dev/null 2>&1
+        # A calm moment: a few seconds of the aurora (any key closes it)
+        on winddown_calm && (sleep 3; lennox-screensaver aurora --seconds 20) >/dev/null 2>&1 &
         exit 0
         ;;
 
@@ -138,6 +140,7 @@ case "${1:-preview}" in
             lennox-panel set brightness "$(cat "$RUNTIME/winddown-brightness")" >/dev/null 2>&1
             rm -f "$RUNTIME/winddown-brightness"
         fi
+        on morning_summary && (sleep 2; lennox-morning show) >/dev/null 2>&1 &
         ;;
 
     track)
