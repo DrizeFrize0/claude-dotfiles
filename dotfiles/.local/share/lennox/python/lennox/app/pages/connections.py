@@ -24,6 +24,23 @@ class Page:
                                lambda: launch(["nm-connection-editor"]), "preferences-system-network-symbolic"))
         page.add(wifi)
 
+        net = Adw.PreferencesGroup(
+            title="Internet, cable and DNS",
+            description="Lennox blocks nothing on the network. If sites don't open (on a cable or Wi-Fi), Check finds out why "
+                        "and Fix puts it right. The DNS is the address book your laptop asks for every site: a fast one makes "
+                        "everything feel quicker.")
+        net.add(rows.combo_row(ctx.store, "network.dns", "DNS",
+                               [("auto", "Automatic (what the network hands out)"), ("fastest", "The fastest one (Lennox tests them)"),
+                                ("cloudflare", "Cloudflare (1.1.1.1)"), ("google", "Google (8.8.8.8)"), ("quad9", "Quad9 (9.9.9.9)")]))
+        self.net_result = rows.info_row("Result", "Not checked yet")
+        self.net_result.value_label.set_wrap(True)
+        net.add(self.net_result)
+        net.add(rows.button_row("Check my connection", "Tests the cable, DNS, IPv6, sites and anything left blocking", "Check",
+                                lambda: self._net("check"), "network-wired-symbolic"))
+        net.add(rows.button_row("Fix what it finds", "Removes a leftover site block, switches to a fast DNS, turns off broken IPv6",
+                                "Fix", lambda: self._net("fix", "--yes"), "emblem-ok-symbolic", suggested=True))
+        page.add(net)
+
         bt = Adw.PreferencesGroup(title="Bluetooth")
         self.bt_switch = Adw.SwitchRow(title="Bluetooth")
         self.bt_switch.connect("notify::active", self._toggle_bt)
@@ -69,3 +86,10 @@ class Page:
         else:
             cmd = "bluetoothctl power off"
         run_async(["bash", "-c", cmd], lambda *_: self.refresh())
+
+    def _net(self, *args):
+        self.net_result.value_label.set_label("Working… (about 15 seconds)")
+
+        def done(ok, out, err):
+            self.net_result.value_label.set_label((out.strip() or err.strip() or "No answer") if ok or out.strip() else (err.strip() or "Couldn't run it"))
+        run_async([lennox_bin("lennox-net"), *args], done)

@@ -211,6 +211,9 @@ DEFAULTS = {
     "ask": {
         "model": "claude-haiku-5-5",   # what answers when you ask Claude from the launcher
     },
+    "network": {
+        "dns": "auto",                 # auto (what the network hands out) | fastest | cloudflare | google | quad9
+    },
     "auto": {"on": False},             # profiles by Wi-Fi network or time of day (Settings > Extras)
     "downloads": {
         "on": True,                    # downloads in the bar
@@ -313,6 +316,7 @@ CHOICES = {
     ("input", "accel_profile"): ["", "adaptive", "flat"],
     ("keybinds", "main_mod"): ["SUPER", "ALT"],
     ("screensaver", "style"): ["stars", "rain", "aurora"],
+    ("network", "dns"): ["auto", "fastest", "cloudflare", "google", "quad9"],
     ("power", "ac_mode"): ["performance", "balanced", "power-saver"],
     ("power", "battery_high_mode"): ["performance", "balanced", "power-saver"],
     ("power", "battery_low_mode"): ["performance", "balanced", "power-saver"],
@@ -445,6 +449,7 @@ APPLY_PARTS = {
     "backup": ["backup"],
     "screensaver": ["idle"],
     "fan": ["fan"],
+    "network": ["network"],
     "pet": ["overlays"],
     "visualizer": ["overlays"],
     "cursorfx": ["overlays", "hypr"],

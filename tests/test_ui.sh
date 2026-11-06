@@ -37,4 +37,38 @@ check "a quick step stays quiet" "! run 'ui_init; step A; step B' | grep -q took
 # 6. dying prints the log hint and exits non-zero
 check "die exits with an error and names the log" "! bash -c \"WARNINGS=(); source $UI; ui_init; LOGFILE=/tmp/x.log; die 'broke'\" >/tmp/ui-die.out 2>&1 && grep -q 'Full log: /tmp/x.log' /tmp/ui-die.out"
 rm -f /tmp/ui-die.out
+
+# 7. the spinner: quiet success, shown failure, exit code kept, log gets the output, animation in a real terminal
+OUT="$(run 'ui_init; ui_spin "Working" bash -c "echo output-line; sleep 0.3"; echo "code=$?"')"
+check "spinner without a terminal: a plain line, no output spam, code 0" "grep -q '… Working' <<<\"\$OUT\" && grep -q 'code=0' <<<\"\$OUT\" && ! grep -q 'output-line' <<<\"\$OUT\""
+OUT="$(run 'ui_init; ui_spin "Breaking" bash -c "echo boom-detail; exit 3"; echo "code=$?"')"
+check "a failing command: code kept, its last lines shown" "grep -q 'code=3' <<<\"\$OUT\" && grep -q 'boom-detail' <<<\"\$OUT\" && grep -q '✗ Breaking' <<<\"\$OUT\""
+LOG="$(mktemp)"
+run "ui_init; LOGFILE=$LOG; ui_spin Logged bash -c 'echo into-the-log'" >/dev/null
+check "the command's output goes into the log" "grep -q 'into-the-log' $LOG && grep -q '== Logged' $LOG"
+rm -f "$LOG"
+PTY="$(python3 - "$UI" <<'PY'
+import os, pty, sys, select, time
+ui = sys.argv[1]
+pid, fd = pty.fork()
+if pid == 0:
+    os.environ["TERM"] = "xterm"
+    os.execvp("bash", ["bash", "-c", f"WARNINGS=(); source {ui}; ui_init; ui_spin 'Installing things' sleep 0.8; echo done-line"])
+data = b""
+end = time.time() + 6
+while time.time() < end:
+    r, _, _ = select.select([fd], [], [], 0.3)
+    if r:
+        try:
+            chunk = os.read(fd, 4096)
+        except OSError:
+            break
+        if not chunk:
+            break
+        data += chunk
+os.waitpid(pid, 0)
+print(data.decode("utf-8", "replace").replace("\r", "<CR>").replace("\x1b", "<ESC>"))
+PY
+)"
+check "in a terminal it animates (several different frames) and ends clean" "[ \"\$(grep -o '[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]' <<<\"\$PTY\" | sort -u | wc -l)\" -ge 3 ] && grep -q 'Installing things' <<<\"\$PTY\" && grep -q 'done-line' <<<\"\$PTY\""
 exit $fail

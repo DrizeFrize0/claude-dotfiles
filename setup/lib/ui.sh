@@ -12,8 +12,11 @@ UI_WIDTH=54
 UI_T0=$SECONDS
 UI_STEP_T0=$SECONDS
 UI_STEP_OPEN=0
+UI_TTY=false
 
 ui_init() {
+    UI_TTY=false
+    [[ -t 1 && "${TERM:-dumb}" != dumb ]] && UI_TTY=true      # decided before any output goes through tee
     local on=false
     if [[ -n "${LENNOX_COLOR:-}" ]]; then on=true
     elif [[ -t 1 && -z "${NO_COLOR:-}" && "${TERM:-dumb}" != dumb ]]; then on=true; fi
@@ -93,4 +96,36 @@ ui_done() {   # ui_done TITLE
         local w
         for w in "${WARNINGS[@]}"; do echo "    ${yellow}▲${reset} $w"; done
     fi
+}
+
+# A spinner for a slow command:  ui_spin "Installing cava" sudo pacman -S --needed --noconfirm cava
+# In a terminal: an animated line (drawn on the terminal itself, never into the log) with the time it has taken.
+# Without one: a plain "..." line. The command's output goes to the log, not the screen; if it fails, its last
+# lines are shown. The command runs in the background, so use it for commands that need no typing (run
+# sudo -v first for a password), and for effects (installing, building), not for setting variables.
+# Returns the command's exit code; the caller prints the result line (ok / warn).
+ui_spin() {
+    local msg="$1"; shift
+    local out t0=$SECONDS code pid i=0
+    out="$(mktemp)"
+    local -a frames=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+    "$@" >"$out" 2>&1 </dev/null &
+    pid=$!
+    if $UI_TTY && [[ -w /dev/tty ]]; then
+        while kill -0 "$pid" 2>/dev/null; do
+            printf '\r    %s%s%s %s %s(%s)%s\033[K' "$accent" "${frames[i % 10]}" "$reset" "$msg" "$dim" "$(ui_duration $((SECONDS - t0)))" "$reset" >/dev/tty
+            i=$((i + 1)); sleep 0.1
+        done
+        printf '\r\033[K' >/dev/tty
+    else
+        echo "    ${dim}… $msg${reset}"
+    fi
+    wait "$pid"; code=$?
+    if [[ -n "${LOGFILE:-}" ]]; then { echo "== $msg"; cat "$out"; } | ui_strip >> "$LOGFILE"; fi
+    if (( code != 0 )); then
+        echo "    ${red}✗${reset} $msg ${dim}(failed, the last lines:)${reset}"
+        tail -n 12 "$out" | sed "s/^/      ${dim}/; s/\$/${reset}/"
+    fi
+    rm -f "$out"
+    return "$code"
 }

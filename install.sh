@@ -232,7 +232,7 @@ install_new_packages() {
     if (( ${#missing[@]} == 0 )); then
         ok "Nothing new"
     # No --ask 4 here: never swap out a package you replaced on purpose
-    elif sudo pacman -S --needed --noconfirm "${missing[@]}"; then
+    elif ui_spin "Installing ${#missing[@]} new package(s): ${missing[*]}" sudo pacman -S --needed --noconfirm "${missing[@]}"; then
         ok "Installed: ${missing[*]}"
     else
         warn "Could not install: ${missing[*]}. Run 'lennox update', then 'lennox upgrade' again."
@@ -246,7 +246,7 @@ install_new_packages() {
         installed "$p" || aur_missing+=("$p")
     done < <(pkg_list "$SETUP/packages/aur.txt")
     (( ${#aur_missing[@]} == 0 )) && return 0
-    if "$helper" -S --needed --noconfirm "${aur_missing[@]}"; then
+    if ui_spin "Building ${#aur_missing[@]} AUR package(s): ${aur_missing[*]}" "$helper" -S --needed --noconfirm "${aur_missing[@]}"; then
         ok "Installed from the AUR: ${aur_missing[*]}"
     else
         warn "Could not install from the AUR: ${aur_missing[*]}. Try: $helper -S ${aur_missing[*]}"
@@ -559,6 +559,16 @@ personalize() {
     marker="$HOME/.config/lennox/.winddown-v2-done"
     if [[ ! -f "$marker" ]]; then
         [[ "$(lennox-get night.winddown_time)" == "23:30" ]] && lennox-set night.winddown_time 23:00 --no-apply >/dev/null
+        touch "$marker"
+    fi
+    # Once: a fast DNS for the whole laptop (Lennox tests Cloudflare, Google and Quad9 from this network and picks the quickest)
+    marker="$HOME/.config/lennox/.fast-dns-done"
+    if [[ ! -f "$marker" ]]; then
+        if ui_spin "Finding the fastest DNS" "$HOME/.local/bin/lennox-net" dns set fastest; then
+            ok "Fast DNS on every wired and Wi-Fi connection (undo: Settings > Wi-Fi & Bluetooth > DNS > Automatic)"
+        else
+            note "No fast DNS set (no connection to test with): lennox-net dns set fastest, later"
+        fi
         touch "$marker"
     fi
     # Once: simple sound (only the laptop and Bluetooth headphones) and no extra processed microphone:

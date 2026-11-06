@@ -3,6 +3,13 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.34.0 · 2026-11-06 · Fast DNS, a fix for blocked sites, and a spinner
+
+- lennox-net: finds out why sites don't open (on a cable or on Wi-Fi) and fixes it. It tests the cable (speed and duplex), the DNS, IPv6, packet size, a handful of sites and proxies, and says in plain words what is wrong. lennox-net fix --yes does the safe fixes: removes a leftover site block, switches to a fast DNS, turns off IPv6 where it is set up but broken. Settings > Wi-Fi & Bluetooth > Internet, cable and DNS has the same two buttons
+- Found while looking: Lennox's own focus mode blocks YouTube, TikTok, Instagram, Reddit, X and Twitch by adding them to /etc/hosts, and if a session ended badly that block stayed behind, on any connection. lennox-net now finds that and takes it out (never during a running focus session)
+- A fast DNS for the whole laptop: Lennox measures Cloudflare, Google, Quad9 (and your router) from your own network and uses the quickest for every wired and Wi-Fi connection. The upgrade does this once; Settings > DNS changes or undoes it (Automatic = what the network hands out). lennox-net dns bench shows the numbers
+- A spinner in the terminal for the slow steps of lennox upgrade (installing packages, building AUR packages, finding the fastest DNS), with the time it has taken. The command's own output goes to the log; if it fails, its last lines are shown
+
 ## 1.33.1 · 2026-11-06 · A nicer lennox upgrade
 
 - lennox upgrade (and the installer) look better in the terminal: a boxed header with the old and new version, the list of what changed, numbered-style steps with a diamond, green checks, yellow triangles for things to look at, how long each slow step took, and a closing box with the total time. Colors only appear in a real terminal (never in the log file or when piped), and NO_COLOR turns them off

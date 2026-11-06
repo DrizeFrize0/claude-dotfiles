@@ -523,6 +523,12 @@ def apply_theme(s, reload=True):
         spawn([os.path.join(BIN, "lennox-wallpaper"), "--restore", "--theme-only", "--quiet"])
 
 
+def apply_network(s, reload=True):
+    """Fixed DNS (or the network's own) follows the setting."""
+    if reload and in_session():
+        spawn([os.path.join(BIN, "lennox-net"), "dns", "apply"])
+
+
 def apply_fan(s, reload=True):
     if reload and in_session():
         spawn([os.path.join(BIN, "lennox-fan"), "apply"])
@@ -542,6 +548,7 @@ def apply_seasons(s, reload=True):
 
 
 PARTS = {
+    "network": apply_network,
     "fan": apply_fan,
     "overlays": apply_overlays,
     "seasons": apply_seasons,
