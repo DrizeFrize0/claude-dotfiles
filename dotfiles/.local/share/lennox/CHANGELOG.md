@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.32.0 · 2026-11-06 · The power mode follows the charger, and tells you
+
+- The power mode now picks itself: Performance when plugged in, Balanced on battery at 80% or more, Power saver on battery below 80%. All of it (the three modes and the 80%) is in Settings > Power & Battery > Power mode by itself, and it can be turned off
+- You get a message every time the power mode changes, whoever changed it: the new mode and why (plugged in, on battery at 62%, changed by you or another program). The bar's power item also shows the reason when you hover it
+- A power mode you pick by hand stays until something real changes (you plug in, unplug, or the battery crosses 80%). Game mode is left alone and the rule catches up when it ends. It does not flip back and forth around 80%
+
 ## 1.31.2 · 2026-11-05 · No more false heat alarms
 
 - Heat alerts now wait for 2 minutes of real heat in a row, and the processor limit is 95 degrees. A short spike to 98 that drops back to 50 a moment later (the processor racing for a second when something starts) is normal and no longer raises an alarm or switches to Quiet mode. The upgrade moves your old limit of 92 to 95

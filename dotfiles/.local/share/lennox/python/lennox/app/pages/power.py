@@ -31,6 +31,22 @@ class Page:
         battery.add(rows.spin_row(store, "power.critical_battery", "Urgent warning at", "Percent", lower=2, upper=20))
         page.add(battery)
 
+        modes = [("performance", "Performance"), ("balanced", "Balanced"), ("power-saver", "Power saver")]
+        auto = Adw.PreferencesGroup(
+            title="Power mode by itself",
+            description="The power mode follows the charger and the battery level. You get a message every time the power mode "
+                        "changes (also when you change it), with what it changed to and why. A mode you pick by hand stays "
+                        "until you plug in, unplug, or the battery crosses the level below.")
+        auto.add(rows.switch_row(store, "power.auto", "Pick the power mode for me"))
+        auto.add(rows.combo_row(store, "power.ac_mode", "Plugged in", modes))
+        auto.add(rows.combo_row(store, "power.battery_high_mode", "On battery, at or above the level", modes))
+        auto.add(rows.combo_row(store, "power.battery_low_mode", "On battery, below the level", modes))
+        auto.add(rows.spin_row(store, "power.threshold", "The level", "Percent of battery", lower=20, upper=95, step=5))
+        auto.add(rows.switch_row(store, "power.notify_changes", "Tell me when the power mode changes"))
+        self.now_mode_row = rows.info_row("Right now", "…")
+        auto.add(self.now_mode_row)
+        page.add(auto)
+
         idle = Adw.PreferencesGroup(title="When you're away", description="Minutes. 0 means never.")
         idle.add(rows.spin_row(store, "idle.dim_minutes", "Dim the screen after", lower=0, upper=240))
         idle.add(rows.spin_row(store, "idle.lock_minutes", "Lock after", lower=0, upper=240))
@@ -71,6 +87,8 @@ class Page:
         self.widget = page
 
     def refresh(self):
+        run_async([lennox_bin("lennox-powerauto"), "status"],
+                  lambda ok, out, _e: self.now_mode_row.value_label.set_label(out.strip() if ok and out.strip() else "unknown"))
         batteries = [b for b in glob.glob("/sys/class/power_supply/BAT*")]
         if batteries:
             b = batteries[0]

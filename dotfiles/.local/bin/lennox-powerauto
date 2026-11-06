@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# The power mode by itself (plugged in: Performance, battery 80%+: Balanced, below: Power saver), and a message on every change.
+#   lennox-powerauto watch | status
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.powerauto "$@"

@@ -51,8 +51,11 @@ case "${1:-status}" in
             max) icon="󰓅" ;;
             *) icon="󰗑" ;;
         esac
-        printf '{"text":"%s","class":"%s","tooltip":"Performance: %s\\nClick: Quiet → Balanced → Max (SUPER + ALT + P)"}\n' \
-            "$icon" "${mode:-balanced}" "${mode^}"
+        why=""
+        state="${XDG_RUNTIME_DIR:-/tmp}/lennox/powerauto.json"
+        [[ -r "$state" ]] && why="$(jq -r '"\\nAutomatic: " + (.why // "")' "$state" 2>/dev/null)"
+        printf '{"text":"%s","class":"%s","tooltip":"Performance: %s%s\\nClick: Quiet → Balanced → Max (SUPER + ALT + P)"}\n' \
+            "$icon" "${mode:-balanced}" "${mode^}" "$why"
         ;;
     *) echo "usage: lennox-perf quiet|balanced|max|cycle|status|waybar" >&2; exit 2 ;;
 esac

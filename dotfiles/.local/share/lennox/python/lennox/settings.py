@@ -261,6 +261,12 @@ DEFAULTS = {
         "trash_days": 30,              # trash older than this goes (0 = empty it all)
     },
     "power": {
+        "auto": True,                  # the power mode follows the charger and the battery level (below)
+        "ac_mode": "performance",      # plugged in
+        "battery_high_mode": "balanced",   # on battery, at or above the level below
+        "battery_low_mode": "power-saver", # on battery, under it
+        "threshold": 80,               # percent
+        "notify_changes": True,        # a message whenever the power mode changes, and what it changed to
         "saver_on_battery": True,
         "low_battery_warning": 20,
         "critical_battery": 8,
@@ -307,6 +313,9 @@ CHOICES = {
     ("input", "accel_profile"): ["", "adaptive", "flat"],
     ("keybinds", "main_mod"): ["SUPER", "ALT"],
     ("screensaver", "style"): ["stars", "rain", "aurora"],
+    ("power", "ac_mode"): ["performance", "balanced", "power-saver"],
+    ("power", "battery_high_mode"): ["performance", "balanced", "power-saver"],
+    ("power", "battery_low_mode"): ["performance", "balanced", "power-saver"],
     ("cursorfx", "style"): ["trail", "spotlight"],
     ("fan", "profile"): ["silent", "cool", "normal", "turbo"],
     ("gpu", "mode"): ["auto", "integrated", "hybrid"],
@@ -315,6 +324,7 @@ CHOICES = {
 # Inclusive ranges for numeric settings
 RANGES = {
     ("screensaver", "minutes"): (1, 60),
+    ("power", "threshold"): (20, 95),
     ("care", "water_minutes"): (15, 240),
     ("care", "heat_cpu"): (70, 105),
     ("care", "heat_gpu"): (65, 100),
