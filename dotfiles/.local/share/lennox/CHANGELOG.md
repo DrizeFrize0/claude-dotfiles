@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.33.1 · 2026-11-06 · A nicer lennox upgrade
+
+- lennox upgrade (and the installer) look better in the terminal: a boxed header with the old and new version, the list of what changed, numbered-style steps with a diamond, green checks, yellow triangles for things to look at, how long each slow step took, and a closing box with the total time. Colors only appear in a real terminal (never in the log file or when piped), and NO_COLOR turns them off
+- The "what's new" part now comes right before the closing box, so the last thing you see is whether everything went well
+
 ## 1.33.0 · 2026-11-06 · Simple sound
 
 - Simple sound (Settings > Sound > Keep it simple, or lennox-sound simplify on): only your laptop and your Bluetooth headphones are offered. The graphics chip's HDMI/DisplayPort audio, the HDMI outputs of the main chip and the headset jack's microphone are hidden, so the long list of sound sources shrinks to what you use. lennox-sound simplify status shows exactly what is offered, and lennox-sound simplify off brings everything back. The upgrade turns it on once

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Update Lennox itself: pull the latest version of the repository you
 # installed from, then refresh the files (your settings are kept).
+# shellcheck disable=SC2034,SC2154
 export PATH="$HOME/.local/bin:$PATH"
 
 repo="$(cat "$HOME/.config/lennox/repo" 2>/dev/null)"
@@ -10,9 +11,32 @@ if [[ -z "$repo" || ! -d "$repo/.git" ]]; then
     exit 1
 fi
 
-echo ":: Updating Lennox from $repo"
-if ! git -C "$repo" pull --ff-only; then
+old_head="$(git -C "$repo" rev-parse HEAD 2>/dev/null)"
+old_version="$(cat "$HOME/.config/lennox/version" 2>/dev/null)"
+echo ":: Checking for a new Lennox in $repo"
+if ! git -C "$repo" pull --ff-only --quiet; then
     echo "git pull failed (local changes in $repo?). Nothing was changed."
     exit 1
+fi
+
+# The new look arrives with the pull: use it when it is there
+# shellcheck source=/dev/null
+if [[ -r "$repo/setup/lib/ui.sh" ]]; then
+    WARNINGS=()
+    . "$repo/setup/lib/ui.sh"
+    ui_init
+    new_version="$(sed -n 's/^VERSION = "\(.*\)"$/\1/p' "$repo/dotfiles/.local/share/lennox/python/lennox/__init__.py" 2>/dev/null)"
+    ui_banner "upgrade" "${old_version:-?} -> ${new_version:-?}"
+    count="$(git -C "$repo" rev-list --count "${old_head:-HEAD}..HEAD" 2>/dev/null || echo 0)"
+    if [[ "$count" -gt 0 ]]; then
+        echo
+        echo "  ${bold}${count} new change$([[ $count -gt 1 ]] && echo s)${reset}"
+        git -C "$repo" log --format='%s' "${old_head}..HEAD" 2>/dev/null | head -8 | sed "s/^/    ${accent}·${reset} /"
+        [[ "$count" -gt 8 ]] && echo "    ${dim}and $((count - 8)) more${reset}"
+    else
+        echo
+        echo "  ${dim}Already the latest files: refreshing and re-checking everything.${reset}"
+    fi
+    export LENNOX_BANNER_DONE=1
 fi
 exec "$repo/install.sh" --update

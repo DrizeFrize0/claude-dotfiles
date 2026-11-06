@@ -66,13 +66,10 @@ KEEP_IF_EXISTS=(
 
 # ---------------------------------------------------------------- output
 
-bold=$'\e[1m'; dim=$'\e[2m'; green=$'\e[32m'; yellow=$'\e[33m'; red=$'\e[31m'; cyan=$'\e[36m'; reset=$'\e[0m'
-
-step() { echo; echo "${bold}${cyan}==>${reset}${bold} $*${reset}"; }
-ok()   { echo "    ${green}✓${reset} $*"; }
-note() { echo "    ${dim}$*${reset}"; }
-warn() { echo "    ${yellow}!${reset} $*"; WARNINGS+=("$*"); }
-die()  { echo; echo "${red}${bold}✗ $*${reset}"; echo "  Full log: $LOGFILE"; exit 1; }
+# The look (colors only in a real terminal; boxes, steps, timings): setup/lib/ui.sh
+# shellcheck source=setup/lib/ui.sh
+. "$SETUP/lib/ui.sh"
+ui_init
 
 ask() {
     # ask "Question" Y|N  -> returns 0 for yes
@@ -109,7 +106,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 mkdir -p "$STATE"
-exec > >(tee -a "$LOGFILE") 2>&1
+exec > >(tee >(ui_strip >> "$LOGFILE")) 2>&1
 
 # ---------------------------------------------------------------- helpers
 
@@ -623,16 +620,7 @@ first_theme() {
 }
 
 summary() {
-    echo
-    echo "${bold}${green}Lennox is installed.${reset}"
-    if (( ${#WARNINGS[@]} )); then
-        echo
-        echo "${yellow}${bold}A few things to look at:${reset}"
-        local w
-        for w in "${WARNINGS[@]}"; do
-            echo "  ${yellow}!${reset} $w"
-        done
-    fi
+    if [[ "$MODE" == "install" ]]; then ui_done "Lennox is installed"; else ui_done "Lennox is up to date ($(lennox_version))"; fi
     if [[ "$MODE" == "install" ]]; then
         cat <<EOF
 
@@ -645,15 +633,22 @@ summary() {
 EOF
         ask "Restart now?" Y && sudo systemctl reboot
     else
-        echo "  Log out and back in to load everything (or press SUPER + SHIFT + R)."
+        echo
+        echo "  ${bold}Log out and back in${reset} to load everything (or press ${bold}SUPER + SHIFT + R${reset})."
+        echo "  ${dim}Log: $LOGFILE${reset}"
     fi
 }
 
 # ---------------------------------------------------------------- main
 
-echo "${bold}${cyan}"
-sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//'
-echo "${reset}${dim}  Hyprland for Arch, in the spirit of ML4W   ·   log: $LOGFILE${reset}"
+if [[ -z "${LENNOX_BANNER_DONE:-}" ]]; then
+    if [[ "$MODE" == "update" ]]; then
+        ui_banner "upgrade" "$(cat "$HOME/.config/lennox/version" 2>/dev/null || echo '?') -> $(sed -n 's/^VERSION = "\(.*\)"$/\1/p' "$DOTFILES/.local/share/lennox/python/lennox/__init__.py")"
+    else
+        ui_banner "installer" "Hyprland for Arch, in the spirit of ML4W"
+    fi
+fi
+note "log: $LOGFILE"
 
 preflight
 detect_hardware
@@ -685,13 +680,13 @@ if [[ "$MODE" == "update" ]]; then
     [[ -d "$dir/lennox" ]] || { step "Painting the Lennox wallpaper pack"; paint_wallpapers; }
     personalize
     first_theme
-    summary
     if [[ "$old_version" != "$(lennox_version)" ]]; then
         step "What's new (Lennox ${old_version:-?} → $(lennox_version))"
         "$HOME/.local/bin/lennox-whatsnew" show --since "$old_version"
         # In a desktop session the notification comes now, otherwise at the next login
         [[ -n "${WAYLAND_DISPLAY:-}" ]] && (setsid -f "$HOME/.local/bin/lennox-whatsnew" check >/dev/null 2>&1 &)
     fi
+    summary
     exit 0
 fi
 
