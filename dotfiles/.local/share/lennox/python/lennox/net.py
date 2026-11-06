@@ -119,13 +119,20 @@ def connections(active_only=False):
     return out
 
 
+def ipv6_on(name):
+    """False when IPv6 is switched off on the connection: NetworkManager refuses IPv6 DNS servers there."""
+    return sh.out(["nmcli", "-g", "ipv6.method", "connection", "show", name], 5) not in ("disabled", "ignore")
+
+
 def set_dns(provider):
     """Fixed DNS servers for every wired and Wi-Fi connection (and now, without dropping the connection)."""
     v4, v6 = PROVIDERS[provider]
     done = []
     for name, _dev, _t in connections():
-        code, _o, err = sh.run(["nmcli", "connection", "modify", name, "ipv4.dns", " ".join(v4), "ipv4.ignore-auto-dns", "yes",
-                                "ipv6.dns", " ".join(v6), "ipv6.ignore-auto-dns", "yes"], 15)
+        args = ["nmcli", "connection", "modify", name, "ipv4.dns", " ".join(v4), "ipv4.ignore-auto-dns", "yes"]
+        if ipv6_on(name):
+            args += ["ipv6.dns", " ".join(v6), "ipv6.ignore-auto-dns", "yes"]
+        code, _o, err = sh.run(args, 15)
         if code == 0:
             done.append(name)
         else:
@@ -139,8 +146,10 @@ def set_dns(provider):
 def reset_dns():
     done = []
     for name, dev, _t in connections():
-        code, _o, _e = sh.run(["nmcli", "connection", "modify", name, "ipv4.dns", "", "ipv4.ignore-auto-dns", "no",
-                               "ipv6.dns", "", "ipv6.ignore-auto-dns", "no"], 15)
+        args = ["nmcli", "connection", "modify", name, "ipv4.dns", "", "ipv4.ignore-auto-dns", "no"]
+        if ipv6_on(name):
+            args += ["ipv6.dns", "", "ipv6.ignore-auto-dns", "no"]
+        code, _o, _e = sh.run(args, 15)
         if code == 0:
             done.append(name)
     for _name, dev, _t in connections(active_only=True):
@@ -164,6 +173,17 @@ def find_mtu(works, high=1472, low=1200):
     return lo + 28
 
 
+def default_device():
+    out = sh.out(["ip", "route", "show", "default"], 3).split()
+    return out[out.index("dev") + 1] if "dev" in out else ""
+
+
+def mtu_now():
+    """The packet size the default connection is set to now (1500 unless changed)."""
+    raw = sh.read_text(f"/sys/class/net/{default_device()}/mtu") if default_device() else ""
+    return int(raw) if raw.isdigit() else 1500
+
+
 def ping_df(size, host="1.1.1.1"):
     return sh.run(["ping", "-c", "1", "-W", "2", "-M", "do", "-s", str(size), host], 6)[0] == 0
 
@@ -181,8 +201,16 @@ def set_mtu(mtu):
 
 
 def disable_ipv6(name):
-    code, _o, _e = sh.run(["nmcli", "connection", "modify", name, "ipv6.method", "disabled"], 15)
-    return code == 0
+    """Turns IPv6 off on a connection. IPv6 DNS servers and addresses must go in the same step (NetworkManager refuses
+    'disabled' while they are set). Returns (worked, the error text)."""
+    code, _o, err = sh.run(["nmcli", "connection", "modify", name, "ipv6.method", "disabled", "ipv6.dns", "",
+                            "ipv6.ignore-auto-dns", "no", "ipv6.addresses", "", "ipv6.gateway", "", "ipv6.routes", ""], 15)
+    if code != 0:
+        return False, err.strip()
+    dev = next((d for n, d, _t in connections(active_only=True) if n == name), "")
+    if dev and sh.run(["nmcli", "device", "reapply", dev], 15)[0] != 0:
+        sh.run(["nmcli", "connection", "up", name], 20)                       # some changes need the connection to restart
+    return True, ""
 
 
 # ---------------------------------------------------------------- what is wrong
@@ -264,7 +292,7 @@ def snapshot():
         "system_dns_ms": system_dns_ms(), "public_dns_ok": query_time("1.1.1.1", "google.com") is not None,
         "ip_ok": tcp_ok("1.1.1.1"), "sites": {u: https_ok(u) for u in SITES},
         "ipv6_addr": v6_addr, "ipv6_ok": tcp_ok("2606:4700:4700::1111") if v6_addr else None,
-        "mtu_ok": ping_df(1472), "mtu_best": None,
+        "mtu_now": mtu_now(), "mtu_ok": ping_df(mtu_now() - 28), "mtu_best": None,
         "links": link_info(), "proxy": [k for k in ("http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY") if os.environ.get(k)],
         "firewalls": [u for u in ("ufw", "firewalld", "nftables", "iptables") if sh.out(["systemctl", "is-active", u], 3) == "active"],
     }
@@ -337,7 +365,7 @@ def plan_fix(s):
         steps.append(("dns", "Use the fastest DNS for every wired and Wi-Fi connection"))
     if s["ipv6_addr"] and s["ipv6_ok"] is False:
         steps.append(("ipv6", "Turn IPv6 off on the connections (it is set up but doesn't work)"))
-    if not s["mtu_ok"] and s.get("mtu_best"):
+    if not s["mtu_ok"] and s.get("mtu_best") and s["mtu_best"] < s.get("mtu_now", 1500):
         steps.append(("mtu", f"Use the packet size that works on this connection (MTU {s['mtu_best']}) so nothing hangs halfway"))
     return steps
 
@@ -357,13 +385,13 @@ def main(argv):
     if mode == "check":
         s = snapshot()
         if not s["mtu_ok"]:
-            s["mtu_best"] = find_mtu(ping_df)
+            s["mtu_best"] = find_mtu(ping_df, high=s["mtu_now"] - 29)
         print(report(s))
     elif mode == "fix":
         s = snapshot()
         if not s["mtu_ok"]:
             print("Measuring the packet size that works…")
-            s["mtu_best"] = find_mtu(ping_df)
+            s["mtu_best"] = find_mtu(ping_df, high=s["mtu_now"] - 29)
         steps = plan_fix(s)
         if not steps:
             print("Nothing to fix.")
@@ -380,8 +408,18 @@ def main(argv):
                 print(f"DNS: {name} on {len(done)} connection(s).")
                 S.set_value("network.dns", "fastest")
             elif key == "ipv6":
-                names = [n for n, _d, _t in connections(active_only=True) if disable_ipv6(n)]
-                print("IPv6 off on: " + ", ".join(names) if names else "No active connection to change (is the cable connected?)")
+                active = connections(active_only=True)
+                names = []
+                for n, _d, _t in active:
+                    worked, err = disable_ipv6(n)
+                    if worked:
+                        names.append(n)
+                    else:
+                        print(f"Couldn't turn IPv6 off on {n}: {err}")
+                if names:
+                    print("IPv6 off on: " + ", ".join(names))
+                elif not active:
+                    print("No active connection to change (is the cable connected?)")
             elif key == "mtu":
                 names = set_mtu(s["mtu_best"])
                 print(f"Packet size {s['mtu_best']} on: " + ", ".join(names) if names else "No active connection to change")

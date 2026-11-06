@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.34.2 · 2026-11-06 · IPv6 off really works, and the packet size is judged correctly
+
+- Fixed: turning IPv6 off was refused by NetworkManager when IPv6 DNS servers were set on the connection (the fast DNS step sets them). lennox-net now clears them in the same step, applies the change right away, and shows the real error if it still fails
+- Fixed: after the packet size was set (for example 1492), lennox-net check kept complaining, because it tested with full-size packets. It now tests with the size the connection is set to, so a connection that was fixed shows as fine
+- The fast DNS no longer fails on a connection that has IPv6 turned off (it only sets the IPv4 servers there)
+
 ## 1.34.1 · 2026-11-06 · lennox-net finds your connections, and fixes the packet size
 
 - Fixed: lennox-net didn't find any wired or Wi-Fi connection on newer NetworkManager (it calls them ethernet and wifi), so "IPv6 off" and the fast DNS changed nothing. Both work now, and the upgrade sets the fast DNS again

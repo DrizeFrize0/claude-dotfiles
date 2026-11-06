@@ -76,7 +76,7 @@ class Wire(unittest.TestCase):
 
 def snap(**kw):
     base = {"hosts_blocked": False, "focus_active": False, "system_dns_ms": 20.0, "public_dns_ok": True, "ip_ok": True,
-            "sites": {"https://www.google.com": True, "https://discord.com": True}, "ipv6_addr": True, "ipv6_ok": True, "mtu_ok": True, "mtu_best": None,
+            "sites": {"https://www.google.com": True, "https://discord.com": True}, "ipv6_addr": True, "ipv6_ok": True, "mtu_now": 1500, "mtu_ok": True, "mtu_best": None,
             "links": [{"dev": "enp3s0", "up": True, "speed": 1000, "duplex": "full"}], "proxy": [], "firewalls": []}
     base.update(kw)
     return base
@@ -137,6 +137,8 @@ class NetworkManager(unittest.TestCase):
                 f.write(f'''#!/bin/sh
 echo "$@" >> {log}
 case "$*" in
+  *"-g ipv6.method"*"Home: Wi-Fi"*) echo disabled ;;
+  *"-g ipv6.method"*) echo auto ;;
   *"connection show --active"*) printf 'Wired connection 1:eno1:{wired}\\nHome\\\\: Wi-Fi:wlan0:{wifi}\\nlo:lo:loopback\\n' ;;
   *"connection show"*) printf 'Wired connection 1:eno1:{wired}\\nHome\\\\: Wi-Fi:wlan0:{wifi}\\nvpn:--:wireguard\\n' ;;
 esac
@@ -160,10 +162,19 @@ esac
             self.assertIn("device reapply eno1", calls)
             self.assertNotIn("wireguard", calls)
 
-    def test_ipv6_off_finds_the_wired_connection(self):
-        names, calls = self.run_with("ethernet", "wifi", lambda: [n for n, _d, _t in net.connections(active_only=True) if net.disable_ipv6(n)])
+    def test_ipv6_off_finds_the_connections_and_clears_what_blocks_it(self):
+        names, calls = self.run_with("ethernet", "wifi", lambda: [n for n, _d, _t in net.connections(active_only=True) if net.disable_ipv6(n)[0]])
         self.assertEqual(names, ["Wired connection 1", "Home: Wi-Fi"])
-        self.assertIn("connection modify Wired connection 1 ipv6.method disabled", calls)
+        # IPv6 DNS servers and addresses go in the same command: NetworkManager refuses "disabled" while they are set
+        self.assertIn("connection modify Wired connection 1 ipv6.method disabled ipv6.dns  ipv6.ignore-auto-dns no ipv6.addresses", calls)
+        self.assertIn("device reapply eno1", calls)
+
+    def test_dns_skips_ipv6_where_ipv6_is_off(self):
+        _done, calls = self.run_with("ethernet", "wifi", lambda: net.set_dns("cloudflare"))
+        wifi = [line for line in calls.splitlines() if "connection modify Home: Wi-Fi" in line][0]
+        wired = [line for line in calls.splitlines() if "connection modify Wired connection 1" in line][0]
+        self.assertNotIn("ipv6.dns", wifi)                                             # IPv6 off there: only the IPv4 part
+        self.assertIn("ipv6.dns", wired)
 
     def test_mtu_goes_to_the_right_property(self):
         done, calls = self.run_with("ethernet", "wifi", lambda: net.set_mtu(1492))
@@ -180,6 +191,15 @@ class Mtu(unittest.TestCase):
 
     def test_not_a_size_problem(self):
         self.assertIsNone(net.find_mtu(lambda size: False))                    # nothing gets through: not about size
+
+    def test_a_connection_already_set_to_the_right_size_is_fine(self):
+        s = snap(mtu_now=1492, mtu_ok=True)                    # the check pings with the size it is set to now
+        self.assertEqual(net.diagnose(s), [])
+        self.assertEqual(net.plan_fix(s), [])
+
+    def test_search_starts_below_the_failing_size(self):
+        self.assertEqual(net.find_mtu(lambda size: size <= 1440, high=1492 - 29), 1468)
+        self.assertEqual(net.find_mtu(lambda size: size <= 1440, high=1471), 1468)
 
     def test_diagnose_and_plan_with_a_best_size(self):
         s = snap(mtu_ok=False, mtu_best=1492)
