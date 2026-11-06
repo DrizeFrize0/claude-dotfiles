@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.34.3 · 2026-11-06 · IPv6 off takes effect right away
+
+- Turning IPv6 off now restarts the connection (a couple of seconds without internet), because the address it already had otherwise stays until the next restart, and waits until the address is gone. If it stays, it says what to do (unplug the cable for a second)
+- lennox-net check only looks at the connection you are using, not at every network device on the laptop (a Wi-Fi card or a virtual network could still have IPv6 and make the check complain after the cable was fixed)
+
 ## 1.34.2 · 2026-11-06 · IPv6 off really works, and the packet size is judged correctly
 
 - Fixed: turning IPv6 off was refused by NetworkManager when IPv6 DNS servers were set on the connection (the fast DNS step sets them). lennox-net now clears them in the same step, applies the change right away, and shows the real error if it still fails

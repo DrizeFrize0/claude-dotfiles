@@ -200,6 +200,12 @@ def set_mtu(mtu):
     return done
 
 
+def global_ipv6(dev=""):
+    """The global IPv6 addresses on a device (on every device when none is given)."""
+    args = ["ip", "-6", "-o", "addr", "show"] + (["dev", dev] if dev else []) + ["scope", "global"]
+    return [line for line in sh.out(args, 3).splitlines() if line.strip()]
+
+
 def disable_ipv6(name):
     """Turns IPv6 off on a connection. IPv6 DNS servers and addresses must go in the same step (NetworkManager refuses
     'disabled' while they are set). Returns (worked, the error text)."""
@@ -207,9 +213,15 @@ def disable_ipv6(name):
                             "ipv6.ignore-auto-dns", "no", "ipv6.addresses", "", "ipv6.gateway", "", "ipv6.routes", ""], 15)
     if code != 0:
         return False, err.strip()
+    # The address it already has stays until the connection restarts (a "reapply" doesn't remove it): restart it
     dev = next((d for n, d, _t in connections(active_only=True) if n == name), "")
-    if dev and sh.run(["nmcli", "device", "reapply", dev], 15)[0] != 0:
-        sh.run(["nmcli", "connection", "up", name], 20)                       # some changes need the connection to restart
+    sh.run(["nmcli", "connection", "up", name], 30)
+    if dev:
+        for _ in range(8):                                                   # wait for the address to go
+            if not global_ipv6(dev):
+                return True, ""
+            time.sleep(0.5)
+        return False, "the change is saved, but the connection still has its IPv6 address: unplug the cable for a second and plug it back in"
     return True, ""
 
 
@@ -286,7 +298,7 @@ def snapshot():
             hosts = f.read()
     except OSError:
         hosts = ""
-    v6_addr = bool(sh.out(["ip", "-6", "addr", "show", "scope", "global"], 3))
+    v6_addr = bool(global_ipv6(default_device()))                           # the connection in use, not every device
     return {
         "hosts_blocked": focus_block_present(hosts), "focus_active": focus_active(),
         "system_dns_ms": system_dns_ms(), "public_dns_ok": query_time("1.1.1.1", "google.com") is not None,

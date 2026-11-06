@@ -167,7 +167,7 @@ esac
         self.assertEqual(names, ["Wired connection 1", "Home: Wi-Fi"])
         # IPv6 DNS servers and addresses go in the same command: NetworkManager refuses "disabled" while they are set
         self.assertIn("connection modify Wired connection 1 ipv6.method disabled ipv6.dns  ipv6.ignore-auto-dns no ipv6.addresses", calls)
-        self.assertIn("device reapply eno1", calls)
+        self.assertIn("connection up Wired connection 1", calls)                      # restarted, so the old address goes
 
     def test_dns_skips_ipv6_where_ipv6_is_off(self):
         _done, calls = self.run_with("ethernet", "wifi", lambda: net.set_dns("cloudflare"))
@@ -182,6 +182,69 @@ esac
         self.assertIn("connection modify Wired connection 1 802-3-ethernet.mtu 1492", calls)
         self.assertIn("connection modify Home: Wi-Fi 802-11-wireless.mtu 1492", calls)
         self.assertIn("device reapply eno1", calls)
+
+
+class Ipv6(unittest.TestCase):
+    def fake_ip(self, d, v6_after_up):
+        """A fake `ip` (and nmcli) in folder d. The IPv6 address is gone only after the connection was brought up again."""
+        log = os.path.join(d, "calls")
+        with open(os.path.join(d, "nmcli"), "w", encoding="utf-8") as f:
+            f.write(f'''#!/bin/sh
+echo "$@" >> {log}
+case "$*" in
+  *"connection up"*) touch {d}/restarted ;;
+  *"connection show --active"*) printf 'Wired connection 1:eno1:ethernet\\n' ;;
+esac
+''')
+        with open(os.path.join(d, "ip"), "w", encoding="utf-8") as f:
+            f.write(f'''#!/bin/sh
+case "$*" in
+  *"route show default"*) echo "default via 192.168.1.1 dev eno1 proto dhcp metric 100" ;;
+  *"-6 -o addr show dev eno1"*) if [ -f {d}/restarted ] && [ "{v6_after_up}" = "gone" ]; then :; else echo "2: eno1    inet6 2001:db8::5/64 scope global"; fi ;;
+  *"-6 -o addr show"*) echo "3: wlan0    inet6 2001:db8:1::9/64 scope global" ;;
+esac
+''')
+        for n in ("nmcli", "ip"):
+            os.chmod(os.path.join(d, n), 0o755)
+
+    def test_it_restarts_the_connection_and_waits_for_the_address_to_go(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.fake_ip(d, "gone")
+            old = os.environ["PATH"]
+            os.environ["PATH"] = d + ":" + old
+            try:
+                worked, err = net.disable_ipv6("Wired connection 1")
+                calls = open(os.path.join(d, "calls"), encoding="utf-8").read()
+            finally:
+                os.environ["PATH"] = old
+        self.assertEqual((worked, err), (True, ""))
+        self.assertIn("connection up Wired connection 1", calls)
+
+    def test_it_says_so_when_the_address_stays(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.fake_ip(d, "stays")
+            old = os.environ["PATH"]
+            os.environ["PATH"] = d + ":" + old
+            time_sleep, net.time.sleep = net.time.sleep, lambda _s: None
+            try:
+                worked, err = net.disable_ipv6("Wired connection 1")
+            finally:
+                os.environ["PATH"] = old
+                net.time.sleep = time_sleep
+        self.assertFalse(worked)
+        self.assertIn("unplug the cable", err)
+
+    def test_only_the_connection_in_use_counts(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.fake_ip(d, "gone")
+            open(os.path.join(d, "restarted"), "w", encoding="utf-8").close()           # eno1 has no IPv6 now; wlan0 does
+            old = os.environ["PATH"]
+            os.environ["PATH"] = d + ":" + old
+            try:
+                self.assertEqual(net.global_ipv6(net.default_device()), [])
+                self.assertEqual(len(net.global_ipv6("")), 1)                            # all devices: only wlan0
+            finally:
+                os.environ["PATH"] = old
 
 
 class Mtu(unittest.TestCase):
