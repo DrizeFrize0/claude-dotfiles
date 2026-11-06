@@ -179,10 +179,10 @@ class Page:
 
         fx = Adw.PreferencesGroup(
             title="Sound effects",
-            description="Soft sounds for things that happen. Notification sounds stay quiet in Do not "
-                        "disturb, focus and game mode.")
+            description="A few soft sounds for the things that matter. Quiet in Do not disturb, focus "
+                        "and game mode, and silent during the sleep wind-down.")
         fx.add(rows.switch_row(ctx.store, "sounds.enabled", "Sound effects"))
-        fx.add(rows.spin_row(ctx.store, "sounds.volume", "Effects volume", "Percent of your volume",
+        fx.add(rows.spin_row(ctx.store, "sounds.volume", "Master volume", "How loud every effect is (alarms and timers keep their own)",
                              lower=0, upper=100, step=10))
         for key, title in (("notifications", "Notifications"), ("volume_keys", "Volume keys"),
                            ("screenshots", "Screenshots"), ("power", "Plugging in and unplugging"),

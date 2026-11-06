@@ -259,7 +259,7 @@
   "custom/clocknext": {
     "exec": "~/.local/bin/lennox-clock waybar",
     "return-type": "json",
-    "interval": 5,
+    "interval": 30,
     "signal": 14,
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-clock timers",
@@ -286,7 +286,7 @@
   "custom/sysmon": {
     "exec": "~/.local/bin/lennox-sysmon waybar",
     "return-type": "json",
-    "interval": 10,
+    "interval": 15,
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-open system_monitor",
     "hide-empty-text": true
@@ -302,7 +302,7 @@
   "custom/downloads": {
     "exec": "~/.local/bin/lennox-downloads waybar",
     "return-type": "json",
-    "interval": 3,
+    "interval": 10,
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-downloads open",
     "hide-empty-text": true
@@ -366,7 +366,7 @@
   "custom/nightlight": {
     "exec": "~/.local/bin/lennox-nightlight waybar",
     "return-type": "json",
-    "interval": 60,
+    "interval": 300,
     "signal": 9,
     "format": "{text}",
     "on-click": "~/.local/bin/lennox-nightlight toggle",

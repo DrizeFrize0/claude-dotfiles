@@ -3,6 +3,14 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.36.0 · 2026-11-07 · Lighter and smoother
+
+- The bar does a lot less work in the background: the downloads, timer, night light and system monitor items refresh far less often, and the island, auto power mode and battery watcher check less often too. Less CPU, cooler laptop, longer battery.
+- New Subtle animations (the new default): short, soft window and workspace motion that stays out of the way. Change it any time in Settings > Appearance.
+- Shadows are lighter and cheaper to draw. Blur stays.
+- Sound effects are quieter and fewer: a master volume (40% by default), and only notifications, plugging in, locking and similar stay on. Volume keys, screenshots and Bluetooth device sounds are off by default. Everything is silent during the sleep wind-down. Settings > Sound.
+- If you already picked an animation style, your choice is kept. Pick Subtle to try the new one.
+
 ## 1.35.0 · 2026-11-07 · Seven little helpers
 
 - Wind-down mode now has two more parts: a calm moment (a few seconds of the aurora when wind-down starts) and a good-morning summary when the night light ends (how long you slept, the weather, your next prayer, your streak, the battery). Settings > Night

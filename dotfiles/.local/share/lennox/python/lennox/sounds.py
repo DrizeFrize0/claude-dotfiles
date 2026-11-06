@@ -46,6 +46,9 @@ def wanted(event, settings, dnd=False):
     sounds = settings["sounds"]
     if not sounds["enabled"] or not sounds[EVENTS[event][1]]:
         return False
+    # Quiet at night: no effects during the sleep wind-down
+    if os.path.exists(os.path.join(S.RUNTIME_DIR, "winddown-active")):
+        return False
     # Do not disturb (also focus mode and game mode) silences notifications only
     return not (dnd and event == "notification")
 

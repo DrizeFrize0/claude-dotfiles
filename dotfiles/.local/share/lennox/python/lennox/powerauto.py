@@ -30,7 +30,7 @@ ICON = {"performance": "power-profile-performance-symbolic", "balanced": "power-
         "power-saver": "power-profile-power-saver-symbolic"}
 STATE = os.path.join(S.RUNTIME_DIR, "powerauto.json")
 LOCK = os.path.join(S.RUNTIME_DIR, "powerauto.lock")
-EVERY = 5
+EVERY = 10
 HYSTERESIS = 2          # percent: a charger that flickers at 80% must not flip the mode back and forth
 
 

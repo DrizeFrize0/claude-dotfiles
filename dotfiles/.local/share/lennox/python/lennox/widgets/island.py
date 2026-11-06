@@ -309,7 +309,7 @@ class StatusWatcher:
             except Exception:  # noqa: BLE001  never let the island die on a flaky tool
                 pass
             first = False
-            time.sleep(2)
+            time.sleep(3)
 
     def _music(self):
         if not self.use_mpris:

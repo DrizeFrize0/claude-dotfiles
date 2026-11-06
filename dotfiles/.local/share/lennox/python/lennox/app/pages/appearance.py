@@ -23,6 +23,7 @@ ANIMATIONS = [
     ("dynamic", "Dynamic (spinning border)"),
     ("moving", "Moving"),
     ("classic", "Classic"),
+    ("subtle", "Subtle (recommended)"),
     ("fast", "Fast"),
     ("smooth", "Smooth"),
     ("bouncy", "Bouncy"),

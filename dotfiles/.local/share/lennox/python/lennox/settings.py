@@ -22,7 +22,7 @@ DEFAULTS = {
         "color_mode": "dark",
         "theme": "wallpaper",
         "color_scheme": "scheme-tonal-spot",
-        "animations": "default",
+        "animations": "subtle",
         "border_style": "gradient",
         "workspace_anim": "preset",
         "gaps_in": 8,
@@ -170,12 +170,12 @@ DEFAULTS = {
     },
     "sounds": {
         "enabled": True,               # UI sounds (Lennox Settings > Sound > Sound effects)
-        "volume": 60,
+        "volume": 40,                  # the master volume for every effect, gentle by default
         "notifications": True,         # not in Do not disturb, focus or game mode
-        "volume_keys": True,
-        "screenshots": True,
+        "volume_keys": False,
+        "screenshots": False,
         "power": True,                 # plugging in / unplugging the charger
-        "devices": True,               # Bluetooth devices connecting
+        "devices": False,              # Bluetooth devices connecting
         "lock": True,
         "login": False,
     },
@@ -311,7 +311,7 @@ CHOICES = {
         "scheme-fruit-salad", "scheme-monochrome", "scheme-neutral", "scheme-rainbow",
         "scheme-vibrant",
     ],
-    ("appearance", "animations"): ["default", "dynamic", "moving", "classic", "fast", "smooth", "bouncy", "off"],
+    ("appearance", "animations"): ["subtle", "default", "dynamic", "moving", "classic", "fast", "smooth", "bouncy", "off"],
     ("appearance", "border_style"): ["gradient", "animated", "solid", "none"],
     ("appearance", "workspace_anim"): ["preset", "slide", "slidevert", "fade", "slidefade"],
     ("appearance", "layout"): ["dwindle", "master"],
