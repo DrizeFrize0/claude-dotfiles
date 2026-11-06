@@ -76,7 +76,7 @@ class Wire(unittest.TestCase):
 
 def snap(**kw):
     base = {"hosts_blocked": False, "focus_active": False, "system_dns_ms": 20.0, "public_dns_ok": True, "ip_ok": True,
-            "sites": {"https://www.google.com": True, "https://discord.com": True}, "ipv6_addr": True, "ipv6_ok": True, "mtu_ok": True,
+            "sites": {"https://www.google.com": True, "https://discord.com": True}, "ipv6_addr": True, "ipv6_ok": True, "mtu_ok": True, "mtu_best": None,
             "links": [{"dev": "enp3s0", "up": True, "speed": 1000, "duplex": "full"}], "proxy": [], "firewalls": []}
     base.update(kw)
     return base
@@ -128,7 +128,8 @@ class FocusBlock(unittest.TestCase):
 
 
 class NetworkManager(unittest.TestCase):
-    def test_dns_commands(self):
+    def run_with(self, wired, wifi, action):
+        """Runs action() with a fake nmcli that names the connection types `wired` and `wifi`. Returns (result, nmcli calls)."""
         with tempfile.TemporaryDirectory() as d:
             log = os.path.join(d, "calls")
             tool = os.path.join(d, "nmcli")
@@ -136,23 +137,56 @@ class NetworkManager(unittest.TestCase):
                 f.write(f'''#!/bin/sh
 echo "$@" >> {log}
 case "$*" in
-  *"connection show --active"*) printf 'Wired connection 1:enp3s0:802-3-ethernet\\nHome\\\\: Wi-Fi:wlan0:802-11-wireless\\nlo:lo:loopback\\n' ;;
-  *"connection show"*) printf 'Wired connection 1:enp3s0:802-3-ethernet\\nHome\\\\: Wi-Fi:wlan0:802-11-wireless\\nvpn:--:wireguard\\n' ;;
+  *"connection show --active"*) printf 'Wired connection 1:eno1:{wired}\\nHome\\\\: Wi-Fi:wlan0:{wifi}\\nlo:lo:loopback\\n' ;;
+  *"connection show"*) printf 'Wired connection 1:eno1:{wired}\\nHome\\\\: Wi-Fi:wlan0:{wifi}\\nvpn:--:wireguard\\n' ;;
 esac
 ''')
             os.chmod(tool, os.stat(tool).st_mode | stat.S_IEXEC)
             old = os.environ["PATH"]
             os.environ["PATH"] = d + ":" + old
             try:
-                done = net.set_dns("cloudflare")
+                result = action()
                 calls = open(log, encoding="utf-8").read()
             finally:
                 os.environ["PATH"] = old
-        self.assertEqual(done, ["Wired connection 1", "Home: Wi-Fi"])             # the VPN and loopback are left alone
-        self.assertIn("connection modify Wired connection 1 ipv4.dns 1.1.1.1 1.0.0.1 ipv4.ignore-auto-dns yes", calls)
-        self.assertIn("ipv6.dns 2606:4700:4700::1111 2606:4700:4700::1001", calls)
-        self.assertIn("device reapply enp3s0", calls)
-        self.assertNotIn("wireguard", calls)
+        return result, calls
+
+    def test_dns_commands_with_either_naming(self):
+        for wired, wifi in (("ethernet", "wifi"), ("802-3-ethernet", "802-11-wireless")):      # newer and older NetworkManager
+            done, calls = self.run_with(wired, wifi, lambda: net.set_dns("cloudflare"))
+            self.assertEqual(done, ["Wired connection 1", "Home: Wi-Fi"], (wired, wifi))      # the VPN and loopback are left alone
+            self.assertIn("connection modify Wired connection 1 ipv4.dns 1.1.1.1 1.0.0.1 ipv4.ignore-auto-dns yes", calls)
+            self.assertIn("ipv6.dns 2606:4700:4700::1111 2606:4700:4700::1001", calls)
+            self.assertIn("device reapply eno1", calls)
+            self.assertNotIn("wireguard", calls)
+
+    def test_ipv6_off_finds_the_wired_connection(self):
+        names, calls = self.run_with("ethernet", "wifi", lambda: [n for n, _d, _t in net.connections(active_only=True) if net.disable_ipv6(n)])
+        self.assertEqual(names, ["Wired connection 1", "Home: Wi-Fi"])
+        self.assertIn("connection modify Wired connection 1 ipv6.method disabled", calls)
+
+    def test_mtu_goes_to_the_right_property(self):
+        done, calls = self.run_with("ethernet", "wifi", lambda: net.set_mtu(1492))
+        self.assertEqual(len(done), 2)
+        self.assertIn("connection modify Wired connection 1 802-3-ethernet.mtu 1492", calls)
+        self.assertIn("connection modify Home: Wi-Fi 802-11-wireless.mtu 1492", calls)
+        self.assertIn("device reapply eno1", calls)
+
+
+class Mtu(unittest.TestCase):
+    def test_finds_the_biggest_payload(self):
+        for limit, expect in ((1472, 1500), (1464, 1492), (1400, 1428), (1200, 1228)):
+            self.assertEqual(net.find_mtu(lambda size, limit=limit: size <= limit), expect, limit)
+
+    def test_not_a_size_problem(self):
+        self.assertIsNone(net.find_mtu(lambda size: False))                    # nothing gets through: not about size
+
+    def test_diagnose_and_plan_with_a_best_size(self):
+        s = snap(mtu_ok=False, mtu_best=1492)
+        self.assertIn("1492", text(s))
+        self.assertIn("mtu", [k for k, _t in net.plan_fix(s)])
+        self.assertNotIn("mtu", [k for k, _t in net.plan_fix(snap(mtu_ok=False, mtu_best=None))])    # unknown size: only advice
+        self.assertNotIn("mtu", [k for k, _t in net.plan_fix(snap())])
 
 
 if __name__ == "__main__":

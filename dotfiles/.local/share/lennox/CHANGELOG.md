@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.34.1 · 2026-11-06 · lennox-net finds your connections, and fixes the packet size
+
+- Fixed: lennox-net didn't find any wired or Wi-Fi connection on newer NetworkManager (it calls them ethernet and wifi), so "IPv6 off" and the fast DNS changed nothing. Both work now, and the upgrade sets the fast DNS again
+- New: when big packets don't get through (a connection that can only carry smaller packets than normal, which makes some sites hang halfway or load only partly), lennox-net measures the biggest size that works and fix --yes sets exactly that on your connections
+- lennox-net says plainly when there was no active connection to change
+
 ## 1.34.0 · 2026-11-06 · Fast DNS, a fix for blocked sites, and a spinner
 
 - lennox-net: finds out why sites don't open (on a cable or on Wi-Fi) and fixes it. It tests the cable (speed and duplex), the DNS, IPv6, packet size, a handful of sites and proxies, and says in plain words what is wrong. lennox-net fix --yes does the safe fixes: removes a leftover site block, switches to a fast DNS, turns off IPv6 where it is set up but broken. Settings > Wi-Fi & Bluetooth > Internet, cable and DNS has the same two buttons

@@ -36,7 +36,9 @@ SITES = ["https://www.google.com", "https://www.cloudflare.com", "https://discor
 HOSTS = os.environ.get("LENNOX_HOSTS_FILE", "/etc/hosts")
 FOCUS_TOOL = os.environ.get("LENNOX_FOCUS_HOSTS_TOOL", "/usr/local/bin/lennox-focus-hosts")
 FOCUS_MARK = "# >>> lennox focus"
-LINK_TYPES = ("802-3-ethernet", "802-11-wireless")
+# NetworkManager says "ethernet" and "wifi" in newer versions, "802-3-ethernet" and "802-11-wireless" in older ones
+LINK_TYPES = ("ethernet", "wifi", "802-3-ethernet", "802-11-wireless")
+WIRED = ("ethernet", "802-3-ethernet")
 
 
 # ---------------------------------------------------------------- DNS on the wire
@@ -147,6 +149,37 @@ def reset_dns():
     return done
 
 
+def find_mtu(works, high=1472, low=1200):
+    """The biggest ping payload that gets through (works(size) -> bool), by halving. The connection's MTU is that + 28.
+    None if even the smallest fails (then it isn't a size problem)."""
+    if not works(low):
+        return None
+    lo, hi = low, high
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if works(mid):
+            lo = mid
+        else:
+            hi = mid - 1
+    return lo + 28
+
+
+def ping_df(size, host="1.1.1.1"):
+    return sh.run(["ping", "-c", "1", "-W", "2", "-M", "do", "-s", str(size), host], 6)[0] == 0
+
+
+def set_mtu(mtu):
+    """Sets the MTU on the active wired and Wi-Fi connections, and applies it now."""
+    done = []
+    for name, dev, kind in connections(active_only=True):
+        prop = "802-3-ethernet.mtu" if kind in WIRED else "802-11-wireless.mtu"
+        if sh.run(["nmcli", "connection", "modify", name, prop, str(mtu)], 15)[0] == 0:
+            done.append(name)
+            if dev:
+                sh.run(["nmcli", "device", "reapply", dev], 15)
+    return done
+
+
 def disable_ipv6(name):
     code, _o, _e = sh.run(["nmcli", "connection", "modify", name, "ipv6.method", "disabled"], 15)
     return code == 0
@@ -231,7 +264,7 @@ def snapshot():
         "system_dns_ms": system_dns_ms(), "public_dns_ok": query_time("1.1.1.1", "google.com") is not None,
         "ip_ok": tcp_ok("1.1.1.1"), "sites": {u: https_ok(u) for u in SITES},
         "ipv6_addr": v6_addr, "ipv6_ok": tcp_ok("2606:4700:4700::1111") if v6_addr else None,
-        "mtu_ok": sh.run(["ping", "-c", "1", "-W", "2", "-M", "do", "-s", "1472", "1.1.1.1"], 6)[0] == 0,
+        "mtu_ok": ping_df(1472), "mtu_best": None,
         "links": link_info(), "proxy": [k for k in ("http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY") if os.environ.get(k)],
         "firewalls": [u for u in ("ufw", "firewalld", "nftables", "iptables") if sh.out(["systemctl", "is-active", u], 3) == "active"],
     }
@@ -263,8 +296,11 @@ def diagnose(s):
             out.append(("IPv6 is set up but doesn't work (sites try it first, wait, then fall back: slow or 'blocked')",
                         "Turn IPv6 off for this connection: lennox-net fix", True))
         if not s["mtu_ok"]:
-            out.append(("Big packets don't get through (a packet-size problem on this connection)",
-                        "Some sites hang halfway. Lennox already probes for the right size; if it persists, set the router's MTU to 1500", False))
+            best = s.get("mtu_best")
+            out.append(("Big packets don't get through: this connection can only carry smaller ones than normal"
+                        + (f" (the biggest that works: {best})" if best else ""),
+                        "Some sites hang halfway or load only partly. " + ("lennox-net fix sets that size on this laptop" if best
+                                                                           else "Set the router's MTU to 1500, or check the cable"), bool(best)))
     for link in s["links"]:
         if link["up"] and link["speed"] is not None and 0 < link["speed"] < 1000:
             out.append((f"The cable runs at only {link['speed']} Mb/s on {link['dev']}", "A damaged cable or a worn port: try another cable", False))
@@ -301,6 +337,8 @@ def plan_fix(s):
         steps.append(("dns", "Use the fastest DNS for every wired and Wi-Fi connection"))
     if s["ipv6_addr"] and s["ipv6_ok"] is False:
         steps.append(("ipv6", "Turn IPv6 off on the connections (it is set up but doesn't work)"))
+    if not s["mtu_ok"] and s.get("mtu_best"):
+        steps.append(("mtu", f"Use the packet size that works on this connection (MTU {s['mtu_best']}) so nothing hangs halfway"))
     return steps
 
 
@@ -317,9 +355,15 @@ def apply_dns_choice(choice):
 def main(argv):
     mode = argv[1] if len(argv) > 1 else "check"
     if mode == "check":
-        print(report(snapshot()))
+        s = snapshot()
+        if not s["mtu_ok"]:
+            s["mtu_best"] = find_mtu(ping_df)
+        print(report(s))
     elif mode == "fix":
         s = snapshot()
+        if not s["mtu_ok"]:
+            print("Measuring the packet size that works…")
+            s["mtu_best"] = find_mtu(ping_df)
         steps = plan_fix(s)
         if not steps:
             print("Nothing to fix.")
@@ -337,7 +381,10 @@ def main(argv):
                 S.set_value("network.dns", "fastest")
             elif key == "ipv6":
                 names = [n for n, _d, _t in connections(active_only=True) if disable_ipv6(n)]
-                print("IPv6 off on: " + ", ".join(names))
+                print("IPv6 off on: " + ", ".join(names) if names else "No active connection to change (is the cable connected?)")
+            elif key == "mtu":
+                names = set_mtu(s["mtu_best"])
+                print(f"Packet size {s['mtu_best']} on: " + ", ".join(names) if names else "No active connection to change")
     elif mode == "dns":
         sub = argv[2] if len(argv) > 2 else "status"
         if sub == "bench":

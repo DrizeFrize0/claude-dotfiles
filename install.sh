@@ -562,7 +562,7 @@ personalize() {
         touch "$marker"
     fi
     # Once: a fast DNS for the whole laptop (Lennox tests Cloudflare, Google and Quad9 from this network and picks the quickest)
-    marker="$HOME/.config/lennox/.fast-dns-done"
+    marker="$HOME/.config/lennox/.fast-dns-v2-done"
     if [[ ! -f "$marker" ]]; then
         if ui_spin "Finding the fastest DNS" "$HOME/.local/bin/lennox-net" dns set fastest; then
             ok "Fast DNS on every wired and Wi-Fi connection (undo: Settings > Wi-Fi & Bluetooth > DNS > Automatic)"
