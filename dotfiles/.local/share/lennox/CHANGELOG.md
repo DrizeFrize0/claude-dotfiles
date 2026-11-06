@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.33.0 · 2026-11-06 · Simple sound
+
+- Simple sound (Settings > Sound > Keep it simple, or lennox-sound simplify on): only your laptop and your Bluetooth headphones are offered. The graphics chip's HDMI/DisplayPort audio, the HDMI outputs of the main chip and the headset jack's microphone are hidden, so the long list of sound sources shrinks to what you use. lennox-sound simplify status shows exactly what is offered, and lennox-sound simplify off brings everything back. The upgrade turns it on once
+- Calls on Discord sound natural again: the extra "clean" microphone is turned off. Discord cleans your voice itself, and two cleaners on top of each other make it sound robotic and bad. You can still turn it on in Settings > Sound
+- Laptop microphone or the Bluetooth headset's microphone: your choice in Settings > Sound > Use the Bluetooth headset's mic (off: headphones in full quality and you talk through the laptop mic; on: the headset mic works but calls sound like a phone line)
+
 ## 1.32.0 · 2026-11-06 · The power mode follows the charger, and tells you
 
 - The power mode now picks itself: Performance when plugged in, Balanced on battery at 80% or more, Power saver on battery below 80%. All of it (the three modes and the 80%) is in Settings > Power & Battery > Power mode by itself, and it can be turned off

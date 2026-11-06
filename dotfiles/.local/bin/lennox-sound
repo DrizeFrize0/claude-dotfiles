@@ -696,6 +696,91 @@ report() {
     echo "$out"
 }
 
+# ---------------------------------------------------------------- simple sound: only the laptop and Bluetooth
+
+SIMPLE_CONF="$WP_DIR/65-lennox-simple.conf"
+simple_on_p() { [[ -f "$SIMPLE_CONF" ]]; }
+
+write_simple_conf() {
+    mkdir -p "$WP_DIR"
+    # Both spellings of each switch (WirePlumber's own docs and older guides differ); an unknown one is just ignored.
+    cat > "$SIMPLE_CONF" <<'CONF'
+# Lennox (lennox-sound simplify): only the laptop's own sound and Bluetooth headphones are offered.
+# The graphics chip's HDMI/DisplayPort audio, the HDMI outputs of the main chip and the headset jack's
+# microphone are hidden. Undo: lennox-sound simplify off
+monitor.alsa.rules = [
+  {
+    matches = [
+      { device.vendor.id = "10de" }
+      { device.vendor.id = "0x10de" }
+      { device.vendor.name = "~NVIDIA.*" }
+    ]
+    actions = {
+      update-props = {
+        device.disabled = true
+        device.disable = true
+      }
+    }
+  }
+  {
+    matches = [
+      { node.description = "~.*(HDMI|DisplayPort|Display Port).*" }
+      { node.nick = "~.*(HDMI|DisplayPort).*" }
+    ]
+    actions = {
+      update-props = {
+        node.disabled = true
+        node.disable = true
+      }
+    }
+  }
+  {
+    matches = [
+      { node.description = "~.*(Headset|Headphones) Microphone.*" }
+    ]
+    actions = {
+      update-props = {
+        node.disabled = true
+        node.disable = true
+      }
+    }
+  }
+]
+CONF
+}
+
+# What the sound system offers right now, in words: outputs and inputs (without the speakers' own loopbacks)
+list_devices() {
+    echo "Outputs you can pick:"
+    pactl -f json list sinks 2>/dev/null | jq -r '.[] | "  - " + .description' 2>/dev/null
+    echo "Microphones you can pick:"
+    pactl -f json list sources 2>/dev/null | jq -r '.[] | select(.name | endswith(".monitor") | not) | "  - " + .description' 2>/dev/null
+}
+
+simple_sound() {
+    case "${1:-status}" in
+        on)
+            write_simple_conf
+            # The extra "clean" microphone is what makes calls sound processed twice (Discord has its own): off
+            rm -f "$CLEAN_CONF" "${CLEAN_CONF%/*}/.lennox-clean-mic-pending"
+            restart_sound
+            guard_mic >/dev/null
+            echo "Simple sound is on: only the laptop and Bluetooth headphones are offered."
+            list_devices
+            ;;
+        off)
+            rm -f "$SIMPLE_CONF"
+            restart_sound
+            echo "Every sound device is offered again."
+            ;;
+        status)
+            if simple_on_p; then echo "Simple sound: on"; else echo "Simple sound: off"; fi
+            list_devices
+            ;;
+        *) echo "usage: lennox-sound simplify on|off|status" >&2; return 2 ;;
+    esac
+}
+
 # ---------------------------------------------------------------- guard
 
 # Keeps the sound right while you use the laptop: headphones in call mode go back to
@@ -743,6 +828,7 @@ guard_watch() {
 }
 
 case "${1:-check}" in
+    simplify) simple_sound "${2:-status}" ;;
     guard)
         case "${2:-watch}" in
             once) guard_once "${3:-}" ;;
@@ -771,7 +857,7 @@ case "${1:-check}" in
         have wl-copy && wl-copy < "$file" 2>/dev/null && echo "Also copied, so you can paste it anywhere."
         ;;
     *)
-        echo "usage: lennox-sound check [--json] | fix | guard [once|watch] | clean-mic on|off|status | bluetooth hifi|headset-mic|status | driver auto|sof|hda|status | outputs | report" >&2
+        echo "usage: lennox-sound check [--json] | fix | simplify on|off|status | guard [once|watch] | clean-mic on|off|status | bluetooth hifi|headset-mic|status | driver auto|sof|hda|status | outputs | report" >&2
         exit 2
         ;;
 esac

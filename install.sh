@@ -564,6 +564,14 @@ personalize() {
         [[ "$(lennox-get night.winddown_time)" == "23:30" ]] && lennox-set night.winddown_time 23:00 --no-apply >/dev/null
         touch "$marker"
     fi
+    # Once: simple sound (only the laptop and Bluetooth headphones) and no extra processed microphone:
+    # Discord cleans the voice itself, and two cleaners together make calls sound bad
+    marker="$HOME/.config/lennox/.simple-sound-done"
+    if [[ ! -f "$marker" ]]; then
+        "$HOME/.local/bin/lennox-sound" simplify on >/dev/null 2>&1
+        ok "Simple sound: only the laptop and Bluetooth headphones; calls sound natural (undo: lennox-sound simplify off)"
+        touch "$marker"
+    fi
     # Once: a processor limit of 95 (short boosts are normal), and the Cool profile that trims the spikes
     marker="$HOME/.config/lennox/.heat-v2-done"
     if [[ ! -f "$marker" ]]; then

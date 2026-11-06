@@ -15,6 +15,8 @@ case "$*" in
     "-f json list cards") cat "$FAKE/cards.json" ;;
     "get-default-source") cat "$FAKE/default-source" 2>/dev/null ;;
     "list short sources") cat "$FAKE/sources" ;;
+    "-f json list sinks") cat "$FAKE/sinks.json" 2>/dev/null || echo '[]' ;;
+    "-f json list sources") cat "$FAKE/sources.json" 2>/dev/null || echo '[]' ;;
     "info") exit 0 ;;
     *) exit 0 ;;
 esac
@@ -69,5 +71,24 @@ echo "lennox_clean_mic" > "$T/default-source"
 : > "$T/calls"; run guard once >/dev/null
 check "healthy: nothing changed" "! grep -q 'set-default-source\|set-card-profile' $T/calls"
 
+# 7. simple sound: only the laptop and Bluetooth
+cat > "$T/sinks.json" <<'JSON'
+[{"name":"alsa_output.speaker","description":"Speaker"},{"name":"bluez_output.AA","description":"WH-1000XM4"}]
+JSON
+cat > "$T/sources.json" <<'JSON'
+[{"name":"alsa_input.dmic","description":"Digital Microphone"},{"name":"alsa_output.speaker.monitor","description":"Monitor of Speaker"}]
+JSON
+mkdir -p "$T/cfg/pipewire/pipewire.conf.d"; touch "$T/cfg/pipewire/pipewire.conf.d/60-lennox-clean-mic.conf"
+SIMPLE="$T/cfg/wireplumber/wireplumber.conf.d/65-lennox-simple.conf"
+OUT="$(run simplify on)"
+check "simplify on: writes the rules" "[ -f $SIMPLE ]"
+check "hides the graphics chip's HDMI audio (both spellings of the switch)" "grep -q 'device.vendor.id = \"10de\"' $SIMPLE && grep -q 'device.disabled = true' $SIMPLE && grep -q 'device.disable = true' $SIMPLE"
+check "hides HDMI/DisplayPort outputs and the jack microphone" "grep -q 'HDMI|DisplayPort' $SIMPLE && grep -q 'Headset|Headphones' $SIMPLE && grep -q 'node.disabled = true' $SIMPLE"
+check "turns off the extra processed (clean) microphone" "[ ! -f $T/cfg/pipewire/pipewire.conf.d/60-lennox-clean-mic.conf ]"
+check "lists the outputs and microphones you can pick (no monitors)" "grep -q 'Speaker' <<<\"\$OUT\" && grep -q 'WH-1000XM4' <<<\"\$OUT\" && grep -q 'Digital Microphone' <<<\"\$OUT\" && ! grep -q 'Monitor of' <<<\"\$OUT\""
+check "status says on" "run simplify status | head -1 | grep -q 'Simple sound: on'"
+run simplify off >/dev/null
+check "simplify off: the rules are gone" "[ ! -f $SIMPLE ] && run simplify status | head -1 | grep -q 'off'"
+check "the Bluetooth configuration from before is still there" "[ -f $BT ]"
 rm -rf "$T"
 exit $fail

@@ -107,6 +107,19 @@ class Page:
         self.ctx = ctx
         page = Adw.PreferencesPage()
 
+        simple = Adw.PreferencesGroup(
+            title="Keep it simple",
+            description="Only your laptop and your Bluetooth headphones: no HDMI outputs, no graphics-chip audio, no jack "
+                        "microphone, and no extra processed microphone. Calls sound like you, not like a robot.")
+        self.simple_row = Adw.SwitchRow(title="Only the laptop and Bluetooth headphones",
+                                        subtitle="Hides the extra sound devices and turns off the clean microphone (Discord "
+                                                 "cleans your voice itself, and two cleaners make it sound bad)")
+        self.simple_row.add_prefix(Gtk.Image.new_from_icon_name("audio-card-symbolic"))
+        self.simple_busy = False
+        self.simple_row.connect("notify::active", self._on_simple)
+        simple.add(self.simple_row)
+        page.add(simple)
+
         self.output = DeviceSection(self, "sink", "Output", "Speakers, headphones, HDMI and Bluetooth audio.")
         page.add(self.output.group)
 
@@ -192,6 +205,13 @@ class Page:
         self.output.load()
         self.input.load()
         self._check()
+
+        def got_simple(ok, out, _err):
+            self.simple_busy = True
+            self.simple_row.set_active(ok and out.strip().splitlines()[:1] == ["Simple sound: on"])
+            self.simple_busy = False
+
+        run_async([lennox_bin("lennox-sound"), "simplify", "status"], got_simple)
 
         def got_clean(ok, out, _err):
             self.clean_busy = True
@@ -280,6 +300,21 @@ class Page:
                 self.driver_rows.append(row)
 
         run_async([lennox_bin("lennox-sound"), "check", "--json"], got)
+
+    def _on_simple(self, row, _param):
+        if self.simple_busy:
+            return
+        state = "on" if row.get_active() else "off"
+        row.set_sensitive(False)
+        self.ctx.toast("Turning simple sound " + state + "… (sound restarts for a second)")
+
+        def done(ok, _out, err):
+            row.set_sensitive(True)
+            if not ok:
+                self.ctx.toast(err.strip().splitlines()[-1] if err.strip() else "Could not change it", 5)
+            self.refresh()
+
+        run_async([lennox_bin("lennox-sound"), "simplify", state], done)
 
     def _on_clean(self, row, _param):
         if self.clean_busy:
