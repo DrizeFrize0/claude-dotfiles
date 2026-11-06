@@ -318,7 +318,18 @@ EOF
         sudo udevadm trigger --subsystem-match=drm
         ok "Desktop runs on Intel; the GTX 1650 wakes up for games and external screens"
     fi
-    sudo systemctl enable nvidia-persistenced.service >/dev/null 2>&1 && ok "nvidia-persistenced enabled"
+    # nvidia-persistenced keeps the GTX awake all the time (it blocks the power-down above): off
+    if systemctl is-enabled --quiet nvidia-persistenced.service 2>/dev/null; then
+        sudo systemctl disable --now nvidia-persistenced.service >/dev/null 2>&1 && ok "nvidia-persistenced off (lets the GPU sleep, much cooler)"
+    fi
+}
+
+setup_thermal() {
+    # Intel's own heat manager: it holds the temperature down before the fans and the throttle have to
+    grep -q GenuineIntel /proc/cpuinfo 2>/dev/null || return 0
+    step "Heat control (thermald)"
+    pacman -Q thermald >/dev/null 2>&1 || sudo pacman -S --needed --noconfirm thermald >/dev/null 2>&1
+    if sudo systemctl enable --now thermald.service >/dev/null 2>&1; then ok "thermald running"; else warn "Could not start thermald"; fi
 }
 
 setup_snapshots() {
@@ -684,6 +695,7 @@ if [[ "$MODE" == "update" ]]; then
     install_new_packages
     install_system_files
     $HAS_NVIDIA && setup_nvidia
+    setup_thermal
     install_dotfiles
     restore_backup
     dir="$HOME/.config/lennox/wallpapers"
@@ -706,6 +718,7 @@ install_packages
 install_aur
 install_flatpaks
 setup_nvidia
+setup_thermal
 install_system_files
 setup_snapshots
 setup_sddm

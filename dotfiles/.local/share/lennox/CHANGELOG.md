@@ -3,6 +3,13 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.36.1 · 2026-11-07 · A cooler laptop
+
+- The laptop was running hot for no reason. Found three causes and fixed all of them. First, the processor limit chosen in Settings was forgotten at every restart, so it ran flat out with no limit: it is now put back at every login, and the new default is Cool. Second, the NVIDIA chip was kept awake all day by a background service: it is turned off so the chip can sleep. Third, Intel's heat manager (thermald) is now installed and running.
+- The processor also boosts less eagerly in Cool and Normal, so short spikes to 98 degrees stop.
+- lennox-heat now tells you if the NVIDIA service or the heat manager is the problem.
+- Run lennox upgrade (it asks for your password once), then restart the laptop.
+
 ## 1.36.0 · 2026-11-07 · Lighter and smoother
 
 - The bar does a lot less work in the background: the downloads, timer, night light and system monitor items refresh far less often, and the island, auto power mode and battery watcher check less often too. Less CPU, cooler laptop, longer battery.

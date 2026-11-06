@@ -9,6 +9,8 @@ run() { LENNOX_PSTATE_DIR="$T" bash "$TOOL" "$1"; }
 run silent; check "silent: turbo off, 60%" "[ \"\$(cat $T/no_turbo)\" = 1 ] && [ \"\$(cat $T/max_perf_pct)\" = 60 ]"
 run cool;   check "cool: turbo on, 80%" "[ \"\$(cat $T/no_turbo)\" = 0 ] && [ \"\$(cat $T/max_perf_pct)\" = 80 ]"
 run turbo;  check "turbo: turbo on, 100%" "[ \"\$(cat $T/no_turbo)\" = 0 ] && [ \"\$(cat $T/max_perf_pct)\" = 100 ]"
-run normal; check "normal: turbo on, 100%" "[ \"\$(cat $T/max_perf_pct)\" = 100 ]"
-check "anything else is refused and changes nothing" "! LENNOX_PSTATE_DIR=$T bash $TOOL rm-rf 2>/dev/null && [ \"\$(cat $T/max_perf_pct)\" = 100 ]"
+run normal; check "normal: 90%" "[ \"\$(cat $T/max_perf_pct)\" = 90 ]"
+check "anything else is refused and changes nothing" "! LENNOX_PSTATE_DIR=$T bash $TOOL rm-rf 2>/dev/null && [ \"\$(cat $T/max_perf_pct)\" = 90 ]"
+mkdir -p "$T/cpu/cpu0/cpufreq"; echo performance > "$T/cpu/cpu0/cpufreq/energy_performance_preference"
+LENNOX_CPU_DIR="$T/cpu" run cool; check "cool: boost preference follows" "[ \"\$(cat $T/cpu/cpu0/cpufreq/energy_performance_preference)\" = balance_power ]"
 rm -rf "$T"; exit $fail

@@ -78,6 +78,9 @@ def snapshot():
             "cap": read_int("/sys/devices/system/cpu/intel_pstate/max_perf_pct"),
             "epp": sh.read_text("/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference"),
             "fans": fan.fan_speeds(), "gpu_awake": care.nvidia_awake(), "throttled": throttle_count(),
+            "persistenced": sh.run(["systemctl", "is-active", "--quiet", "nvidia-persistenced"])[0] == 0,
+            "thermald": None if not os.path.exists("/usr/bin/thermald") and not os.path.exists("/usr/sbin/thermald")
+                        else sh.run(["systemctl", "is-active", "--quiet", "thermald"])[0] == 0,
             "extras": running_extras(), "livewall": sh.out([sh.bin_path("lennox-livewall"), "status"]).startswith("playing")}
 
 
@@ -103,6 +106,12 @@ def diagnose(s):
         out.append(("A live (video) wallpaper is playing", "lennox-livewall stop (or turn on pausing on battery in Settings > Wallpaper)"))
     if s["gpu_awake"]:
         out.append(("The NVIDIA graphics chip is awake (it adds heat and drains the battery)", "Settings > Graphics: integrated mode, and close what uses it: nvidia-smi"))
+    if s.get("persistenced"):
+        out.append(("nvidia-persistenced keeps the NVIDIA chip awake all day (hot and drains the battery)", "Run: lennox upgrade (it turns it off), or: sudo systemctl disable --now nvidia-persistenced"))
+    if s.get("thermald") is None and s["temp"] is not None and s["temp"] >= 80:
+        out.append(("thermald (Intel's heat manager) isn't installed", "Run: lennox upgrade, or: sudo pacman -S thermald && sudo systemctl enable --now thermald"))
+    elif s.get("thermald") is False:
+        out.append(("thermald is installed but not running", "sudo systemctl enable --now thermald"))
     if s["throttled"]:
         out.append((f"The processor has slowed itself down because of heat {s['throttled']} times", "Clean the fans and vents, see below"))
     if not s["fans"]:

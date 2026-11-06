@@ -204,7 +204,7 @@ DEFAULTS = {
         "server_id": "",               # a server whose widget is switched on (Server Settings > Widget)
     },
     "fan": {
-        "profile": "normal",           # silent | normal | turbo
+        "profile": "cool",             # silent | cool | normal | turbo
     },
     "mood": {
         "on": False,                   # ask how the day was, every evening
