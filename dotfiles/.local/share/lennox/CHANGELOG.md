@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.36.2 · 2026-11-07 · Fan control
+
+- New: lennox-fan probe shows exactly what your laptop lets Linux control (the HP fan curve, fan speeds, and whether the fan can be set directly).
+- When the HP driver allows it, the Turbo fan profile now runs the fan at full speed and every other profile hands the fan back to the laptop. New command: lennox-fan boost on or off.
+- OMEN Gaming Hub is a Windows program and can't run on Linux, so this replaces what it does for the fan.
+
 ## 1.36.1 · 2026-11-07 · A cooler laptop
 
 - The laptop was running hot for no reason. Found three causes and fixed all of them. First, the processor limit chosen in Settings was forgotten at every restart, so it ran flat out with no limit: it is now put back at every login, and the new default is Cool. Second, the NVIDIA chip was kept awake all day by a background service: it is turned off so the chip can sleep. Third, Intel's heat manager (thermald) is now installed and running.

@@ -13,4 +13,7 @@ run normal; check "normal: 90%" "[ \"\$(cat $T/max_perf_pct)\" = 90 ]"
 check "anything else is refused and changes nothing" "! LENNOX_PSTATE_DIR=$T bash $TOOL rm-rf 2>/dev/null && [ \"\$(cat $T/max_perf_pct)\" = 90 ]"
 mkdir -p "$T/cpu/cpu0/cpufreq"; echo performance > "$T/cpu/cpu0/cpufreq/energy_performance_preference"
 LENNOX_CPU_DIR="$T/cpu" run cool; check "cool: boost preference follows" "[ \"\$(cat $T/cpu/cpu0/cpufreq/energy_performance_preference)\" = balance_power ]"
-rm -rf "$T"; exit $fail
+H="$(mktemp -d)"; mkdir -p "$H/hwmon3" "$H/hwmon4"; echo hp > "$H/hwmon3/name"; echo 2 > "$H/hwmon3/pwm1_enable"; echo coretemp > "$H/hwmon4/name"; echo 2 > "$H/hwmon4/pwm1_enable"
+LENNOX_HWMON_DIR="$H" bash "$TOOL" fan-max; check "fan-max: HP fan to full speed, others untouched" "[ \"\$(cat $H/hwmon3/pwm1_enable)\" = 0 ] && [ \"\$(cat $H/hwmon4/pwm1_enable)\" = 2 ]"
+LENNOX_HWMON_DIR="$H" bash "$TOOL" fan-auto; check "fan-auto: back to the laptop's own curve" "[ \"\$(cat $H/hwmon3/pwm1_enable)\" = 2 ]"
+rm -rf "$T" "$H"; exit $fail
