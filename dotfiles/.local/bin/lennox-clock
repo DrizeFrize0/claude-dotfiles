@@ -8,6 +8,7 @@
 #   lennox-clock list | cancel ID | stop | snooze [minutes] | waybar
 # Everything fires from the Lennox widgets process, so the app can stay closed.
 export PATH="$HOME/.local/bin:$PATH"
+[[ "${1:-}" == waybar && -x "$HOME/.local/bin/lennox-fast" ]] && exec "$HOME/.local/bin/lennox-fast" clock waybar
 export PYTHONPATH="$HOME/.local/share/lennox/python"
 case "${1:-}" in
     ""|world|alarms|timers|stopwatch|reminders)

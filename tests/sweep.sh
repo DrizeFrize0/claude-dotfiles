@@ -45,6 +45,7 @@ bash tests/test_mods.sh | grep -q FAIL && { bash tests/test_mods.sh | grep FAIL;
 python3 -W ignore tests/test_heat.py 2>&1 | tail -3 | grep -q "^OK" && echo ok heat || { python3 tests/test_heat.py 2>&1 | tail -15; fail=1; }
 /usr/bin/python3.12 -W ignore tests/test_overlay_cache.py 2>&1 | tail -3 | grep -q "^OK" && echo ok overlay cache || { /usr/bin/python3.12 tests/test_overlay_cache.py 2>&1 | tail -15; fail=1; }
 bash tests/test_cpucap.sh | grep -q FAIL && { bash tests/test_cpucap.sh | grep FAIL; fail=1; } || echo ok cpucap
+bash tests/test_fast.sh | grep -q FAIL && { bash tests/test_fast.sh | grep FAIL; fail=1; } || echo ok fast path
 python3 -W ignore tests/test_powerauto.py 2>&1 | tail -3 | grep -q "^OK" && echo ok powerauto || { python3 tests/test_powerauto.py 2>&1 | tail -15; fail=1; }
 bash tests/test_ui.sh | grep -q FAIL && { bash tests/test_ui.sh | grep FAIL; fail=1; } || echo ok terminal look
 bash tests/test_upgrade_look.sh | grep -q FAIL && { bash tests/test_upgrade_look.sh | grep FAIL; fail=1; } || echo ok upgrade flow

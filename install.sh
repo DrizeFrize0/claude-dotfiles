@@ -324,6 +324,19 @@ EOF
     fi
 }
 
+build_fast() {
+    # Small Rust program that answers the busiest bar items in about a millisecond
+    step "Fast bar items (Rust)"
+    command -v cargo >/dev/null 2>&1 || sudo pacman -S --needed --noconfirm rust >/dev/null 2>&1
+    if command -v cargo >/dev/null 2>&1 \
+        && cargo build --release -q --manifest-path "$REPO/rust/lennox-fast/Cargo.toml" 2>/dev/null; then
+        install -Dm755 "$REPO/rust/lennox-fast/target/release/lennox-fast" "$HOME/.local/bin/lennox-fast"
+        ok "lennox-fast built"
+    else
+        warn "Could not build lennox-fast: the bar uses the slower Python versions (nothing breaks)"
+    fi
+}
+
 setup_thermal() {
     # Intel's own heat manager: it holds the temperature down before the fans and the throttle have to
     grep -q GenuineIntel /proc/cpuinfo 2>/dev/null || return 0
@@ -697,6 +710,7 @@ if [[ "$MODE" == "update" ]]; then
     $HAS_NVIDIA && setup_nvidia
     setup_thermal
     install_dotfiles
+    build_fast
     restore_backup
     dir="$HOME/.config/lennox/wallpapers"
     [[ -d "$dir/lennox" ]] || { step "Painting the Lennox wallpaper pack"; paint_wallpapers; }
@@ -724,6 +738,7 @@ setup_snapshots
 setup_sddm
 enable_services
 install_dotfiles
+build_fast
 restore_backup
 download_wallpapers
 setup_shell
