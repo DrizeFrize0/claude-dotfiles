@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.37.1 · 2026-11-07 · Snappier island
+
+- The island opens, closes and changes size faster (a stiffer spring and shorter fades), and Hyprland no longer adds its own fade on top of the island's motion, which could leave boxes behind.
+- Run lennox upgrade, then log out and back in. Tell me if boxes still show when it opens or closes.
+
 ## 1.37.0 · 2026-11-07 · First Rust part
 
 - New: lennox-fast, a tiny program written in Rust (no extra libraries). The downloads and timer items in the bar used to start Python every few seconds (about 30 ms each); now the quiet case is answered in about 1 ms. When a download or timer is running, it hands over to the Python code, so nothing changes in how they look or work.

@@ -465,7 +465,7 @@ def glow_for(kind, info):
 
 # ---------------------------------------------------------------- the window
 
-SPRING = (0.8, 1.0, 320.0)      # damping, mass, stiffness: quick, a touch of overshoot
+SPRING = (0.82, 1.0, 560.0)      # damping, mass, stiffness: snappy, a touch of overshoot
 BOUNCE = (0.45, 1.0, 420.0)     # a new event: a small wobble
 
 
@@ -818,7 +818,7 @@ class IslandWindow(Gtk.ApplicationWindow):
                 self.ls.set_margin(self, self.ls.Edge.TOP, 6)
 
         # One page per activity in a cross-fading stack, inside the springing pill
-        self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, transition_duration=220,
+        self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, transition_duration=140,
                                hhomogeneous=False, vhomogeneous=False)
         h = self.compact_height
         self.pages = {"clock": Page(self, "clock", h), "music": Page(self, "music", h, art=True, bars=True, marquee=150),
@@ -853,7 +853,7 @@ class IslandWindow(Gtk.ApplicationWindow):
         click.connect("released", self._blob_clicked)
         self.blob.add_controller(click)
         self.blob_reveal = Gtk.Revealer(transition_type=Gtk.RevealerTransitionType.SLIDE_RIGHT,
-                                        transition_duration=260, child=self.blob)
+                                        transition_duration=170, child=self.blob)
         row = Gtk.Box(halign=Gtk.Align.CENTER, valign=Gtk.Align.START)
         row.append(self.pill)
         row.append(self.blob_reveal)

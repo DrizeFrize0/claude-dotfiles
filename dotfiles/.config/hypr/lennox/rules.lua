@@ -114,4 +114,6 @@ hl.layer_rule({ name = "blur-overview",  match = { namespace = "^(lennox-overvie
 hl.layer_rule({ name = "anim-overview",  match = { namespace = "^(lennox-overview)$" },             animation = "fade" })
 hl.layer_rule({ name = "anim-dashboard", match = { namespace = "^(lennox-dashboard)$" },             animation = "slide left" })
 hl.layer_rule({ name = "anim-widgets",   match = { namespace = "^(lennox-widgets)$" },               animation = "fade" })
+-- The island moves by itself: no fade or box from the compositor on top
+hl.layer_rule({ name = "no-anim-island", match = { namespace = "^(lennox-island)$" }, no_anim = true })
 hl.layer_rule({ name = "no-anim-picker", match = { namespace = "^(selection|hyprpicker)$" },       no_anim = true })
