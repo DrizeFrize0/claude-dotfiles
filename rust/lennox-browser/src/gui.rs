@@ -221,9 +221,10 @@ impl Browser {
         let pass = gtk::PasswordEntry::builder().placeholder_text("Password").show_peek_icon(true).build();
         let save = gtk::Button::with_label("Save");
         let boxed = gtk::Box::new(gtk::Orientation::Vertical, 8);
-        for w in [&gtk::Label::new(Some(&format!("Save a login for {host}"))) as &gtk::Widget, user.upcast_ref(), pass.upcast_ref(), save.upcast_ref()] {
-            boxed.append(w);
-        }
+        boxed.append(&gtk::Label::new(Some(&format!("Save a login for {host}"))));
+        boxed.append(&user);
+        boxed.append(&pass);
+        boxed.append(&save);
         boxed.set_margin_top(14); boxed.set_margin_bottom(14); boxed.set_margin_start(14); boxed.set_margin_end(14);
         let dialog = gtk::Window::builder().transient_for(window).modal(true).title("Save login").child(&boxed).default_width(340).build();
         let b = self.clone();
