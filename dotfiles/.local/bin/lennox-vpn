@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# VPN profiles for the whole laptop (OpenVPN, WireGuard, VPNBook zips). Lennox Settings > Extras > VPN.
+#   lennox-vpn import FILE [--user U --password P]   a .ovpn, a .conf or a .zip of them
+#   lennox-vpn list | status | connect NAME | disconnect | remove NAME
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.vpn "$@"

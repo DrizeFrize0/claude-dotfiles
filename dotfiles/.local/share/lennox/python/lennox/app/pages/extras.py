@@ -2,7 +2,7 @@
 
 import json
 
-from gi.repository import Adw
+from gi.repository import Adw, Gio, Gtk
 
 from ... import autoprofile as AP
 from .. import rows
@@ -80,6 +80,19 @@ class Page:
         fan.add(self.fan_row)
         page.add(fan)
 
+        self.vpn_group = Adw.PreferencesGroup(
+            title="VPN", description="Import a profile from your VPN provider (OpenVPN .ovpn, WireGuard .conf, or a VPNBook .zip), "
+                                     "then connect with one click. It covers the whole laptop.")
+        self.vpn_status = rows.info_row("Right now", "…")
+        self.vpn_group.add(self.vpn_status)
+        self.vpn_user = Adw.EntryRow(title="Username (if the provider gives one, like VPNBook)")
+        self.vpn_pass = Adw.PasswordEntryRow(title="Password")
+        self.vpn_group.add(self.vpn_user)
+        self.vpn_group.add(self.vpn_pass)
+        self.vpn_group.add(rows.button_row("Import a profile", "Choose the file you downloaded", "Choose file…", self._vpn_choose, "document-open-symbolic", suggested=True))
+        self.vpn_rows = []
+        page.add(self.vpn_group)
+
         hub = Adw.PreferencesGroup(title="Jado's hub", description="Opens your hub's web page in its own window, like an app. Also in the app launcher.")
         hub.add(rows.entry_row(store, "hub.url", "Address (for example 192.168.1.20:8080 or the Tailscale name)"))
         hub.add(rows.button_row("Open the hub", None, "Open", lambda: run_async([lennox_bin("lennox-hub")])))
@@ -136,7 +149,58 @@ class Page:
         row.connect("apply", apply)
         return row
 
+    # ---------------------------------------------------------------- VPN
+    def _vpn_choose(self):
+        dialog = Gtk.FileDialog(title="Choose a VPN profile")
+        filters = Gio.ListStore.new(Gtk.FileFilter)
+        vpn = Gtk.FileFilter(name="VPN profiles (.ovpn, .conf, .zip)")
+        for pattern in ("*.ovpn", "*.conf", "*.zip"):
+            vpn.add_pattern(pattern)
+        filters.append(vpn)
+        dialog.set_filters(filters)
+
+        def chosen(d, result):
+            try:
+                path = d.open_finish(result).get_path()
+            except Exception:  # noqa: BLE001  cancelled
+                return
+            argv = [lennox_bin("lennox-vpn"), "import", path]
+            if self.vpn_user.get_text().strip():
+                argv += ["--user", self.vpn_user.get_text().strip(), "--password", self.vpn_pass.get_text()]
+            self.ctx.toast("Importing…")
+
+            def done(ok, out, err):
+                self.ctx.toast(out.strip().replace("\n", ", ") if ok else (err.strip().splitlines() or ["Import failed"])[-1], 5)
+                self.refresh()
+            run_async(argv, done)
+
+        dialog.open(self.ctx.window, None, chosen)
+
+    def _got_vpn(self, ok, out, _err):
+        profiles = [line.split("\t")[0] for line in out.splitlines() if line.strip()] if ok else []
+        for row in self.vpn_rows:
+            self.vpn_group.remove(row)
+        self.vpn_rows = []
+        for name in profiles:
+            row = rows.button_row(name, None, "Connect", lambda n=name: self._vpn_connect(n), "network-vpn-symbolic")
+            self.vpn_group.add(row)
+            self.vpn_rows.append(row)
+        if profiles:
+            row = rows.button_row("Turn the VPN off", None, "Disconnect", lambda: run_async([lennox_bin("lennox-vpn"), "disconnect"], lambda *_a: self.refresh()))
+            self.vpn_group.add(row)
+            self.vpn_rows.append(row)
+
+    def _vpn_connect(self, name):
+        self.ctx.toast(f"Connecting to {name}…")
+
+        def done(ok, out, err):
+            self.ctx.toast(("Connected" if ok else (err.strip().splitlines() or ["Could not connect"])[-1]), 5)
+            self.refresh()
+        run_async([lennox_bin("lennox-vpn"), "connect", name], done)
+
     def refresh(self):
+        run_async([lennox_bin("lennox-vpn"), "list"], self._got_vpn)
+        run_async([lennox_bin("lennox-vpn"), "status"], lambda ok, out, _e: self.vpn_status.value_label.set_label(out.strip() if ok else "NetworkManager isn't running"))
         run_async([lennox_bin("lennox-autoprofile"), "list"], self._got_rules)
         run_async([lennox_bin("lennox-fan"), "status"], self._got_fan)
 

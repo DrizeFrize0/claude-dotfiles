@@ -52,6 +52,7 @@ python3 -W ignore tests/test_powerauto.py 2>&1 | tail -3 | grep -q "^OK" && echo
 bash tests/test_ui.sh | grep -q FAIL && { bash tests/test_ui.sh | grep FAIL; fail=1; } || echo ok terminal look
 bash tests/test_upgrade_look.sh | grep -q FAIL && { bash tests/test_upgrade_look.sh | grep FAIL; fail=1; } || echo ok upgrade flow
 python3 -W ignore tests/test_net.py 2>&1 | tail -3 | grep -q "^OK" && echo ok network || { python3 tests/test_net.py 2>&1 | tail -15; fail=1; }
+python3 -W ignore tests/test_vpn.py 2>&1 | tail -3 | grep -q "^OK" && echo ok vpn || { python3 tests/test_vpn.py 2>&1 | tail -15; fail=1; }
 python3 -W ignore tests/test_more.py 2>&1 | tail -3 | grep -q "^OK" && echo ok helpers || { python3 tests/test_more.py 2>&1 | tail -15; fail=1; }
 bash tests/test_colors_only.sh | grep -q FAIL && { bash tests/test_colors_only.sh | grep FAIL; fail=1; } || echo ok colors-from-music
 

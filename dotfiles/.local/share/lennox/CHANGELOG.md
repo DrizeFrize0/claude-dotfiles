@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.42.0 · 2026-11-07 · VPN profiles
+
+- New: VPN for the whole laptop. Import a profile from your provider (OpenVPN .ovpn, WireGuard .conf, or a whole VPNBook .zip), then connect and disconnect with one click. Settings > Extras > VPN, or in a terminal: lennox-vpn import FILE, list, status, connect NAME, disconnect, remove NAME.
+- Providers like VPNBook give a username and password on their website: type them in before choosing the file and Lennox stores them for every profile in the zip. Profiles never connect by themselves.
+- Uses NetworkManager (lennox upgrade installs its OpenVPN part). Free VPNs can see and log your traffic, so use them for hiding your location, not for anything private.
+
 ## 1.41.0 · 2026-11-07 · Browser: Google sign-in and the rest
 
 - Fixed Google sign-in. Google refuses to sign you in from what looks like an embedded browser, and the browser's default name tag said exactly that. Google sites (accounts, Gmail, YouTube) now get a Firefox name tag and everything else a Safari one. Third-party cookies are limited to sites you visited yourself, which keeps strict privacy and still lets the sign-in work.

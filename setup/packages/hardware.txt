@@ -32,3 +32,5 @@ lib32-vulkan-intel
 intel-media-driver
 libva-utils
 vulkan-tools
+networkmanager-openvpn
+wireguard-tools
