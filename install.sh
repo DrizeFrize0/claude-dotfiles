@@ -337,6 +337,21 @@ build_fast() {
     fi
 }
 
+build_browser() {
+    # Lennox Browser (Rust, WebKitGTK). If the window can't be built, the download manager still is.
+    step "Lennox Browser"
+    command -v cargo >/dev/null 2>&1 || return 0
+    local m="$REPO/rust/lennox-browser/Cargo.toml" bin="$REPO/rust/lennox-browser/target/release/lennox-browser"
+    if cargo build --release -q --features gui --manifest-path "$m" 2>/dev/null; then
+        ok "Lennox Browser built"
+    elif cargo build --release -q --manifest-path "$m" 2>/dev/null; then
+        warn "The browser window did not build (needs webkitgtk-6.0); the download manager works"
+    else
+        warn "Could not build Lennox Browser"; return 0
+    fi
+    install -Dm755 "$bin" "$HOME/.local/bin/lennox-browser"
+}
+
 setup_thermal() {
     # Intel's own heat manager: it holds the temperature down before the fans and the throttle have to
     grep -q GenuineIntel /proc/cpuinfo 2>/dev/null || return 0
@@ -711,6 +726,7 @@ if [[ "$MODE" == "update" ]]; then
     setup_thermal
     install_dotfiles
     build_fast
+    build_browser
     restore_backup
     dir="$HOME/.config/lennox/wallpapers"
     [[ -d "$dir/lennox" ]] || { step "Painting the Lennox wallpaper pack"; paint_wallpapers; }
@@ -739,6 +755,7 @@ setup_sddm
 enable_services
 install_dotfiles
 build_fast
+build_browser
 restore_backup
 download_wallpapers
 setup_shell

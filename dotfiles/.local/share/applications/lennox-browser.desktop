@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lennox Browser
+Comment=Fast browser with vertical tabs, ad blocking and a built-in download manager
+Exec=lennox-browser
+Icon=web-browser
+Terminal=false
+Categories=Network;WebBrowser;

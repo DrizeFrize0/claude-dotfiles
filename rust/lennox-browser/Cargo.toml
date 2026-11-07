@@ -1,0 +1,30 @@
+[package]
+name = "lennox-browser"
+version = "0.1.0"
+edition = "2021"
+description = "Lennox Browser: WebKitGTK window (feature gui) on top of a tested Rust core: downloads, ad blocking, bookmarks, Zen import"
+
+[lib]
+name = "lennox_browser"
+path = "src/lib.rs"
+
+[[bin]]
+name = "lennox-browser"
+path = "src/main.rs"
+
+[features]
+default = []
+gui = ["dep:gtk4", "dep:webkit6"]
+
+[dependencies]
+ureq = "2"
+rusqlite = { version = "0.32", features = ["bundled"] }
+gtk4 = { version = "0.9", optional = true }
+webkit6 = { version = "0.4", optional = true }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

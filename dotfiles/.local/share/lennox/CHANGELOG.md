@@ -3,6 +3,14 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.40.0 · 2026-11-07 · Lennox Browser (first version)
+
+- New: Lennox Browser, written in Rust on WebKitGTK. Vertical tabs on the left, a start page with your most visited sites and a Jado's hub tile, DuckDuckGo search, plain http upgraded to https (home addresses like your Pi stay http), ads and trackers blocked inside pages, sleeping tabs (10 minutes unused), developer tools (F12) and the usual shortcuts (Ctrl+T, W, L, R, Alt+Left/Right). It runs next to Zen; nothing is replaced.
+- Built-in download manager in the style of IDM: a file is split into 8 parts that download at the same time, pause and resume survive a restart, a speed limit, a night schedule, and files sorted into Videos, Music, Images, Documents, Archives and Programs. In the browser every download goes through it. In a terminal: lennox-browser dl URL.
+- Netflix-style sites that need DRM open in Zen automatically. Bookmarks and history are kept locally, and lennox-browser import-zen copies yours over from Zen.
+- Not in yet: password manager, split view, picture-in-picture, per-site permissions and the clear-on-exit options.
+- The browser window needs webkitgtk-6.0, which lennox upgrade installs. If it can't build, you still get the download manager.
+
 ## 1.39.0 · 2026-11-07 · Jado's hub app
 
 - New app: Jado's hub. It opens your Raspberry Pi hub's web page in its own window, like a real app, and shows up in the app launcher. Type its address in Settings > Extras > Jado's hub (for example 192.168.1.20:8080), then open it from there, the launcher, or lennox-hub.
