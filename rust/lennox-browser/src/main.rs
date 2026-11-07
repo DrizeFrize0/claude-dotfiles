@@ -3,7 +3,7 @@
 //!   lennox-browser resolve TEXT                                         what the address bar would load
 //!   lennox-browser import-zen                                           copy bookmarks and history from Zen
 
-use lennox_browser::{adblock, download, drm, store, url, zen};
+use lennox_browser::{adblock, download, drm, grab, store, url, vault, zen};
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -35,13 +35,24 @@ fn main() {
             }
         }
         Some("adblock-rules") => println!("{}", adblock::Blocker::built_in().content_rules_json()),
+        Some("passwords") => passwords(&args[1..]),
+        Some("grab") if args.len() > 1 => {
+            let dir = PathBuf::from(std::env::var("HOME").unwrap_or_default()).join("Downloads/Videos");
+            let status = std::process::Command::new("yt-dlp").args(grab::args(&args[1], &dir)).status();
+            if status.map(|s| !s.success()).unwrap_or(true) {
+                eprintln!("yt-dlp failed or is not installed (sudo pacman -S yt-dlp)");
+            }
+        }
+        Some("pip") if args.len() > 1 => {
+            let _ = std::process::Command::new("mpv").args(grab::pip_args(&args[1])).spawn();
+        }
         Some("dl") => dl(&args[1..]),
         #[cfg(feature = "gui")]
         None => gui::run(),
         #[cfg(not(feature = "gui"))]
         None => eprintln!("This build has no window (it needs the gui feature and webkitgtk-6.0). Commands: dl, resolve, import-zen"),
         _ => {
-            eprintln!("usage: lennox-browser dl URL... | resolve TEXT | import-zen");
+            eprintln!("usage: lennox-browser dl URL... | grab URL | pip URL | passwords add|list|get | resolve TEXT | import-zen | adblock-rules");
             std::process::exit(2);
         }
     }
@@ -82,3 +93,24 @@ fn dl(args: &[String]) {
 
 #[cfg(feature = "gui")]
 mod gui;
+
+fn passwords(args: &[String]) {
+    let dir = data_dir();
+    let v = match vault::Vault::open(&dir.join("vault.sqlite"), &dir.join("vault.key")) {
+        Ok(v) => v,
+        Err(e) => return eprintln!("vault: {e}"),
+    };
+    match args.iter().map(String::as_str).collect::<Vec<_>>().as_slice() {
+        ["add", host, user, password] => match v.save(host, user, password) {
+            Ok(()) => println!("Saved {user} for {host}"),
+            Err(e) => eprintln!("{e}"),
+        },
+        ["list"] => v.hosts().unwrap_or_default().iter().for_each(|(h, u)| println!("{h}  {u}")),
+        ["get", host] => match v.for_host(host) {
+            Ok(logins) => logins.iter().for_each(|l| println!("{}  {}  {}", l.host, l.user, l.password)),
+            Err(e) => eprintln!("{e}"),
+        },
+        ["remove", host, user] => println!("{}", if v.remove(host, user).unwrap_or(false) { "Removed" } else { "Not found" }),
+        _ => eprintln!("usage: lennox-browser passwords add HOST USER PASSWORD | list | get HOST | remove HOST USER"),
+    }
+}

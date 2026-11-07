@@ -85,6 +85,12 @@ class Page:
         hub.add(rows.button_row("Open the hub", None, "Open", lambda: run_async([lennox_bin("lennox-hub")])))
         page.add(hub)
 
+        browser = Adw.PreferencesGroup(title="Lennox Browser", description="What the browser forgets each time it starts. Saved logins, bookmarks and downloads are never wiped.")
+        browser.add(rows.switch_row(store, "browser.clear_cookies", "Clear cookies", "You sign in to sites again next time"))
+        browser.add(rows.switch_row(store, "browser.clear_history", "Clear history"))
+        browser.add(rows.switch_row(store, "browser.clear_cache", "Clear the page cache"))
+        page.add(browser)
+
         online = Adw.PreferencesGroup(title="Online")
         online.add(rows.entry_row(store, "discord.server_id", "Discord server ID (turn on its widget in Server Settings > Widget)"))
         online.add(rows.switch_row(store, "downloads.on", "Downloads in the bar", "Progress of browser downloads; a click opens the finished file"))

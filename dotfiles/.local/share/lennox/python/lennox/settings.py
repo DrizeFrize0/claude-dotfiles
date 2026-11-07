@@ -224,6 +224,11 @@ DEFAULTS = {
         "dns": "auto",                 # auto (what the network hands out) | fastest | cloudflare | google | quad9
     },
     "auto": {"on": False},             # profiles by Wi-Fi network or time of day (Settings > Extras)
+    "browser": {
+        "clear_cookies": False,        # Lennox Browser: wipe these every time it starts (Settings > Extras)
+        "clear_history": False,
+        "clear_cache": False,
+    },
     "hub": {
         "url": "",                     # Jado's hub address (Settings > Extras), opened by lennox-hub
     },

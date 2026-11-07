@@ -18,8 +18,9 @@ gui = ["dep:gtk4", "dep:webkit6"]
 
 [dependencies]
 ureq = "2"
+chacha20poly1305 = "0.10"
 rusqlite = { version = "0.32", features = ["bundled"] }
-gtk4 = { version = "0.9", optional = true }
+gtk4 = { version = "0.9", features = ["v4_10"], optional = true }
 webkit6 = { version = "0.4", optional = true }
 
 [profile.release]

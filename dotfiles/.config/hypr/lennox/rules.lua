@@ -61,6 +61,17 @@ hl.window_rule({
     keep_aspect_ratio = true,
 })
 
+-- The floating video player of Lennox Browser (picture in picture)
+hl.window_rule({
+    name  = "lennox-pip",
+    match = { class = "^(lennox-pip)$" },
+    float = true,
+    pin   = true,
+    size  = "480 270",
+    no_initial_focus = true,
+    keep_aspect_ratio = true,
+})
+
 -- Steam's small windows float, the library stays tiled
 hl.window_rule({
     name  = "steam-dialogs",

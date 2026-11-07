@@ -3,6 +3,16 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.41.0 · 2026-11-07 · Browser: Google sign-in and the rest
+
+- Fixed Google sign-in. Google refuses to sign you in from what looks like an embedded browser, and the browser's default name tag said exactly that. Google sites (accounts, Gmail, YouTube) now get a Firefox name tag and everything else a Safari one. Third-party cookies are limited to sites you visited yourself, which keeps strict privacy and still lets the sign-in work.
+- Password manager: save a login for a site (key button) and fill it in with one click. Passwords are encrypted one by one and the key file is readable only by you. From a terminal: lennox-browser passwords add|list|get|remove. (Passwords can't be imported from Zen: it locks them with its own key.)
+- Split view: two pages side by side in one tab (Ctrl+Shift+S).
+- Picture-in-picture: a small floating, always-on-top player for the video on the page (it uses mpv, so YouTube works too).
+- Video grabber: one button downloads the video on the page into Downloads/Videos with yt-dlp, 8 parts at a time.
+- Site permissions: camera, microphone, location and notifications ask once and remember your answer per site.
+- Clear on start: cookies, history and cache can be wiped each time the browser starts. Settings > Extras > Lennox Browser.
+
 ## 1.40.0 · 2026-11-07 · Lennox Browser (first version)
 
 - New: Lennox Browser, written in Rust on WebKitGTK. Vertical tabs on the left, a start page with your most visited sites and a Jado's hub tile, DuckDuckGo search, plain http upgraded to https (home addresses like your Pi stay http), ads and trackers blocked inside pages, sleeping tabs (10 minutes unused), developer tools (F12) and the usual shortcuts (Ctrl+T, W, L, R, Alt+Left/Right). It runs next to Zen; nothing is replaced.

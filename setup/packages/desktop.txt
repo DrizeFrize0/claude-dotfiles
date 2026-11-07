@@ -83,3 +83,4 @@ gcr                        # the master password dialog (pinentry-gnome3)
 cava
 python-cairo
 webkitgtk-6.0
+yt-dlp
