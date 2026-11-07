@@ -3,6 +3,12 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.38.0 · 2026-11-07 · More Rust
+
+- lennox-fast now also answers the system monitor bar item and every setting lookup (lennox-get). Many of Lennox's scripts read a setting dozens of times; each lookup took about 33 ms (Python starting up) and now takes about 1.5 ms, so menus, the wallpaper script, the bar and the installer feel quicker.
+- The system monitor item uses far less processor time: it measures and prints in Rust and prints exactly what the Python version did. If the NVIDIA chip is awake it hands over to Python for the extra details.
+- Everything falls back to the Python code when Rust can't answer, so nothing changes in how it works.
+
 ## 1.37.1 · 2026-11-07 · Snappier island
 
 - The island opens, closes and changes size faster (a stiffer spring and shorter fades), and Hyprland no longer adds its own fade on top of the island's motion, which could leave boxes behind.

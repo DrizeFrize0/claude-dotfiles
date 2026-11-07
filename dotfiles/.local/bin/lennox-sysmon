@@ -4,6 +4,7 @@
 #   lennox-sysmon          the same details as text
 #   lennox-sysmon open     the full monitor (Mission Center, SUPER + CTRL + ESC)
 export PATH="$HOME/.local/bin:$PATH"
+[[ "${1:-}" == waybar && -x "$HOME/.local/bin/lennox-fast" ]] && exec "$HOME/.local/bin/lennox-fast" sysmon waybar
 case "${1:-text}" in
     open) exec lennox-open system_monitor ;;
     *) PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.sysmon "${1:-text}" ;;

@@ -2,6 +2,9 @@
 //! It only handles the quiet case (nothing downloading, no timers). For anything else
 //! it runs the Python code, so behaviour never changes: `lennox-fast downloads|clock [args]`.
 
+mod get;
+mod sysmon;
+
 use std::env;
 use std::fs;
 use std::os::unix::process::CommandExt;
@@ -11,11 +14,11 @@ use std::process::Command;
 const EMPTY: &str = "{\"text\": \"\"}";
 const PARTIAL: [&str; 4] = [".crdownload", ".part", ".opdownload", ".download"];
 
-fn home() -> PathBuf {
+pub fn home() -> PathBuf {
     PathBuf::from(env::var("HOME").unwrap_or_else(|_| "/".into()))
 }
 
-fn dir(var: &str, fallback: &str) -> PathBuf {
+pub fn dir(var: &str, fallback: &str) -> PathBuf {
     match env::var(var) {
         Ok(v) if !v.is_empty() => PathBuf::from(v),
         _ => home().join(fallback),
@@ -85,7 +88,7 @@ fn clock_quiet() -> Option<bool> {
     if quiet { Some(true) } else { None }
 }
 
-fn python(module: &str, args: &[String]) -> ! {
+pub fn python(module: &str, args: &[String]) -> ! {
     let lib = home().join(".local/share/lennox/python");
     let err = Command::new("python3").arg("-m").arg(module).args(args).env("PYTHONPATH", lib).exec();
     eprintln!("lennox-fast: cannot run python3: {err}");
@@ -117,6 +120,8 @@ fn main() {
             }
             python("lennox.clock", &["waybar".to_string()]);
         }
+        "get" => get::run(&rest),
+        "sysmon" => sysmon::run(&rest),
         "downloads" => python("lennox.downloads", &rest),
         "clock" => python("lennox.clock", &rest),
         _ => {

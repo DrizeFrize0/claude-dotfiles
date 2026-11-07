@@ -32,4 +32,39 @@ import json
 json.dump({"timers":[],"alarms":[{"id":"a","time":"07:00","enabled":False,"next":None}],"reminders":[],"ringing":[],"stopwatch":{"start":None,"elapsed":0.0,"laps":[]}},open("$HOME/.local/state/lennox/clock.json","w"),indent=1)
 P
 check "clock: only a switched-off alarm is empty" '[ "$($B clock waybar)" = "{\"text\": \"\"}" ]'
+
+# ---- system monitor: the Rust output must equal the Python output, character for character
+mk() {  # mk DIR: a made-up /sys and /proc (the numbers change half way through the half second)
+    rm -rf "$1"; mkdir -p "$1/sys/class/hwmon/hwmon0" "$1/sys/class/hwmon/hwmon1" "$1/sys/class/hwmon/hwmon2" "$1/sys/class/power_supply/BAT0" \
+        "$1/sys/bus/pci/devices/0000:01:00.0/power" "$1/proc/101" "$1/proc/202" "$1/proc/303"
+    echo coretemp > "$1/sys/class/hwmon/hwmon0/name"; echo 79500 > "$1/sys/class/hwmon/hwmon0/temp1_input"
+    echo hp > "$1/sys/class/hwmon/hwmon1/name"; echo 2200 > "$1/sys/class/hwmon/hwmon1/fan1_input"; echo 0 > "$1/sys/class/hwmon/hwmon1/fan2_input"
+    echo nvme > "$1/sys/class/hwmon/hwmon2/name"; echo 41000 > "$1/sys/class/hwmon/hwmon2/temp1_input"
+    echo Discharging > "$1/sys/class/power_supply/BAT0/status"; echo 11250000 > "$1/sys/class/power_supply/BAT0/power_now"
+    echo 0x10de > "$1/sys/bus/pci/devices/0000:01:00.0/vendor"; echo 0x030200 > "$1/sys/bus/pci/devices/0000:01:00.0/class"
+    echo suspended > "$1/sys/bus/pci/devices/0000:01:00.0/power/runtime_status"
+    printf 'MemTotal: 16000000 kB\nMemFree: 1000 kB\nMemAvailable: 6000000 kB\n' > "$1/proc/meminfo"
+    echo "cpu 1000 0 500 8000 100 0 0 0 0 0" > "$1/proc/stat"
+    echo "101 (firefox) S 1 1 1 0 0 0 0 0 0 0 100 50 0 0 0 0 0 0 0 0" > "$1/proc/101/stat"
+    echo "202 (Web Content) S 1 1 1 0 0 0 0 0 0 0 10 5 0 0 0 0 0 0 0 0" > "$1/proc/202/stat"
+    echo "303 (idle thing) S 1 1 1 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0" > "$1/proc/303/stat"
+    ( sleep 0.25; echo "cpu 1300 0 600 8200 100 0 0 0 0 0" > "$1/proc/stat"
+      echo "101 (firefox) S 1 1 1 0 0 0 0 0 0 0 130 70 0 0 0 0 0 0 0 0" > "$1/proc/101/stat"
+      echo "202 (Web Content) S 1 1 1 0 0 0 0 0 0 0 12 8 0 0 0 0 0 0 0 0" > "$1/proc/202/stat" ) &
+}
+M="$T/mon"
+mk "$M"; RUST_OUT="$(LENNOX_SYS=$M/sys LENNOX_PROC=$M/proc $B sysmon waybar)"; wait
+mk "$M"; PY_OUT="$(cd "$SP/../dotfiles/.local/share/lennox/python" && LENNOX_SYS=$M/sys LENNOX_PROC=$M/proc python3 -m lennox.sysmon waybar)"; wait
+check "sysmon: Rust prints exactly what Python prints" '[ "$RUST_OUT" = "$PY_OUT" ] && [ -n "$RUST_OUT" ]'
+[ "$RUST_OUT" = "$PY_OUT" ] || { echo "rust: $RUST_OUT"; echo "py:   $PY_OUT"; }
+echo awake > "$M/sys/bus/pci/devices/0000:01:00.0/power/runtime_status"
+check "sysmon: an awake NVIDIA chip goes to Python" 'LENNOX_SYS=$M/sys LENNOX_PROC=$M/proc $B sysmon waybar | grep -q "\"class\""'
+
+# ---- settings: lennox-get
+mkdir -p "$HOME/.config/lennox"; echo '{"bar": {"style": "glass", "x": true, "n": 7}}' > "$HOME/.config/lennox/settings.json"
+check "get: text" '[ "$($B get bar.style)" = glass ]'
+check "get: true/false" '[ "$($B get bar.x)" = true ]'
+check "get: number" '[ "$($B get bar.n)" = 7 ]'
+check "get: a missing key falls back to the default from Python" '[ -n "$($B get appearance.rounding)" ]'
+check "get: an unknown setting is an error" '! $B get nope.nothing 2>/dev/null'
 rm -rf "$T"; exit $fail

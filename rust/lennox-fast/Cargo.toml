@@ -5,6 +5,7 @@ edition = "2021"
 description = "Instant answers for the busiest bar items; anything unusual is handed to the Python code"
 
 [dependencies]
+serde_json = "1"
 
 [profile.release]
 opt-level = "s"
