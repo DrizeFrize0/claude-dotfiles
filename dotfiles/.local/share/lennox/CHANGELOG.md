@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.36.3 · 2026-11-07 · Fans that follow the profile
+
+- Your laptop was stuck on the quiet fan curve. Each fan profile now also sets the laptop's own fan curve: Silent is quiet, Cool uses HP's cool curve (fans work harder), Normal is balanced and Turbo is performance.
+- lennox-heat cool now also runs the fans at full speed until you pick a profile in Settings.
+
 ## 1.36.2 · 2026-11-07 · Fan control
 
 - New: lennox-fan probe shows exactly what your laptop lets Linux control (the HP fan curve, fan speeds, and whether the fan can be set directly).

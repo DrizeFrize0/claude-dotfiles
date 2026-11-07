@@ -163,6 +163,9 @@ def cool():
     if os.path.exists(fan.HELPER):
         sh.run(["pkexec", fan.HELPER, "silent"], 15)
         steps.append("Processor held to 60% with turbo off (until you pick Normal in Settings > Extras > Fan and noise)")
+        if fan.fan_control():
+            sh.run(["pkexec", fan.HELPER, "fan-max"], 15)
+            steps.append("Fans at full speed (they go back to automatic when you pick a profile in Settings)")
     return steps
 
 

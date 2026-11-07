@@ -24,6 +24,10 @@ case "${1:-}" in
     turbo) turbo=0; pct=100; epp=performance ;;
     *) echo "usage: lennox-cpucap silent|cool|normal|turbo|fan-max|fan-auto" >&2; exit 2 ;;
 esac
+# The laptop's own fan curve (firmware profile): HP has a "cool" one that runs the fans harder
+PLAT="${LENNOX_PLATFORM_DIR:-/sys/firmware/acpi}/platform_profile"
+case "$1" in silent) plat=quiet ;; cool) plat=cool ;; normal) plat=balanced ;; turbo) plat=performance ;; esac
+if [[ -w "$PLAT" ]] && grep -qw "$plat" "${PLAT}_choices" 2>/dev/null; then echo "$plat" > "$PLAT" 2>/dev/null || true; fi
 echo "$turbo" > "$DIR/no_turbo"
 echo "$pct" > "$DIR/max_perf_pct"
 # How eagerly the processor boosts (a cooler default than the kernel's)
