@@ -224,6 +224,9 @@ DEFAULTS = {
         "dns": "auto",                 # auto (what the network hands out) | fastest | cloudflare | google | quad9
     },
     "auto": {"on": False},             # profiles by Wi-Fi network or time of day (Settings > Extras)
+    "hub": {
+        "url": "",                     # Jado's hub address (Settings > Extras), opened by lennox-hub
+    },
     "downloads": {
         "on": True,                    # downloads in the bar
         "folder": "",                  # empty: ~/Downloads

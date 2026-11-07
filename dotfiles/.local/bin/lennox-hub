@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Jado's hub as an app: its web page in its own window (set the address in Lennox Settings > Extras).
+#   lennox-hub            open it
+#   lennox-hub URL        open this address instead (and remember nothing)
+# Window: a Chromium-style --app window if one is installed, else a small WebKit window, else your browser.
+export PATH="$HOME/.local/bin:$PATH"
+url="${1:-$(lennox-get hub.url 2>/dev/null)}"
+if [[ -z "$url" ]]; then
+    notify-send -a Lennox -i dialog-information "Jado's hub" "Set its address first: Lennox Settings > Extras > Jado's hub."
+    exit 1
+fi
+[[ "$url" == *://* ]] || url="http://$url"
+for b in chromium chromium-browser google-chrome-stable brave; do
+    if command -v "$b" >/dev/null 2>&1; then
+        exec setsid -f "$b" "--app=$url" --class=lennox-hub >/dev/null 2>&1
+    fi
+done
+# A window that closes normally ends here; WebKit missing or any failure opens the browser instead
+PYTHONPATH="$HOME/.local/share/lennox/python" python3 -m lennox.hub "$url" 2>/dev/null && exit 0
+exec lennox-open browser "$url"

@@ -80,6 +80,11 @@ class Page:
         fan.add(self.fan_row)
         page.add(fan)
 
+        hub = Adw.PreferencesGroup(title="Jado's hub", description="Opens your hub's web page in its own window, like an app. Also in the app launcher.")
+        hub.add(rows.entry_row(store, "hub.url", "Address (for example 192.168.1.20:8080 or the Tailscale name)"))
+        hub.add(rows.button_row("Open the hub", None, "Open", lambda: run_async([lennox_bin("lennox-hub")])))
+        page.add(hub)
+
         online = Adw.PreferencesGroup(title="Online")
         online.add(rows.entry_row(store, "discord.server_id", "Discord server ID (turn on its widget in Server Settings > Widget)"))
         online.add(rows.switch_row(store, "downloads.on", "Downloads in the bar", "Progress of browser downloads; a click opens the finished file"))

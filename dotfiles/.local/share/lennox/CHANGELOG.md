@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.39.0 · 2026-11-07 · Jado's hub app
+
+- New app: Jado's hub. It opens your Raspberry Pi hub's web page in its own window, like a real app, and shows up in the app launcher. Type its address in Settings > Extras > Jado's hub (for example 192.168.1.20:8080), then open it from there, the launcher, or lennox-hub.
+- It uses a Chromium-style app window if you have one, otherwise a small built-in web window (WebKit, installed by lennox upgrade), otherwise your browser.
+
 ## 1.38.0 · 2026-11-07 · More Rust
 
 - lennox-fast now also answers the system monitor bar item and every setting lookup (lennox-get). Many of Lennox's scripts read a setting dozens of times; each lookup took about 33 ms (Python starting up) and now takes about 1.5 ms, so menus, the wallpaper script, the bar and the installer feel quicker.
