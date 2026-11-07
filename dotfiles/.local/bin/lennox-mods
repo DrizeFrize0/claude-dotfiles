@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Find your Minecraft mods folders and copy mods between them (it only copies, never moves or deletes).
+#   lennox-mods find                      where LabyMod and your launchers keep mods, and how many each holds
+#   lennox-mods horizon                   work out which folder Horizon uses for Minecraft
+#   lennox-mods copy FROM TO [--yes]      copy every .jar in FROM to TO (shows what it would do without --yes)
+# LABYMOD_ROOTS / MOD_ROOTS can point the search somewhere else (tests do).
+
+ROOTS="${MOD_ROOTS:-$HOME}"
+
+count_jars() { find "$1" -maxdepth 1 -type f -iname '*.jar' 2>/dev/null | wc -l; }
+
+list() {   # list LABEL FIND-ARGS...  (only folders that hold jars are shown)
+    local label="$1" dir n; shift
+    echo "$label"
+    local found=0
+    while IFS= read -r dir; do
+        [[ -n "$dir" ]] || continue
+        n="$(count_jars "$dir")"
+        [[ "$n" -gt 0 ]] || continue
+        printf '  %3s files  %s\n' "$n" "$dir"
+        found=1
+    done < <(find "$ROOTS" -maxdepth 9 "$@" 2>/dev/null | sort -u)
+    [[ $found == 1 ]] || echo "  (nothing found)"
+}
+
+find_cmd() {
+    # Every folder named mods or addons that holds .jar files, wherever it is: the surest way to find them
+    list "Every mods or addons folder that has files in it (this is where the mods are):" \
+        \( -type d \( -iname mods -o -iname addons \) \) -prune
+    echo
+    echo "How to tell them apart: a path with 'labymod' in it is LabyMod's. A path with 'horizon' (or the launcher's name) is Horizon's."
+    echo "A path ending in .minecraft/mods is the standard Minecraft one."
+    echo
+    echo "Mods folders that are EMPTY (a launcher's own folder is often here, until you put mods in it):"
+    local empties=0 dir
+    while IFS= read -r dir; do
+        [[ -n "$dir" && "$(count_jars "$dir")" -eq 0 ]] || continue
+        printf '      0 files  %s\n' "$dir"; empties=1
+    done < <(find "$ROOTS" -maxdepth 9 -type d \( -iname mods -o -iname addons \) -prune 2>/dev/null | sort -u)
+    [[ $empties == 1 ]] || echo "  (none)"
+    echo
+    echo "Horizon on this laptop:"
+    local any=0 line
+    while IFS= read -r line; do [[ -n "$line" ]] && { echo "  $line"; any=1; }; done < <(
+        { command -v flatpak >/dev/null && flatpak list 2>/dev/null | grep -i horizon | sed 's/^/flatpak: /'
+          command -v pacman >/dev/null && pacman -Qs horizon 2>/dev/null | grep -i '^local' | sed 's/^/package: /'
+          find "$ROOTS" -maxdepth 4 \( -iname '*horizon*' \) ! -ipath '*/.cache/*' ! -ipath '*/node_modules/*' ! -ipath '*/wallpapers/*' 2>/dev/null | head -12 | sed 's/^/found:   /'
+        } 2>/dev/null)
+    local hd
+    for hd in "$ROOTS/.local/share/horizon" "$ROOTS/.local/share/horizon-launcher" "$ROOTS/.local/share/Horizon" "$ROOTS/.config/horizon"; do
+        [[ -d "$hd" ]] || continue
+        echo "  Inside $hd (folders, two levels):"
+        find "$hd" -maxdepth 2 -type d ! -name '.horizon-cache' 2>/dev/null | sed "s#^$hd#     .#" | head -20
+    done
+    [[ $any == 1 ]] || echo "  (nothing named Horizon found: where did you install it from? A download in ~/Downloads, an AppImage, the AUR?)"
+    echo
+    echo "Then: lennox-mods copy FROM TO   (FROM = LabyMod's folder above, TO = Horizon's folder above)"
+}
+
+# Where does Horizon keep Minecraft? Three clues: a running game's own command line, Horizon's settings files,
+# and the folders it made.
+horizon_cmd() {
+    echo "1. If a Minecraft game is running right now (start one from Horizon first), its game folder is:"
+    local run
+    run="$(ps -eo args 2>/dev/null | grep -oE -- '--gameDir[= ][^ ]+' | sed -E 's/--gameDir[= ]//' | sort -u)"
+    if [[ -n "$run" ]]; then sed 's/^/     /' <<<"$run"; echo "     -> its mods folder is that path plus /mods"
+    else echo "     (no game running: start an instance in Horizon, wait for the game window, then run this again)"; fi
+    echo
+    echo "2. What Horizon's own settings say about folders:"
+    local hits
+    hits="$(grep -rIiE 'gamedir|game_dir|game-dir|mods|minecraft|instances' "$ROOTS/.local/share/horizon" "$ROOTS/.local/share/horizon-launcher" \
+        "$ROOTS/.config/horizon" "$ROOTS/.config/horizon-launcher" 2>/dev/null | grep -v 'horizon-cache' | cut -c1-170 | head -15)"
+    [[ -n "$hits" ]] && sed "s#$ROOTS#~#" <<<"$hits" | sed 's/^/     /' || echo "     (nothing about folders in its settings)"
+    echo
+    echo "3. The folders Horizon created (three levels deep):"
+    local d any=0
+    for d in "$ROOTS/.local/share/horizon" "$ROOTS/.local/share/horizon-launcher" "$ROOTS/.config/horizon"; do
+        [[ -d "$d" ]] || continue
+        any=1
+        find "$d" -maxdepth 3 -type d ! -ipath '*cache*' 2>/dev/null | sed "s#$ROOTS#~#" | sed 's/^/     /' | head -25
+    done
+    [[ $any == 1 ]] || echo "     (none)"
+    echo
+    echo "Horizon may simply use the standard folder, ~/.minecraft/mods (it doesn't exist until you make it):"
+    if [[ -d "$ROOTS/.minecraft/mods" ]]; then echo "     exists: ~/.minecraft/mods"; else echo "     missing. To use it: mkdir -p ~/.minecraft/mods"; fi
+}
+
+copy_cmd() {
+    local from="$1" to="$2" yes="$3" jar n=0 skipped=0
+    if [[ ! -d "$from" ]]; then
+        echo "Not a folder: $from" >&2
+        [[ "$from" == *PATH* || "$from" == [A-Z_]* ]] && echo "Use the real paths from 'lennox-mods find' (copy one of the lines that starts with a number), not the words in capital letters." >&2
+        exit 1
+    fi
+    [[ "$from" != "$to" ]] || { echo "Both folders are the same." >&2; exit 1; }
+    [[ -d "$to" ]] || { echo "The destination folder doesn't exist yet: $to" >&2; echo "Start an instance of that launcher once (or create the folder) and run this again." >&2; exit 1; }
+    while IFS= read -r jar; do
+        if [[ -e "$to/$(basename "$jar")" ]]; then skipped=$((skipped + 1)); continue; fi
+        case "$(basename "$jar" | tr 'A-Z' 'a-z')" in
+            labymod*|*laby-mod*) echo "skipped (LabyMod's own file, it only works inside LabyMod)  $(basename "$jar")"; continue ;;
+        esac
+        if [[ "$yes" == --yes ]]; then cp -- "$jar" "$to/" && echo "copied  $(basename "$jar")"; else echo "would copy  $(basename "$jar")"; fi
+        n=$((n + 1))
+    done < <(find "$from" -maxdepth 1 -type f -iname '*.jar' | sort)
+    echo
+    if [[ "$yes" == --yes ]]; then echo "$n copied, $skipped already there (left alone). Nothing was removed from $from."
+    else echo "$n would be copied, $skipped already there. Nothing was changed: add --yes to do it."; fi
+}
+
+case "${1:-find}" in
+    find) find_cmd ;;
+    horizon) horizon_cmd ;;
+    copy) [[ $# -ge 3 ]] || { echo "usage: lennox-mods copy FROM TO [--yes]" >&2; exit 2; }; copy_cmd "$2" "$3" "${4:-}" ;;
+    *) echo "usage: lennox-mods find | horizon | copy FROM TO [--yes]" >&2; exit 2 ;;
+esac

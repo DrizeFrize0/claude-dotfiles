@@ -1,0 +1,56 @@
+# Lennox startup animation for Plymouth: the name fades in, three dots pulse.
+# Also shows the disk password box (for encrypted disks) so unlocking still works.
+Window.SetBackgroundTopColor(0.02, 0.03, 0.08);
+Window.SetBackgroundBottomColor(0.06, 0.08, 0.18);
+
+cx = Window.GetWidth() / 2;
+cy = Window.GetHeight() / 2;
+
+logo.image = Image.Text("Lennox", 0.82, 0.9, 1.0, 1, "Sans Bold 44");
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetX(cx - logo.image.GetWidth() / 2);
+logo.sprite.SetY(cy - logo.image.GetHeight() / 2 - 30);
+logo.sprite.SetOpacity(0);
+
+for (i = 0; i < 3; i++) {
+    dot[i].image = Image.Text("●", 0.66, 0.78, 1.0, 1, "Sans 20");
+    dot[i].sprite = Sprite(dot[i].image);
+    dot[i].sprite.SetX(cx - 36 + i * 30);
+    dot[i].sprite.SetY(cy + 34);
+    dot[i].sprite.SetOpacity(0);
+}
+
+counter = 0;
+fun refresh_callback() {
+    counter++;
+    fade = counter / 40;
+    if (fade > 1) fade = 1;
+    logo.sprite.SetOpacity(fade);
+    for (i = 0; i < 3; i++) {
+        pulse = (Math.Sin(counter / 8 - i * 1.1) + 1) / 2;
+        dot[i].sprite.SetOpacity(fade * (0.25 + 0.75 * pulse));
+    }
+}
+Plymouth.SetRefreshFunction(refresh_callback);
+
+# The disk password (only appears on encrypted disks)
+prompt.sprite = Sprite();
+bullets.sprite = Sprite();
+fun display_password_callback(prompt_text, bullet_count) {
+    prompt.image = Image.Text(prompt_text, 0.82, 0.9, 1.0, 1, "Sans 16");
+    prompt.sprite.SetImage(prompt.image);
+    prompt.sprite.SetX(cx - prompt.image.GetWidth() / 2);
+    prompt.sprite.SetY(cy + 90);
+    text = "";
+    for (i = 0; i < bullet_count; i++) text += "● ";
+    bullets.image = Image.Text(text + " ", 0.66, 0.78, 1.0, 1, "Sans 16");
+    bullets.sprite.SetImage(bullets.image);
+    bullets.sprite.SetX(cx - bullets.image.GetWidth() / 2);
+    bullets.sprite.SetY(cy + 125);
+}
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+fun display_normal_callback() {
+    prompt.sprite.SetOpacity(0);
+    bullets.sprite.SetOpacity(0);
+}
+Plymouth.SetDisplayNormalFunction(display_normal_callback);

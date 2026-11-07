@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<defs>
+  <linearGradient id="a7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a2fd0"/><stop offset="0.55" stop-color="#ff4f8b"/><stop offset="1" stop-color="#ffa45a"/></linearGradient>
+  <linearGradient id="s7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset="1" stop-color="#ffb870"/></linearGradient>
+  <clipPath id="c7"><circle cx="64" cy="64" r="58"/></clipPath>
+  <mask id="stripes7"><rect width="128" height="128" fill="#fff"/><rect y="62" width="128" height="3" fill="#000"/><rect y="72" width="128" height="4" fill="#000"/><rect y="83" width="128" height="5" fill="#000"/></mask>
+</defs>
+<g clip-path="url(#c7)">
+  <rect width="128" height="128" fill="url(#a7)"/>
+  <circle cx="64" cy="58" r="34" fill="url(#s7)" mask="url(#stripes7)"/>
+  <rect y="96" width="128" height="40" fill="#1a1038"/>
+  <rect y="96" width="128" height="2.5" fill="#ff7ab0" opacity="0.8"/>
+</g>
+<path d="M52 34 V84 H88" fill="none" stroke="#1a1038" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 0)"/>
+</svg>

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Check your ping (router, internet, your Minecraft server) and what to do about it.
+#   lennox-ping [--json]
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.ping "$@"

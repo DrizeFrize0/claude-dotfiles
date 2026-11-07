@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Profiles by Wi-Fi network or time of day.
+#   lennox-autoprofile watch | check | list | add RULE | remove N
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.autoprofile "$@"

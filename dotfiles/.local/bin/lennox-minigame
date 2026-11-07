@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# A quick break: snake or flappy.
+#   lennox-minigame snake | flappy | menu
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.minigames "$@"

@@ -1,0 +1,57 @@
+/* Lennox list menu: clipboard, Wi-Fi, keybinds, emoji, bar style.
+ * A glass card that drops in under the bar. */
+
+@import "~/.config/rofi/shared.rasi"
+
+configuration {
+    show-icons: false;
+}
+
+window {
+    width:             36em;
+    location:          north;
+    anchor:            north;
+    y-offset:          4.2em;
+}
+
+mainbox {
+    padding:           16px;
+    spacing:           12px;
+    orientation:       vertical;
+    children:          [ "inputbar", "message", "listview" ];
+    background-color:  transparent;
+}
+
+inputbar {
+    children:          [ "prompt", "entry" ];
+}
+
+prompt {
+    font:              "Inter SemiBold 11";
+}
+
+listview {
+    columns:           1;
+    lines:             9;
+    spacing:           4px;
+    cycle:             true;
+    dynamic:           true;
+    scrollbar:         false;
+    layout:            vertical;
+    fixed-height:      false;
+    background-color:  transparent;
+}
+
+element {
+    padding:           10px 14px;
+    spacing:           10px;
+    border-radius:     14px;
+}
+
+element-text {
+    vertical-align:    0.5;
+}
+
+element-icon {
+    size:              1.4em;
+}

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Automatic screen lock / sleep (hypridle).
+#   lennox-idle on       normal: dim, lock and sleep when idle
+#   lennox-idle off      stay awake (until you turn it back on or log in again)
+#   lennox-idle toggle | status | waybar
+export PATH="$HOME/.local/bin:$PATH"
+
+status() { pgrep -x hypridle >/dev/null && echo on || echo off; }
+
+case "${1:-status}" in
+    on)
+        pgrep -x hypridle >/dev/null || setsid -f hypridle >/dev/null 2>&1
+        ;;
+    off)
+        pkill -x hypridle
+        ;;
+    toggle)
+        if [[ "$(status)" == "on" ]]; then
+            "$0" off
+            notify-send -a Lennox -i caffeine-cup-full -t 2500 "Staying awake" "Auto lock and sleep are paused until you turn them back on."
+        else
+            "$0" on
+            notify-send -a Lennox -i caffeine-cup-empty -t 2000 "Auto lock back on"
+        fi
+        ;;
+    status) status ;;
+    waybar)
+        if [[ "$(status)" == "on" ]]; then
+            printf '{"text":"󰛊","class":"on","tooltip":"Auto lock and sleep are on\\nClick to stay awake"}\n'
+        else
+            printf '{"text":"󰅶","class":"off","tooltip":"Staying awake\\nClick to turn auto lock back on"}\n'
+        fi
+        exit 0
+        ;;
+    *) echo "usage: lennox-idle on|off|toggle|status|waybar" >&2; exit 2 ;;
+esac
+pkill -RTMIN+11 -x waybar 2>/dev/null
+exit 0

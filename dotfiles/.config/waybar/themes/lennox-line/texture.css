@@ -1,0 +1,2 @@
+/* Subtle texture (Settings > Bar & Dock): a faint grain on the strip */
+window#waybar { background-image: url("../../assets/noise.png"); }

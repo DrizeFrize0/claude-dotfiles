@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Why is the laptop hot? What uses the processor, power settings, and the safe steps to cool it.
+#   lennox-heat [check | cool]
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.heat "$@"

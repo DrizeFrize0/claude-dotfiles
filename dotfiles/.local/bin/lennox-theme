@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Dark / light mode and color themes.
+#   lennox-theme toggle|dark|light   switch dark / light mode (SUPER + SHIFT + M)
+#   lennox-theme list                the color themes
+#   lennox-theme set NAME            use a color theme (wallpaper = colors from your wallpaper)
+#   lennox-theme base                (internal) the current theme's "COLOR SCHEME", empty for wallpaper
+export PATH="$HOME/.local/bin:$PATH"
+
+themes() {
+    # id<TAB>name<TAB>base color<TAB>scheme override
+    PYTHONPATH="$HOME/.local/share/lennox/python" python3 -c '
+from lennox import settings as S
+for tid, (name, color, scheme) in S.THEMES.items():
+    print("\t".join([tid, name, color or "", scheme or ""]))'
+}
+
+case "${1:-toggle}" in
+    toggle|dark|light)
+        current="$(lennox-get appearance.color_mode)"
+        if [[ "$1" == "dark" || "$1" == "light" ]]; then
+            new="$1"
+        elif [[ "$current" == "dark" ]]; then
+            new="light"
+        else
+            new="dark"
+        fi
+        lennox-set appearance.color_mode "$new"
+        notify-send -a Lennox -i weather-clear-night -t 2000 "${new^} mode" "Colors updated."
+        ;;
+
+    list)
+        current="$(lennox-get appearance.theme)"
+        themes | while IFS=$'\t' read -r tid name color _; do
+            mark=" "; [[ "$tid" == "$current" ]] && mark="*"
+            printf '%s %-10s %-20s %s\n' "$mark" "$tid" "$name" "$color"
+        done
+        ;;
+
+    set)
+        [[ -n "${2:-}" ]] || { echo "usage: lennox-theme set NAME   (see: lennox-theme list)" >&2; exit 2; }
+        lennox-set appearance.theme "$2" || exit 1
+        name="$(themes | awk -F'\t' -v t="$2" '$1 == t { print $2 }')"
+        notify-send -a Lennox -i preferences-desktop-theme -t 2000 "Theme: $name" "Colors updated."
+        ;;
+
+    base)
+        current="$(lennox-get appearance.theme 2>/dev/null)"
+        themes | awk -F'\t' -v t="$current" '$1 == t && $3 != "" { print $3, $4 }'
+        ;;
+
+    *)
+        echo "usage: lennox-theme toggle|dark|light | list | set NAME" >&2
+        exit 2
+        ;;
+esac

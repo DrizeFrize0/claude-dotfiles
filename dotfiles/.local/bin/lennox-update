@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Update everything now: system, drivers, AUR apps and Flatpaks.
+# Opens in a terminal window; on btrfs a snapshot is taken first (snap-pac),
+# so you can roll back from the boot menu if something goes wrong.
+export PATH="$HOME/.local/bin:$PATH"
+
+if [[ "${1:-}" != "--run" ]]; then
+    exec setsid -f kitty --class lennox-floating --title "Lennox Update" "$0" --run
+fi
+
+bold=$'\e[1m'; green=$'\e[32m'; yellow=$'\e[33m'; red=$'\e[31m'; reset=$'\e[0m'
+step() { echo; echo "${bold}${green}::${reset}${bold} $*${reset}"; }
+
+command -v figlet >/dev/null && figlet -f smslant "Updates" || echo "${bold}Updates${reset}"
+echo "System packages and drivers also update automatically in the background."
+
+if [[ -f /var/lib/pacman/db.lck ]]; then
+    step "The automatic updater is running right now, waiting for it..."
+    while [[ -f /var/lib/pacman/db.lck ]]; do sleep 2; done
+fi
+
+kernel_before="$(pacman -Q linux 2>/dev/null)"
+
+step "Arch Linux news (read these if they mention 'manual intervention')"
+curl -fsS --max-time 10 https://archlinux.org/feeds/news/ 2>/dev/null \
+    | grep -oP '(?<=<title>)[^<]+' | sed -n '2,4p' | sed 's/^/   • /' || echo "   (offline)"
+
+if command -v yay >/dev/null; then
+    step "System + AUR (yay)"
+    yay -Syu
+elif command -v paru >/dev/null; then
+    step "System + AUR (paru)"
+    paru -Syu
+else
+    step "System (pacman)"
+    sudo pacman -Syu
+fi
+result=$?
+
+if command -v flatpak >/dev/null; then
+    step "Flatpak apps"
+    flatpak update -y --noninteractive
+fi
+
+step "Checking the NVIDIA driver"
+lennox-gpu check-driver && echo "   ${green}Graphics driver is ready for every installed kernel.${reset}" \
+    || echo "   ${red}The NVIDIA driver did not build. Do not restart yet: run 'lennox-doctor'.${reset}"
+
+kernel_after="$(pacman -Q linux 2>/dev/null)"
+pkill -RTMIN+12 -x waybar 2>/dev/null
+
+echo
+if (( result != 0 )); then
+    echo "${yellow}Something went wrong above. Nothing was half-installed: pacman stops before changing anything if it can't finish.${reset}"
+elif [[ "$kernel_before" != "$kernel_after" ]]; then
+    echo "${bold}${green}Done.${reset} The kernel was updated, so ${bold}restart${reset} when it suits you."
+else
+    echo "${bold}${green}Done.${reset} Everything is up to date."
+fi
+echo
+read -rp "Press Enter to close..."

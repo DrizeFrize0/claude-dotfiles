@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Downloads in the bar.
+#   lennox-downloads waybar | open
+# The Rust fast path answers the quiet case in ~1 ms (it hands anything else to the Python code)
+[[ "${1:-waybar}" == waybar && -x "$HOME/.local/bin/lennox-fast" ]] && exec "$HOME/.local/bin/lennox-fast" downloads waybar
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.downloads "$@"

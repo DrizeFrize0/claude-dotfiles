@@ -1,0 +1,1 @@
+local orig = hl.bind

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Hidden surprises (SUPER + CTRL + SHIFT + C / R / S).
+#   lennox-egg cat | rain | stars
+export PATH="$HOME/.local/bin:$PATH"
+case "${1:-cat}" in
+    cat) lennox-pet across & ;;
+    rain) lennox-screensaver rain --seconds 8 & ;;
+    stars) lennox-screensaver stars --seconds 8 & ;;
+    *) echo "usage: lennox-egg cat | rain | stars" >&2; exit 2 ;;
+esac
+lennox-widgets island event face-smile-symbolic "Shh. You found something" 3 >/dev/null 2>&1 &
+lennox-achieve tick egg >/dev/null 2>&1 &
+wait

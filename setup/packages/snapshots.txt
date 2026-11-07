@@ -1,0 +1,4 @@
+# Only installed on btrfs: snapshot before every update, roll back from the boot menu
+snapper
+snap-pac
+btrfs-assistant

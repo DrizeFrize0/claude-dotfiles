@@ -1,0 +1,10 @@
+/* Subtle texture (Settings > Bar & Dock): a faint grain on every pill (the chips keep their color) */
+#lennox-start, #clock, #mpris, #window, #custom-clocknext, #custom-mcserver, #custom-aispend, #custom-perf,
+#hardware, #tools, #tray, #bluetooth, #custom-notification, #custom-exit { background-image: url("../../assets/noise.png"); }
+#pulseaudio { background-image: url("../../assets/noise.png"), linear-gradient(90deg, alpha(@primary, 0.30) 0, alpha(@primary, 0.30) 31px, transparent 31px); }
+#network { background-image: url("../../assets/noise.png"), linear-gradient(90deg, alpha(@tertiary, 0.30) 0, alpha(@tertiary, 0.30) 31px, transparent 31px); }
+#battery { background-image: url("../../assets/noise.png"), linear-gradient(90deg, alpha(@secondary, 0.32) 0, alpha(@secondary, 0.32) 31px, transparent 31px); }
+#custom-updates { background-image: url("../../assets/noise.png"), linear-gradient(90deg, alpha(@tertiary, 0.30) 0, alpha(@tertiary, 0.30) 31px, transparent 31px); }
+#custom-sysmon { background-image: url("../../assets/noise.png"), linear-gradient(90deg, alpha(@secondary, 0.30) 0, alpha(@secondary, 0.30) 31px, transparent 31px); }
+#battery.warning, #battery.critical { background-image: url("../../assets/noise.png"), linear-gradient(90deg, alpha(@error, 0.45) 0, alpha(@error, 0.45) 31px, transparent 31px); }
+window#waybar.empty #window { background-image: none; }

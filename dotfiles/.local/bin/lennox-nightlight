@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Night light (blue light filter, via hyprsunset).
+# Usage: lennox-nightlight toggle|on|off|status|waybar
+# The schedule is set in Lennox Settings > Night. A manual toggle lasts
+# until the next scheduled switch or the next login.
+export PATH="$HOME/.local/bin:$PATH"
+
+RUNTIME="${XDG_RUNTIME_DIR:-/tmp}/lennox"
+OVERRIDE="$RUNTIME/nightlight"
+mkdir -p "$RUNTIME"
+
+minutes() { local h="${1%%:*}" m="${1##*:}"; echo $((10#$h * 60 + 10#$m)); }
+
+scheduled() {
+    [[ "$(lennox-get night.nightlight)" == "true" ]] || { echo off; return; }
+    local start end now
+    start="$(minutes "$(lennox-get night.start)")"
+    end="$(minutes "$(lennox-get night.end)")"
+    now="$(minutes "$(date +%H:%M)")"
+    if (( start <= end )); then
+        (( now >= start && now < end )) && echo on || echo off
+    else
+        (( now >= start || now < end )) && echo on || echo off
+    fi
+}
+
+status() {
+    if [[ -f "$OVERRIDE" ]]; then cat "$OVERRIDE"; else scheduled; fi
+}
+
+ensure_running() {
+    pgrep -x hyprsunset >/dev/null && return
+    setsid -f hyprsunset >/dev/null 2>&1
+    for _ in $(seq 20); do
+        hyprctl hyprsunset profile >/dev/null 2>&1 && return
+        sleep 0.1
+    done
+}
+
+set_state() {
+    ensure_running
+    if [[ "$1" == "on" ]]; then
+        hyprctl hyprsunset temperature "$(lennox-get night.temperature)" >/dev/null
+    else
+        hyprctl hyprsunset identity >/dev/null
+    fi
+    echo "$1" > "$OVERRIDE"
+    pkill -RTMIN+9 -x waybar 2>/dev/null
+    return 0
+}
+
+case "${1:-status}" in
+    toggle)
+        if [[ "$(status)" == "on" ]]; then set_state off; else set_state on; fi
+        ;;
+    on|off) set_state "$1" ;;
+    status) status ;;
+    waybar)
+        if [[ "$(status)" == "on" ]]; then
+            printf '{"text":"󰖔","class":"on","tooltip":"Night light on\\nClick to turn off"}\n'
+        else
+            printf '{"text":"󰖙","class":"off","tooltip":"Night light off\\nClick to turn on"}\n'
+        fi
+        ;;
+    *) echo "usage: lennox-nightlight toggle|on|off|status|waybar" >&2; exit 2 ;;
+esac

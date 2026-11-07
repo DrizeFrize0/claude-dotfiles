@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# What is using the disk (biggest first), trash something safely.
+#   lennox-storage scan [FOLDER] | trash PATH | open PATH
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.storage "$@"

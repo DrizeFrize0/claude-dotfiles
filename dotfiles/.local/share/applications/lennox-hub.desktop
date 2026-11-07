@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Jado's hub
+Comment=Open Jado's hub in its own window
+Exec=lennox-hub
+Icon=network-server
+Terminal=false
+Categories=Network;

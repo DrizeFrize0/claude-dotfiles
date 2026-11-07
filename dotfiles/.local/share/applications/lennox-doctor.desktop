@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lennox Doctor
+Comment=Check drivers, sound, microphone, touchpad and updates
+Exec=kitty --class lennox-floating --title "Lennox Doctor" --hold lennox-doctor
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;

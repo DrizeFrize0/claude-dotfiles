@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Lennox
+Description=A calm Lennox startup: the name, three pulsing dots
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/lennox
+ScriptFile=/usr/share/plymouth/themes/lennox/lennox.script

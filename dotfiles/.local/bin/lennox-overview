@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Window overview (SUPER + TAB): every window on every workspace; type to search.
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.overview "$@"

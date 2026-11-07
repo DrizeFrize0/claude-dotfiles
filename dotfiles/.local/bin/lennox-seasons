@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Colors and wallpaper for occasions (Ramadan, Eid...).
+#   lennox-seasons check | today
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.seasons "$@"

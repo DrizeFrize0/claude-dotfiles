@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# What uses the battery while you are unplugged.
+#   lennox-batterydoc report [--json] | sample
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.batterydoc "$@"

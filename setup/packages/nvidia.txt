@@ -1,0 +1,9 @@
+# NVIDIA (Turing and newer, e.g. GTX 1650): open kernel modules, rebuilt
+# automatically for every kernel by DKMS. Headers are added per kernel.
+dkms
+nvidia-open-dkms
+nvidia-utils
+lib32-nvidia-utils
+nvidia-settings
+nvidia-prime
+egl-wayland

@@ -1,0 +1,22 @@
+# -----------------------------------------------------
+# Environment
+# -----------------------------------------------------
+export EDITOR="${EDITOR:-nano}"
+command -v code >/dev/null && export VISUAL="code --wait"
+typeset -U path
+path=("$HOME/.local/bin" $path)
+export PATH
+
+# History
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=20000
+SAVEHIST=20000
+setopt appendhistory sharehistory hist_ignore_dups hist_ignore_space hist_reduce_blanks
+
+setopt autocd interactivecomments nocaseglob
+bindkey -e
+bindkey '^[[1;5C' forward-word     # Ctrl + Right
+bindkey '^[[1;5D' backward-word    # Ctrl + Left
+bindkey '^[[H' beginning-of-line
+bindkey '^[[F' end-of-line
+bindkey '^[[3~' delete-char

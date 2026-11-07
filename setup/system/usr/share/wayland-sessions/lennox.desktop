@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Lennox (Hyprland)
+Comment=Hyprland with the Lennox setup
+Exec=/usr/local/bin/lennox-session
+Type=Application
+DesktopNames=Hyprland

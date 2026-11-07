@@ -1,0 +1,294 @@
+/*
+ * Lennox quick panel and notifications (swaync), after ML4W Modern.
+ * Colors come from the wallpaper (colors.css, written by matugen).
+ */
+
+@import "colors.css";
+
+@define-color panel_bg alpha(@surface, 0.72);
+@define-color card_bg alpha(@surface_container_high, 0.85);
+@define-color card_hover alpha(@surface_container_highest, 0.95);
+@define-color text @on_surface;
+
+* {
+    font-family: "Inter", "Fira Sans Semibold", "Symbols Nerd Font", sans-serif;
+    font-size: 14px;
+    transition: 200ms;
+}
+
+/* ---------------------------------------------------- Floating notifications */
+
+.floating-notifications.background .notification-row .notification-background {
+    background: transparent;
+    box-shadow: none;
+    padding: 4px 8px;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification {
+    background: @panel_bg;
+    border-radius: 12px;
+    border: 2px solid @primary;
+    padding: 10px;
+    color: @text;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification.critical {
+    border-color: @error;
+}
+
+.notification .summary {
+    font-size: 15px;
+    color: @text;
+}
+
+.notification .body {
+    font-size: 13px;
+    color: alpha(@on_surface, 0.85);
+}
+
+.notification .time {
+    font-size: 12px;
+    color: @outline;
+}
+
+.notification-action {
+    border-radius: 8px;
+    background: @card_bg;
+    color: @text;
+    border: 1px solid transparent;
+    margin: 4px;
+}
+
+.notification-action:hover {
+    background: @card_hover;
+    border-color: @primary;
+}
+
+.close-button {
+    background: alpha(@on_surface, 0.15);
+    color: @text;
+    border-radius: 20px;
+    padding: 2px;
+    margin: 6px;
+    min-width: 22px;
+    min-height: 22px;
+}
+
+.close-button:hover {
+    background: @primary;
+    color: @on_primary;
+}
+
+/* Volume / brightness popups (lennox-osd) */
+.notification progressbar trough {
+    background: alpha(@on_surface, 0.15);
+    border-radius: 6px;
+    min-height: 6px;
+}
+
+.notification progressbar progress {
+    background: @primary;
+    border-radius: 6px;
+    min-height: 6px;
+}
+
+/* ---------------------------------------------------- Quick panel */
+
+.control-center {
+    background: @panel_bg;
+    border-radius: 14px;
+    border: 2px solid @primary;
+    padding: 10px 10px 0px 10px;
+    color: @text;
+}
+
+.control-center .notification-row .notification-background .notification {
+    background: @card_bg;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 3px 0px;
+    color: @text;
+}
+
+.control-center .notification-row .notification-background .notification.critical {
+    border: 2px solid @error;
+}
+
+.control-center .notification-group {
+    margin: 2px 6px;
+}
+
+.notification-group-collapse-button,
+.notification-group-close-all-button {
+    background: @card_bg;
+    border-radius: 8px;
+    padding: 4px;
+    color: @text;
+}
+
+.notification-group-collapse-button:hover,
+.notification-group-close-all-button:hover {
+    background: @card_hover;
+}
+
+/* Header */
+.widget-label {
+    margin: 6px 12px 2px 12px;
+}
+
+.widget-label > label {
+    font-size: 22px;
+    color: @primary;
+}
+
+/* Toggle tiles (2 per row, phone style) */
+.widget-buttons-grid {
+    margin: 4px 6px;
+    padding: 0px;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button {
+    margin: 4px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: @card_bg;
+    color: @text;
+    border: 1px solid alpha(@outline, 0.3);
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button label {
+    font-size: 14px;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button:hover {
+    background: @card_hover;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button.toggle:checked {
+    background: @primary;
+    color: @on_primary;
+    border-color: @primary;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button.toggle:checked label {
+    color: @on_primary;
+}
+
+/* Sliders */
+.widget-volume,
+.widget-slider,
+.widget-backlight {
+    margin: 4px 10px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: @card_bg;
+}
+
+.widget-volume label,
+.widget-slider label {
+    font-size: 18px;
+    color: @primary;
+    margin-right: 6px;
+}
+
+.widget-volume trough,
+.widget-slider trough,
+.widget-backlight trough {
+    background: alpha(@on_surface, 0.15);
+    border-radius: 8px;
+    min-height: 8px;
+}
+
+.widget-volume trough highlight,
+.widget-slider trough highlight,
+.widget-backlight trough highlight {
+    background: @primary;
+    border-radius: 8px;
+}
+
+.widget-volume trough slider,
+.widget-slider trough slider,
+.widget-backlight trough slider {
+    background: @on_primary;
+    border: 2px solid @primary;
+    border-radius: 50%;
+    min-width: 14px;
+    min-height: 14px;
+}
+
+/* Media player */
+.widget-mpris {
+    margin: 4px 10px;
+}
+
+.widget-mpris-player {
+    border-radius: 12px;
+    background: @card_bg;
+    padding: 8px;
+}
+
+.widget-mpris-title {
+    font-size: 15px;
+    color: @text;
+}
+
+.widget-mpris-subtitle {
+    font-size: 13px;
+    color: alpha(@on_surface, 0.8);
+}
+
+.widget-mpris button {
+    border-radius: 20px;
+    background: transparent;
+    color: @text;
+    padding: 4px;
+}
+
+.widget-mpris button:hover {
+    background: @card_hover;
+}
+
+/* Do not disturb */
+.widget-dnd {
+    margin: 8px 12px 4px 12px;
+    font-size: 14px;
+}
+
+.widget-dnd > switch {
+    background: @card_bg;
+    border-radius: 12px;
+}
+
+.widget-dnd > switch:checked {
+    background: @primary;
+}
+
+.widget-dnd > switch slider {
+    background: @on_surface;
+    border-radius: 12px;
+}
+
+.widget-dnd > switch:checked slider {
+    background: @on_primary;
+}
+
+/* Notifications title + clear button */
+.widget-title {
+    margin: 6px 12px;
+}
+
+.widget-title > label {
+    font-size: 16px;
+}
+
+.widget-title > button {
+    background: @card_bg;
+    color: @text;
+    border-radius: 8px;
+    padding: 4px 12px;
+}
+
+.widget-title > button:hover {
+    background: @primary;
+    color: @on_primary;
+}

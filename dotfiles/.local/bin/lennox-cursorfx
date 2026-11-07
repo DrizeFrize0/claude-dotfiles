@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Cursor effects: trail, spotlight, click ripples.
+#   lennox-cursorfx start | stop | sync | ripple
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.cursorfx "$@"

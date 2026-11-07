@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Print a Lennox setting, e.g. `lennox-get bar.style`. Booleans print as true/false.
+# The Rust program answers in about a millisecond; the Python code covers the rest.
+[[ -x "$HOME/.local/bin/lennox-fast" ]] && exec "$HOME/.local/bin/lennox-fast" get "$@"
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.getcli "$@"

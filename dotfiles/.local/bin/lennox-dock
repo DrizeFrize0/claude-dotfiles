@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# The dock (nwg-dock-hyprland): lennox-dock start|stop|reload|toggle
+# Turn it on/off, auto-hide and icon size in Lennox Settings > Dock.
+export PATH="$HOME/.local/bin:$PATH"
+
+RUN="${XDG_RUNTIME_DIR:-/tmp}/lennox"
+mkdir -p "$RUN"
+
+running() { pgrep -f '^nwg-dock-hyprland' >/dev/null; }
+
+start() {
+    # "start force" shows the dock even if it is turned off in the settings
+    [[ "${1:-}" == "force" || "$(lennox-get dock.enabled)" == "true" ]] || return 0
+    command -v nwg-dock-hyprland >/dev/null || return 0
+    running && return 0
+    local args=(-i "$(lennox-get dock.icon_size)" -mb 10 -w 10 -s style.css
+                -c "$HOME/.local/bin/lennox-menu apps" -ico view-app-grid-symbolic -lp start)
+    if [[ "$(lennox-get dock.autohide)" == "true" ]]; then
+        args+=(-d -hd 300)
+    else
+        args+=(-x)
+    fi
+    setsid -f nwg-dock-hyprland "${args[@]}" >"$RUN/dock.log" 2>&1 </dev/null 9>&-
+}
+
+stop() {
+    pkill -f '^nwg-dock-hyprland'
+    for _ in $(seq 20); do
+        running || return 0
+        sleep 0.1
+    done
+    pkill -9 -f '^nwg-dock-hyprland'
+}
+
+exec 9>"$RUN/dock.lock"
+flock -w 10 9 || exit 0
+
+case "${1:-reload}" in
+    start) start ;;
+    stop) stop ;;
+    reload|restart) stop; start ;;
+    toggle) if running; then stop; else start force; fi ;;
+    *) echo "usage: lennox-dock start|stop|reload|toggle" >&2; exit 2 ;;
+esac

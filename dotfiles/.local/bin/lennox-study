@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Study buddy: a recap after each focus session and study notes.
+#   lennox-study recap | notes | end SUBJECT MINUTES
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.study "$@"

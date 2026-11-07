@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# A calm animation (stars, rain, aurora); any key closes it.
+#   lennox-screensaver [stars|rain|aurora] [--seconds N]
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.screensaver "$@"

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Free up space: old package downloads, packages nothing uses, old logs,
+# AUR build files, unused Flatpak runtimes, old trash and thumbnails.
+#   lennox-cleanup [scan]      what can go and how big it is
+#   lennox-cleanup now         clean everything (asks for your password once)
+#   lennox-cleanup auto        the weekly run (your own files only)
+# Lennox Settings > Cleanup has the same with a button.
+if [[ "${1:-}" == root ]]; then
+    # Through pkexec, as root: the module sits next to this script (~/.local/share/lennox)
+    here="$(dirname "$(readlink -f "$0")")"
+    PYTHONPATH="$here/../share/lennox/python" exec python3 -m lennox.cleanup "$@"
+fi
+export PATH="$HOME/.local/bin:$PATH"
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.cleanup "${@:-scan}"

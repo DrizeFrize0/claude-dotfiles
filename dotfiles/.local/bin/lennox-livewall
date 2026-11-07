@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# Live (video) wallpapers. Colors, the lock screen and the login screen use
+# a still frame of the video; the video plays behind your windows and pauses
+# in games, in fullscreen, on the lock screen and (if you like) on battery.
+#   lennox-livewall set VIDEO     use a video (mp4, webm, mkv, mov) as the wallpaper
+#   lennox-livewall stop          back to a still wallpaper (the frame stays)
+#   lennox-livewall restore       at login: start it again if one was set
+#   lennox-livewall status        the video, and playing / paused / off
+#   lennox-livewall watch         (started by start) pauses and resumes it
+# GIFs don't need this: lennox-wallpaper animates them directly.
+export PATH="$HOME/.local/bin:$PATH"
+
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/lennox/livewall"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/lennox/wallpaper"
+RUNTIME="${XDG_RUNTIME_DIR:-/tmp}/lennox"
+PIDFILE="$RUNTIME/livewall.pid"
+mkdir -p "$(dirname "$STATE")" "$CACHE" "$RUNTIME"
+
+running() {
+    # Alive and not a zombie (an exited player nobody has collected yet)
+    [[ -f "$PIDFILE" ]] || return 1
+    local stat; stat="$(ps -o stat= -p "$(cat "$PIDFILE")" 2>/dev/null)"
+    [[ -n "$stat" && "$stat" != Z* ]]
+}
+
+is_video() {
+    [[ -f "$1" ]] || return 1
+    case "$(file --brief --mime-type -- "$1" 2>/dev/null)" in
+        video/*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+kill_player() {
+    if running; then
+        local pid; pid="$(cat "$PIDFILE")"
+        kill -CONT "$pid" 2>/dev/null            # a stopped process can't exit
+        kill "$pid" 2>/dev/null
+        for _ in 1 2 3 4 5 6 7 8 9 10; do running || break; sleep 0.1; done
+        running && kill -KILL "$pid" 2>/dev/null
+    fi
+    rm -f "$PIDFILE"
+}
+
+start() {
+    local video="$1"
+    command -v mpvpaper >/dev/null || { echo "mpvpaper is not installed (lennox upgrade)" >&2; return 1; }
+    kill_player
+    # No sound, looped, filling the screen, decoded by the graphics chip
+    setsid mpvpaper -o "no-audio loop panscan=1.0 hwdec=auto-safe" ALL "$video" \
+        </dev/null >"$RUNTIME/livewall.log" 2>&1 &
+    local pid=$!
+    disown "$pid" 2>/dev/null
+    sleep 0.5
+    kill -0 "$pid" 2>/dev/null || { echo "The live wallpaper didn't start: see $RUNTIME/livewall.log" >&2; return 1; }
+    echo "$pid" > "$PIDFILE"
+    setsid -f "$0" watch >/dev/null 2>&1 </dev/null
+}
+
+on_battery() {
+    local supply
+    for supply in /sys/class/power_supply/*; do
+        [[ "$(cat "$supply/type" 2>/dev/null)" == Mains ]] && [[ "$(cat "$supply/online" 2>/dev/null)" == 1 ]] && return 1
+    done
+    ls /sys/class/power_supply/BAT* >/dev/null 2>&1
+}
+
+should_pause() {
+    pidof hyprlock >/dev/null && return 0
+    [[ "$(lennox-mode game status 2>/dev/null)" == on ]] && return 0
+    [[ "$(jq -r '.wallpaper.live_pause_battery' "${XDG_CONFIG_HOME:-$HOME/.config}/lennox/settings.json" 2>/dev/null)" != false ]] \
+        && on_battery && return 0
+    # A fullscreen window covers it anyway
+    hyprctl activewindow -j 2>/dev/null | jq -e '(.fullscreen // 0) as $f | ($f == true) or (($f | type) == "number" and $f > 0)' >/dev/null 2>&1
+}
+
+case "${1:-status}" in
+    set)
+        video="$(realpath -e -- "${2:-}" 2>/dev/null)" || { echo "usage: lennox-livewall set VIDEO" >&2; exit 2; }
+        is_video "$video" || { echo "not a video file: $video" >&2; exit 1; }
+        frame="$CACHE/live-frame.png"
+        # A frame a second in (the very first is often black) for colors and the lock screen
+        ffmpeg -nostdin -loglevel error -y -ss 1 -i "$video" -frames:v 1 "$frame" 2>/dev/null \
+            || ffmpeg -nostdin -loglevel error -y -i "$video" -frames:v 1 "$frame" \
+            || { echo "Couldn't read a frame from $video" >&2; exit 1; }
+        LENNOX_LIVE_KEEP=1 lennox-wallpaper "$frame" "${@:3}" || exit 1
+        echo "$video" > "$STATE"
+        start "$video"
+        ;;
+    stop)
+        rm -f "$STATE"
+        kill_player
+        ;;
+    restore)
+        video="$(cat "$STATE" 2>/dev/null)"
+        [[ -n "$video" && -f "$video" ]] || exit 0
+        running || start "$video"
+        ;;
+    status)
+        video="$(cat "$STATE" 2>/dev/null)"
+        if [[ -z "$video" ]]; then echo "off"
+        elif ! running; then echo "set (not playing): $video"
+        elif [[ "$(ps -o stat= -p "$(cat "$PIDFILE")" 2>/dev/null)" == T* ]]; then echo "paused: $video"
+        else echo "playing: $video"; fi
+        ;;
+    watch)
+        exec 9>"$RUNTIME/livewall-watch.lock"
+        flock -n 9 || exit 0
+        paused=false
+        while running; do
+            pid="$(cat "$PIDFILE")"
+            if should_pause; then
+                $paused || { kill -STOP "$pid" 2>/dev/null; paused=true; }
+            else
+                $paused && { kill -CONT "$pid" 2>/dev/null; paused=false; }
+            fi
+            sleep 5
+        done
+        ;;
+    *) echo "usage: lennox-livewall set VIDEO | stop | restore | status" >&2; exit 2 ;;
+esac
