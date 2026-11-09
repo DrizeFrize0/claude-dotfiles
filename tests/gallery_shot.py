@@ -19,7 +19,7 @@ class Store(GObject.Object):
 
 Adw.init()
 store = Store(); g = Gallery(store, STYLES)
-win = Gtk.Window(title="gallery"); win.set_default_size(820, 1000)
+win = Gtk.Window(title="gallery"); win.set_default_size(820, 1500)
 win.set_child(Gtk.ScrolledWindow(child=Adw.Clamp(child=g.widget, maximum_size=780))); win.present()
 fails = []
 def pump(s):
@@ -27,7 +27,7 @@ def pump(s):
     while time.time() < end:
         GLib.MainContext.default().iteration(False); time.sleep(0.01)
 pump(1.5)
-subprocess.run(["import", "-window", "root", "-crop", "820x1000+0+0", os.path.join(os.path.dirname(os.path.abspath(__file__)), "gallery.png")])
+subprocess.run(["import", "-window", "root", "-crop", "820x1500+0+0", os.path.join(os.path.dirname(os.path.abspath(__file__)), "gallery.png")])
 ws = [w for w in g.cards.values()]
 g.cards["lennox-aurora"].emit("clicked"); pump(0.2)
 ok = store.get("bar.style") == "lennox-aurora" and g.cards["lennox-aurora"].has_css_class("bp-selected") \

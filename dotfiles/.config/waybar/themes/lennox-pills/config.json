@@ -13,7 +13,8 @@
     "media-in": "modules-center",
     "clock-24": "{:<b>%H:%M</b>   <span alpha=\"60%%\">%a %d</span>}",
     "clock-12": "{:<b>%I:%M</b> <span alpha=\"75%%\" size=\"small\">%p</span>   <span alpha=\"60%%\">%a %d</span>}",
-    "compact-height": 34
+    "compact-height": 34,
+    "island": "match"
   },
   "modules-left": [
     "group/lennox-start",

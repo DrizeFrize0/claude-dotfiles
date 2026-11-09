@@ -149,25 +149,17 @@ case "${1:-apps}" in
         ;;
 
     bar-style)
-        style="$(lennox-get bar.style)"
-        case "$style" in
-            lennox) current="Lennox Islands" ;;
-            lennox-line) current="Lennox Line" ;;
-            lennox-aurora) current="Lennox Aurora" ;;
-            lennox-pills) current="Lennox Pills" ;;
-            lennox-dots) current="Lennox Minimal Dots" ;;
-            *) current="ML4W ${style^}" ;;
-        esac
-        choice="$(printf 'Lennox Islands\nLennox Line\nLennox Aurora\nLennox Pills\nLennox Minimal Dots\nML4W Modern\nML4W Glass\nML4W Minimal\n' \
-            | menu "󰕰 Bar style" -no-custom -mesg "Current: $current")" || exit 0
-        case "$choice" in
-            "Lennox Islands") lennox-bar style lennox ;;
-            "Lennox Line") lennox-bar style lennox-line ;;
-            "Lennox Aurora") lennox-bar style lennox-aurora ;;
-            "Lennox Pills") lennox-bar style lennox-pills ;;
-            "Lennox Minimal Dots") lennox-bar style lennox-dots ;;
-            "ML4W "*) lennox-bar style "$(tr '[:upper:]' '[:lower:]' <<<"${choice#ML4W }")" ;;
-        esac
+        # One table: shown name | style id (Lennox Settings > Bar shows the same list with previews)
+        styles=("Lennox Islands|lennox" "Lennox Line|lennox-line" "Lennox Aurora|lennox-aurora"
+                "Lennox Pills|lennox-pills" "Lennox Minimal Dots|lennox-dots" "Material|lennox-material"
+                "Terminal|lennox-terminal" "Mecha|lennox-mecha" "Glow|lennox-glow" "Dock (bottom)|lennox-dock"
+                "ML4W Modern|modern" "ML4W Glass|glass" "ML4W Minimal|minimal")
+        style="$(lennox-get bar.style)" current="$style"
+        for s in "${styles[@]}"; do [[ "${s#*|}" == "$style" ]] && current="${s%%|*}"; done
+        choice="$(printf '%s\n' "${styles[@]%%|*}" | menu "󰕰 Bar style" -no-custom -mesg "Current: $current")" || exit 0
+        for s in "${styles[@]}"; do
+            [[ "${s%%|*}" == "$choice" ]] && lennox-bar style "${s#*|}"
+        done
         ;;
 
     power)

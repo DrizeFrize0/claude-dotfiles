@@ -182,6 +182,10 @@ class Page:
             description="A few soft sounds for the things that matter. Quiet in Do not disturb, focus "
                         "and game mode, and silent during the sleep wind-down.")
         fx.add(rows.switch_row(ctx.store, "sounds.enabled", "Sound effects"))
+        fx.add(rows.combo_row(ctx.store, "sounds.pack", "Sound pack",
+                              [("soft", "Soft: warm marimba"), ("glass", "Glass: small bells"),
+                               ("pop", "Pop: bubbly"), ("freedesktop", "Classic (system sounds)")],
+                              "Made on your laptop the first time they play"))
         fx.add(rows.spin_row(ctx.store, "sounds.volume", "Master volume", "How loud every effect is (alarms and timers keep their own)",
                              lower=0, upper=100, step=10))
         for key, title in (("notifications", "Notifications"), ("volume_keys", "Volume keys"),

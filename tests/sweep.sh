@@ -56,6 +56,10 @@ python3 -W ignore tests/test_vpn.py 2>&1 | tail -3 | grep -q "^OK" && echo ok vp
 python3 -W ignore tests/test_disk.py 2>&1 | tail -3 | grep -q "^OK" && echo ok disk || { python3 tests/test_disk.py 2>&1 | tail -15; fail=1; }
 bash tests/test_disk_live.sh | grep -q "^OK" && echo ok disk-live || { bash tests/test_disk_live.sh | tail; fail=1; }
 bash tests/test_install_care.sh | grep -q "^OK" && echo ok install-care || { bash tests/test_install_care.sh | grep FAIL; fail=1; }
+python3 -W ignore tests/test_sound_packs.py 2>&1 | tail -3 | grep -q "^OK" && echo ok sound-packs || { python3 tests/test_sound_packs.py 2>&1 | tail -15; fail=1; }
+python3 -W ignore tests/test_palette.py 2>&1 | tail -3 | grep -q "^OK" && echo ok palette || { python3 tests/test_palette.py 2>&1 | tail -15; fail=1; }
+bash tests/test_bar_fit.sh | grep -q "^OK" && echo ok bar-fit || { bash tests/test_bar_fit.sh | grep FAIL; fail=1; }
+out=$(timeout -k 5 120 xvfb-run -a -s "-screen 0 1280x800x24" dbus-run-session /usr/bin/python3.12 tests/test_island_fit.py 2>&1); grep -q "^OK island-fit" <<<"$out" && echo ok island-fit || { grep FAIL <<<"$out"; fail=1; }
 python3 -W ignore tests/test_more.py 2>&1 | tail -3 | grep -q "^OK" && echo ok helpers || { python3 tests/test_more.py 2>&1 | tail -15; fail=1; }
 bash tests/test_colors_only.sh | grep -q FAIL && { bash tests/test_colors_only.sh | grep FAIL; fail=1; } || echo ok colors-from-music
 

@@ -274,6 +274,28 @@ def bar_geometry(path=None):
         return 6, 36
 
 
+SKINS = ("black", "match", "glass", "flat", "glow")
+
+
+def island_geometry(path=None):
+    """Where and how the island sits, written by lennox-bar for the running bar style:
+    {"position": top|bottom, "top": margin, "height": px, "skin": ...}. Falls back to the
+    bar's own config when the file is missing."""
+    path = path or os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "lennox", "island.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            g = json.load(f)
+        top, height = int(g.get("top", 0)), int(g.get("height", 34))
+        skin = g.get("skin") if g.get("skin") in SKINS else "black"
+        position = "bottom" if g.get("position") == "bottom" else "top"
+        if not 18 <= height <= 80:
+            raise ValueError(height)
+        return {"position": position, "top": max(0, top), "height": height, "skin": skin}
+    except (OSError, ValueError, TypeError, AttributeError):
+        top, height = bar_geometry()
+        return {"position": "top", "top": top, "height": height, "skin": "black"}
+
+
 def dnd_on():
     try:
         return subprocess.run(["swaync-client", "-D"], capture_output=True, text=True,
@@ -798,7 +820,13 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.set_decorated(False)
         self.set_resizable(False)
 
-        top, height = bar_geometry() if place == "bar" else (6, 34)
+        self.geometry = island_geometry()
+        if place == "bar" and self.geometry["position"] == "bottom":
+            place = "notch"          # the bar is at the bottom: a notch at the top edge instead
+        if place == "bar":
+            top, height = self.geometry["top"], self.geometry["height"]
+        else:
+            top, height = 6, 34
         # In the bar: exactly the bar's height and position, so it covers the
         # bar's middle completely (nothing peeks out above or below)
         self.compact_height = max(26, height - 2)     # + the 1 px border = the bar's height
@@ -808,8 +836,8 @@ class IslandWindow(Gtk.ApplicationWindow):
             self.ls.set_namespace(self, "lennox-island")
             self.ls.set_anchor(self, self.ls.Edge.TOP, True)
             self.ls.set_keyboard_mode(self, self.ls.KeyboardMode.NONE)
-            if place == "bar":
-                # Over the bar's middle, like the iPhone's island
+            if place in ("bar", "notch"):
+                # Over the bar's middle (or the screen's top edge), like the iPhone's island
                 self.ls.set_layer(self, self.ls.Layer.OVERLAY)
                 self.ls.set_exclusive_zone(self, -1)
                 self.ls.set_margin(self, self.ls.Edge.TOP, top)
@@ -830,7 +858,8 @@ class IslandWindow(Gtk.ApplicationWindow):
             build = getattr(self, f"_build_{kind}", None)
             if build:
                 build(page)
-        self.pill = SpringBin(self.stack, css_classes=["lennox-island"], halign=Gtk.Align.CENTER)
+        skin = "skin-" + self.geometry["skin"]
+        self.pill = SpringBin(self.stack, css_classes=["lennox-island", skin], halign=Gtk.Align.CENTER)
         # Two at once: a small linked blob beside the pill with the other activity
         self.blob_kind = None
         self.prefer = None          # the activity whose blob was clicked: it gets the big pill
@@ -848,7 +877,7 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.blob_label = Gtk.Label(css_classes=["island-detail"], visible=False)
         for w in (self.blob_art, lead, self.blob_label):
             blob_row.append(w)
-        self.blob = SpringBin(blob_row, css_classes=["lennox-island", "island-blob"], margin_start=6)
+        self.blob = SpringBin(blob_row, css_classes=["lennox-island", "island-blob", skin], margin_start=6)
         click = Gtk.GestureClick()
         click.connect("released", self._blob_clicked)
         self.blob.add_controller(click)

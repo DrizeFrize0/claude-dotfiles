@@ -3,6 +3,15 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 2.1.0 · 2026-11-09 · New bars, a smarter island, sounds and a command palette
+
+- Five new bar styles, each after a well-known Arch setup: Material (calm tonal islands and a big clock, after end-4 and Caelestia), Terminal (one flat monospace strip with underlined workspace numbers, after Omarchy), Mecha (hard-edged slanted segments, after mechabar), Glow (dark islands with a glowing accent outline, after JaKooLit) and Dock (one glass capsule at the bottom of the screen). Pick one in Settings > Bar & Dock, with SUPER + CTRL + T, or from the command palette.
+- The dynamic island now fits every bar style. It measures the real bar (height and position), so it sits exactly in it, even in the classic styles, and takes a matching look: black, the bar's own colors, glass, flat or glowing. With the Dock style it becomes a notch at the top of the screen, and it rebuilds itself whenever you switch styles.
+- With the Dock style the app dock floats just above the bar instead of on top of it, and the bar slides in from the edge it is on.
+- New sound effects: three packs made on your laptop, Soft (warm marimba, the new default), Glass (small bells) and Pop (bubbly), next to the classic system sounds. Each event has its own little tune: rising for plugging in, falling for unplugging, a soft shutter for screenshots. Settings > Sound > Sound pack.
+- New command palette (SUPER + /): one search box for everything. Every Settings page, every bar style, performance and fan modes, sound packs, color themes, dark mode, night light, game and focus mode, screenshots, the disk check and more. Type a few letters and press Enter.
+- Four new painted wallpapers: Astral (a constellation over the Milky Way, for AstralNetwork), Blocky hills (a voxel landscape with grass, dirt, stone and the odd diamond), Beach day and Nebula.
+
 ## 2.0.0 · 2026-11-09 · Lennox 2.0
 
 - Lennox 2.0 is built for a fresh start: everything learned from the disk failure is now part of the system, so a problem is caught early instead of breaking it.

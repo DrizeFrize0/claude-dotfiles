@@ -34,5 +34,8 @@
     "custom/lennox",
     "clock",
     "custom/clocknext"
-  ]
+  ],
+  "x-lennox": {
+    "island": "black"
+  }
 }

@@ -42,7 +42,7 @@ if LAYER_SHELL:
 from .. import focus  # noqa: E402
 from .. import settings as S  # noqa: E402
 from . import cards, style  # noqa: E402
-from .island import ClockEngine, IslandWindow, NotificationWatcher, StatusWatcher  # noqa: E402
+from .island import ClockEngine, IslandWindow, NotificationWatcher, StatusWatcher, island_geometry  # noqa: E402
 from .mpris import Mpris  # noqa: E402
 
 APP_ID = "dev.lennox.Widgets"
@@ -279,8 +279,9 @@ class App(Gtk.Application):
                                                   Gtk.STYLE_PROVIDER_PRIORITY_USER)
         self.load_css()
         # Live updates: new wallpaper colors, settings changed elsewhere
+        island_file = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "lennox", "island.json")
         for path, callback in ((style.COLORS_FILE, self.load_css), (style.CUSTOM_CSS, self.load_css),
-                               (S.SETTINGS_FILE, self.reload)):
+                               (S.SETTINGS_FILE, self.reload), (island_file, self.refit_island)):
             monitor = Gio.File.new_for_path(path).monitor_file(Gio.FileMonitorFlags.WATCH_MOVES, None)
             monitor.set_rate_limit(500)
             monitor.connect("changed", self._file_changed, callback)
@@ -345,6 +346,13 @@ class App(Gtk.Application):
         elif self.island is not None:
             self.island.destroy()
             self.island = None
+
+    def refit_island(self):
+        """The bar changed style or size: build the island again to match it."""
+        if self.island is not None and self.island.geometry != island_geometry():
+            self.island.destroy()
+            self.island = None
+            self.apply_island()
 
     def clock_tick(self):
         """Every second: fire due timers / alarms / reminders, update the island.

@@ -44,6 +44,7 @@ hl.bind(key("TAB"),            run("lennox-overview"),         { description = "
 hl.bind(key("SHIFT + TAB"),    run("lennox-menu windows"),     { description = "Switch to an open window (list)" })
 hl.bind(key("V"),              run("lennox-menu clipboard"),   { description = "Clipboard history" })
 hl.bind(key("CTRL + K"),       run("lennox-menu keybinds"),    { description = "Show all keybindings" })
+hl.bind(key("slash"),          run("lennox-palette"),          { description = "Command palette: search everything Lennox can do" })
 
 -- Lennox ----------------------------------------------
 hl.bind(key("I"),              run("lennox-settings"),          { description = "Open Lennox Settings" })

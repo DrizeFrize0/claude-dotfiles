@@ -35,5 +35,8 @@
     "tray",
     "custom/notification",
     "custom/lennox"
-  ]
+  ],
+  "x-lennox": {
+    "island": "flat"
+  }
 }

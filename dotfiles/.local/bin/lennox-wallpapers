@@ -391,7 +391,110 @@ DESIGNS = {
     "mesh-peach": ("Peach", mesh(["#3a1f2b", "#ff8f70", "#ffc371", "#ff5f8f", "#f9d29d"])),
     "mesh-mint": ("Mint", mesh(["#0e2a2a", "#2ec4b6", "#9be7c4", "#3a86ff", "#cbf3f0"])),
     "graphite": ("Graphite", graphite),
+    "astral": ("Astral", lambda *a: astral(*a)),
+    "blocky-hills": ("Blocky hills", lambda *a: blocky(*a)),
+    "beach-day": ("Beach day", lambda *a: beach_day(*a)),
+    "nebula": ("Nebula", lambda *a: nebula(*a)),
 }
+
+
+# ---------------------------------------------------------------- Lennox 2.1 designs
+
+def astral(w, h, out, tmp, rnd):
+    """A deep-blue night with a glowing constellation, for AstralNetwork."""
+    sw, sh = w // 2, h // 2
+    run(["-size", f"{sw}x{sh}", "gradient:#070a1f-#1b1446", *stars(sw, sh, rnd, 420, scale=sh / 1080), f"{tmp}/sky.png"])
+    # Milky band: soft blobs along a diagonal
+    band = []
+    for i in range(26):
+        t = i / 25
+        x, y = sw * (0.05 + 0.9 * t), sh * (0.85 - 0.7 * t) + rnd.uniform(-1, 1) * sh * 0.05
+        r = rnd.uniform(0.04, 0.09) * sh
+        band += ["-fill", rnd.choice(("rgba(130,110,255,0.20)", "rgba(80,160,255,0.16)", "rgba(220,140,255,0.14)")),
+                 "-draw", f"circle {x:.0f},{y:.0f} {x + r:.0f},{y:.0f}"]
+    run(["-size", f"{sw}x{sh}", "xc:none", *band, "-blur", f"0x{sh // 25}", f"{tmp}/band.png"])
+    # The constellation: a few bright stars joined by thin lines
+    pts = [(0.62, 0.28), (0.70, 0.22), (0.78, 0.30), (0.74, 0.42), (0.84, 0.48), (0.66, 0.40)]
+    pts = [(x * sw, y * sh) for x, y in pts]
+    lines = []
+    for (x1, y1), (x2, y2) in zip(pts, pts[1:]):
+        lines += ["-stroke", "rgba(200,210,255,0.45)", "-strokewidth", max(1, sh // 600), "-draw", f"line {x1:.0f},{y1:.0f} {x2:.0f},{y2:.0f}"]
+    glows = []
+    for x, y in pts:
+        r = sh * 0.006
+        glows += ["-stroke", "none", "-fill", "#ffffff", "-draw", f"circle {x:.0f},{y:.0f} {x + r:.0f},{y:.0f}"]
+    run(["-size", f"{sw}x{sh}", "xc:none", *glows, "-blur", f"0x{sh // 120 + 1}", f"{tmp}/glow.png"])
+    run([f"{tmp}/sky.png", f"{tmp}/band.png", "-compose", "screen", "-composite", f"{tmp}/glow.png", "-compose", "screen",
+         "-composite", *lines, *glows, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.03)
+
+
+def blocky(w, h, out, tmp, rnd):
+    """Blocky hills: a voxel landscape with grass, dirt, stone, a square sun and square clouds."""
+    px = max(8, h // 54)                       # one block
+    cols, rows = w // px + 1, h // px + 1
+    draws = []
+    # Square sun and clouds
+    sx, sy = int(cols * 0.78), int(rows * 0.14)
+    draws += ["-fill", "#fff3b0", "-draw", f"rectangle {sx * px},{sy * px} {(sx + 4) * px},{(sy + 4) * px}"]
+    for _ in range(5):
+        cx, cy, cw = rnd.randrange(0, cols), rnd.randrange(2, rows // 3), rnd.randrange(5, 11)
+        draws += ["-fill", "rgba(255,255,255,0.92)", "-draw", f"rectangle {cx * px},{cy * px} {(cx + cw) * px},{(cy + 2) * px}"]
+    # The terrain: a smooth height per column, snapped to blocks
+    phase = [rnd.uniform(0, math.tau) for _ in range(3)]
+    for c in range(cols):
+        t = c / cols * math.tau
+        height = rows * (0.58 + 0.07 * math.sin(t * 1.3 + phase[0]) + 0.04 * math.sin(t * 3.1 + phase[1])
+                         + 0.02 * math.sin(t * 7 + phase[2]))
+        top = int(height)
+        x0, x1 = c * px, (c + 1) * px - 1
+        draws += ["-fill", rnd.choice(("#5fbf4a", "#58b443", "#66c552")), "-draw", f"rectangle {x0},{top * px} {x1},{(top + 1) * px - 1}"]
+        for r in range(top + 1, rows):
+            depth = r - top
+            color = (rnd.choice(("#8a5a35", "#7f522f", "#94633c")) if depth < 4 else
+                     rnd.choice(("#7d7d7d", "#737373", "#868686", "#6b6b6b")))
+            if depth > 6 and rnd.random() < 0.02:
+                color = rnd.choice(("#5fd3e6", "#e6c35f"))      # a diamond, or gold
+            draws += ["-fill", color, "-draw", f"rectangle {x0},{r * px} {x1},{(r + 1) * px - 1}"]
+        if rnd.random() < 0.05 and 3 < c < cols - 3:           # a tree
+            for k in range(1, 4):
+                draws += ["-fill", "#6b4a2b", "-draw", f"rectangle {x0},{(top - k) * px} {x1},{(top - k + 1) * px - 1}"]
+            draws += ["-fill", "#3f8f34", "-draw", f"rectangle {(c - 1) * px},{(top - 6) * px} {(c + 2) * px - 1},{(top - 3) * px - 1}"]
+    run(["-size", f"{w}x{h}", "gradient:#79c6ff-#cfefff", *draws, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.0)
+
+
+def beach_day(w, h, out, tmp, rnd):
+    """Summer beach paradise at noon: turquoise sea, white foam, warm sand."""
+    horizon, shore = h * 0.48, h * 0.70
+    sun_x, sun_y, sun_r = w * 0.22, h * 0.17, h * 0.06
+    run(["-size", f"{w}x{int(horizon)}", "gradient:#3d9be9-#bfe7ff", "-fill", "#fffbe8",
+         "-draw", f"circle {sun_x:.0f},{sun_y:.0f} {sun_x + sun_r:.0f},{sun_y:.0f}", f"{tmp}/sky.png"])
+    run(["-size", f"{w}x{int(horizon)}", "xc:none", "-fill", "rgba(255,255,230,0.7)",
+         "-draw", f"circle {sun_x:.0f},{sun_y:.0f} {sun_x + sun_r * 2.5:.0f},{sun_y:.0f}", "-blur", f"0x{sun_r:.0f}", f"{tmp}/glow.png"])
+    run([f"{tmp}/sky.png", f"{tmp}/glow.png", "-compose", "screen", "-composite", f"{tmp}/sky2.png"])
+    sea_h = h - int(horizon)
+    run(["-size", f"{w}x{sea_h}", "gradient:#0b6fa8-#2fd1c5", f"{tmp}/sea.png"])
+    foam = []
+    for k in range(3):
+        y = shore - horizon + k * h * 0.012
+        foam += ["-fill", f"rgba(255,255,255,{0.75 - k * 0.2:.2f})", "-draw",
+                 ridge(w, sea_h, y, h * 0.008, rnd, waves=6).replace("polygon", "polygon", 1)]
+    sand = ["-fill", "#f2d9a8", "-draw", ridge(w, sea_h, shore - horizon + h * 0.03, h * 0.01, rnd, waves=3)]
+    run([f"{tmp}/sea.png", *foam, *sand, f"{tmp}/sea2.png"])
+    run([f"{tmp}/sky2.png", f"{tmp}/sea2.png", "-append", f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.02)
+
+
+def nebula(w, h, out, tmp, rnd):
+    """A soft space nebula in magenta and teal with stars in front."""
+    sw, sh = w // 4, h // 4
+    run(["-size", f"{sw}x{sh}", "xc:#05030d",
+         *blobs(sw, sh, ["rgba(190,60,170,0.55)", "rgba(40,170,190,0.45)", "rgba(110,70,220,0.5)", "rgba(250,120,90,0.30)"],
+                rnd, count=9, size=(0.12, 0.35)),
+         "-blur", f"0x{sw // 14}", f"{tmp}/n.png"])
+    run([f"{tmp}/n.png", "-resize", f"{w}x{h}!", *stars(w, h, rnd, 500, scale=h / 1080), f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.03)
 
 
 # ---------------------------------------------------------------- commands

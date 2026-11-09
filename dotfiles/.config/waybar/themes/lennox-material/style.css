@@ -1,0 +1,76 @@
+/*
+ * Lennox bar: Material
+ *
+ * Inspired by end-4's illogical-impulse and Caelestia: Material You tonal
+ * containers. Solid, calm islands in the wallpaper's container color, a
+ * squircle Lennox button, workspaces as a tonal track with the active one a
+ * filled pill, and a bigger, bolder clock. Same modules as Islands (imported).
+ */
+
+@import "../lennox/style.css";
+
+@define-color island alpha(@surface_container_high, 0.94);
+@define-color island_border transparent;
+@define-color hover alpha(@primary, 0.12);
+
+#lennox-start,
+.modules-center,
+.modules-right {
+    border-radius: 22px;
+    padding: 0 6px;
+    box-shadow: none;
+}
+
+#custom-lennox-launcher {
+    border-radius: 14px;
+    margin: 7px 6px 7px 2px;
+    padding: 0 11px;
+    background: @primary_container;
+    color: @on_primary_container;
+}
+
+#custom-lennox-launcher:hover {
+    background: @primary;
+    color: @on_primary;
+}
+
+/* Workspaces sit on a tonal track */
+#workspaces {
+    background: alpha(@surface_container_highest, 0.9);
+    border-radius: 99px;
+    margin: 8px 6px 8px 2px;
+    padding: 0 4px;
+}
+
+#workspaces .ws {
+    margin: 11px 3px;
+}
+
+#workspaces .ws.active,
+#workspaces .ws.urgent {
+    margin: 4px 2px;
+    background: @primary;
+    color: @on_primary;
+}
+
+#clock {
+    font-size: 14px;
+    font-weight: 800;
+    padding: 0 12px;
+}
+
+/* Status icons: round tonal buttons on hover */
+#network:hover,
+#bluetooth:hover,
+#pulseaudio:hover,
+#battery:hover,
+#custom-notification:hover {
+    background: alpha(@secondary_container, 0.9);
+    color: @on_secondary_container;
+}
+
+tooltip {
+    border-radius: 16px;
+    border: none;
+    background: @surface_container_highest;
+}

@@ -534,6 +534,8 @@ install_dotfiles() {
         rmdir "$BACKUP" 2>/dev/null
     fi
     chmod +x "$HOME"/.local/bin/lennox* 2>/dev/null
+    # The sound packs are synthesized locally (pure Python, about a second)
+    "$HOME/.local/bin/lennox-sound-fx" make >/dev/null 2>&1 || true
     echo "$REPO" > "$HOME/.config/lennox/repo"
     lennox_version > "$HOME/.config/lennox/version"
     ok "Configs and lennox-* commands installed"

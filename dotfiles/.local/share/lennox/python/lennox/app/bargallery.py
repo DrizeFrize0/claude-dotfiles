@@ -50,6 +50,31 @@ CSS = """
 .bp-lennox-dots .bp-launch {{ background: transparent; border: 2px solid {primary}; min-width: 6px; min-height: 6px; }}
 .bp-lennox-dots .bp-ws.active {{ min-height: 5px; min-width: 12px; }}
 .bp-lennox-dots .bp-ws.active label {{ color: transparent; font-size: 1px; }}
+/* Material: solid tonal islands, squircle button, tonal workspace track */
+.bp-lennox-material .bp-group {{ background: {surface_container_high}; min-height: 21px; border-radius: 12px; }}
+.bp-lennox-material .bp-launch {{ border-radius: 5px; background: {primary_container}; }}
+.bp-lennox-material .bp-clock label {{ font-weight: 800; font-size: 10px; }}
+/* Terminal: one flat strip, numbers underlined */
+.bp-lennox-terminal .bp-inner {{ background: {surface}; border-radius: 0; border-bottom: 1px solid {outline_variant}; }}
+.bp-lennox-terminal, .bp-lennox-terminal label {{ font-family: monospace; font-weight: 500; }}
+.bp-lennox-terminal .bp-launch {{ background: transparent; border: 2px solid {primary}; border-radius: 0; min-width: 6px; min-height: 6px; }}
+.bp-lennox-terminal .bp-ws {{ border-radius: 0; background: alpha({on_surface}, 0.25); min-height: 2px; min-width: 6px; }}
+.bp-lennox-terminal .bp-ws.active {{ background: {primary}; min-height: 2px; min-width: 10px; }}
+.bp-lennox-terminal .bp-ws.active label {{ color: transparent; font-size: 1px; }}
+/* Mecha: slanted segments, accent edge, solid clock block */
+.bp-lennox-mecha .bp-group {{ background: alpha({surface_container_low}, 0.95); border: 1px solid alpha({primary}, 0.5);
+    border-left: 3px solid {primary}; border-radius: 2px 9px 2px 9px; min-height: 19px; }}
+.bp-lennox-mecha .bp-clock {{ background: {primary}; }}
+.bp-lennox-mecha .bp-clock label {{ color: {on_primary}; font-weight: 800; }}
+.bp-lennox-mecha .bp-launch {{ border-radius: 1px 5px 1px 5px; }}
+/* Glow: dark islands, glowing outline */
+.bp-lennox-glow .bp-group {{ background: alpha({surface}, 0.9); border: 1px solid {primary};
+    box-shadow: 0 0 5px alpha({primary}, 0.6); min-height: 20px; }}
+.bp-lennox-glow .bp-clock label {{ color: {primary}; }}
+/* Dock: one capsule in the middle */
+.bp-lennox-dock .bp-inner {{ background: transparent; }}
+.bp-lennox-dock .bp-capsule {{ background: alpha({surface_container}, 0.85); border: 1px solid alpha({outline_variant}, 0.6);
+    border-radius: 99px; padding: 0 6px; min-height: 22px; }}
 /* The classic ML4W styles */
 .bp-modern .bp-inner {{ background: {surface_container}; border-radius: 0; }}
 .bp-glass .bp-inner {{ background: alpha(white, 0.14); border: 1px solid alpha(white, 0.25); border-radius: 8px; }}
@@ -97,6 +122,10 @@ def mock_bar(style):
                  _module("network-wireless-symbolic", "80%", "chip-b"),
                  _module("battery-good-symbolic", "72%", "chip-c"), spacing=2)
     inner = Gtk.CenterBox(css_classes=["bp-inner"], hexpand=True)
+    if style == "lennox-dock":
+        # Everything in one capsule in the middle
+        inner.set_center_widget(_box(["bp-capsule"], left, center, right, spacing=4))
+        return _box(["bp-bar", f"bp-{style}"], inner, valign=Gtk.Align.START)
     inner.set_start_widget(left)
     inner.set_center_widget(center)
     inner.set_end_widget(right)

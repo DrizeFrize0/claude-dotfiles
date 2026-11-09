@@ -1,0 +1,44 @@
+/*
+ * Lennox bar: Glow
+ *
+ * Inspired by JaKooLit's glowing borders: the Islands layout on a darker
+ * glass, each island outlined in the wallpaper's accent with a soft halo.
+ * The halo brightens when you hover an island. Same modules as Islands.
+ */
+
+@import "../lennox/style.css";
+
+@define-color island alpha(@surface_container_lowest, 0.80);
+@define-color island_border alpha(@primary, 0.75);
+
+window#waybar {
+    padding: 4px 0;
+}
+
+#lennox-start,
+.modules-center,
+.modules-right {
+    border: 1px solid @island_border;
+    box-shadow: 0 0 6px alpha(@primary, 0.35), inset 0 0 8px alpha(@primary, 0.12);
+    transition: box-shadow 300ms ease, border-color 300ms ease;
+}
+
+#lennox-start:hover,
+.modules-center:hover,
+.modules-right:hover {
+    border-color: @primary;
+    box-shadow: 0 0 9px alpha(@primary, 0.55), inset 0 0 10px alpha(@primary, 0.18);
+}
+
+.modules-right {
+    border-color: alpha(@tertiary, 0.75);
+    box-shadow: 0 0 6px alpha(@tertiary, 0.35), inset 0 0 8px alpha(@tertiary, 0.12);
+}
+
+#workspaces .ws.active {
+    box-shadow: 0 0 6px alpha(@primary, 0.7);
+}
+
+#clock {
+    color: @primary;
+}

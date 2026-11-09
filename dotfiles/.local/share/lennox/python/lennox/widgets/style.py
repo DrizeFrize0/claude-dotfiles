@@ -13,7 +13,7 @@ FALLBACK = {
     "primary": "#81d5cd", "on_primary": "#003734", "primary_container": "#00504b",
     "on_primary_container": "#9df2e9", "secondary": "#b0ccc8", "secondary_container": "#324b49",
     "on_secondary_container": "#cce8e4", "tertiary": "#afc9e7", "surface": "#0e1514",
-    "surface_container": "#1a2120", "surface_container_high": "#252b2a",
+    "surface_container_low": "#161d1c", "surface_container": "#1a2120", "surface_container_high": "#252b2a",
     "surface_container_highest": "#2f3635", "on_surface": "#dde4e2",
     "on_surface_variant": "#bec9c6", "outline": "#899391", "outline_variant": "#3f4947",
     "error": "#ffb4ab",
@@ -179,6 +179,21 @@ window.lennox-island-window { background: transparent; }
     box-shadow: inset 0 1px alpha(white, 0.10);
     transition: border-radius 300ms cubic-bezier(0.2, 0.9, 0.3, 1.0), border-color 400ms ease, box-shadow 400ms ease;
 }
+/* Island skins: each bar style picks the one that matches it (lennox-bar writes it) */
+.lennox-island.skin-match {
+    background-color: @surface_container; color: @on_surface;
+    border-color: alpha(@outline_variant, 0.55); box-shadow: inset 0 1px alpha(white, 0.06);
+}
+.lennox-island.skin-match .island-text, .lennox-island.skin-match label { color: @on_surface; }
+.lennox-island.skin-glass {
+    background-color: alpha(@surface_container_low, 0.72); color: @on_surface;
+    border-color: alpha(white, 0.14); box-shadow: inset 0 1px alpha(white, 0.18);
+}
+.lennox-island.skin-glass label { color: @on_surface; }
+.lennox-island.skin-flat { border-radius: 8px; background-color: @surface; color: @on_surface; border-color: alpha(@primary, 0.35); }
+.lennox-island.skin-flat label { color: @on_surface; }
+.lennox-island.skin-flat.island-blob { border-radius: 8px; }
+.lennox-island.skin-glow { border-color: alpha(@primary, 0.70); box-shadow: inset 0 0 10px alpha(@primary, 0.28), inset 0 1px alpha(white, 0.10); }
 .lennox-island.glow-accent { border-color: alpha(@primary, 0.55); box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 9px alpha(@primary, 0.30); }
 .lennox-island.glow-amber { border-color: alpha(#ff9f0a, 0.60); box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 9px alpha(#ff9f0a, 0.30); }
 .lennox-island.glow-green { border-color: alpha(#30d158, 0.60); box-shadow: inset 0 1px alpha(white, 0.10), inset 0 0 9px alpha(#30d158, 0.28); }

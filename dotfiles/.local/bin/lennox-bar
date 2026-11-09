@@ -2,7 +2,7 @@
 # The top bar (Waybar).
 #   lennox-bar start|stop|reload|toggle
 #   lennox-bar refresh   rebuild, restart only if what the bar shows changed
-#   lennox-bar style lennox|lennox-line|lennox-aurora|lennox-pills|lennox-dots|modern|glass|minimal
+#   lennox-bar style lennox|lennox-line|lennox-aurora|lennox-pills|lennox-dots|lennox-material|lennox-terminal|lennox-mecha|lennox-glow|lennox-dock|modern|glass|minimal
 # Style and visible modules are set in Lennox Settings > Bar.
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -93,6 +93,33 @@ start() {
     build_config "$style" || { notify-send -a Lennox -i dialog-error "Bar" "Could not build the bar config (is jq installed?)"; return 1; }
     # 9>&- : waybar must not inherit (and keep holding) our lock
     setsid -f waybar -c "$RUN/waybar.json" -s "$(style_file "$style")" >"$RUN/waybar.log" 2>&1 </dev/null 9>&-
+    ( island_fit "$style" ) >/dev/null 2>&1 </dev/null 9>&- &
+}
+
+# Where the island goes: the bar's real position and height, measured from the running
+# bar (works for every style, even ones with an automatic height), plus the island's
+# look for this style ("x-lennox": {"island": "black|match|glass|flat|glow"}).
+# The widgets watch this file and refit the island when it changes.
+island_fit() {
+    local style="$1" cfg="$RUN/waybar.json" skin pos top h geo=""
+    skin="$(jq -r '.["x-lennox"].island // "black"' "$WAYBAR/themes/$style/config.json" 2>/dev/null)"
+    pos="$(jq -r '.position // "top"' "$cfg" 2>/dev/null)"
+    top="$(jq -r '.["margin-top"] // 0' "$cfg" 2>/dev/null)"
+    h="$(jq -r '.height // 34' "$cfg" 2>/dev/null)"
+    if command -v hyprctl >/dev/null; then
+        for _ in $(seq 30); do
+            geo="$(hyprctl layers -j 2>/dev/null | jq -r '[.. | objects | select(.namespace? == "waybar")][0] | select(. != null) | "\(.y) \(.h)"' 2>/dev/null)"
+            [[ -n "$geo" ]] && break
+            sleep 0.1
+        done
+    fi
+    if [[ -n "$geo" && "$pos" == "top" ]]; then
+        top="${geo%% *}"; h="${geo##* }"
+    fi
+    jq -n --arg style "$style" --arg skin "${skin:-black}" --arg pos "${pos:-top}" \
+        --argjson top "${top:-0}" --argjson h "${h:-34}" \
+        '{style: $style, skin: $skin, position: $pos, top: $top, height: $h}' > "$RUN/island.json.tmp" \
+        && mv -f "$RUN/island.json.tmp" "$RUN/island.json"
 }
 
 stop() {
@@ -126,7 +153,7 @@ case "${1:-reload}" in
         ;;
     toggle) if pgrep -x waybar >/dev/null; then stop; else start force; fi ;;
     style)
-        [[ -n "${2:-}" ]] || { echo "usage: lennox-bar style lennox|lennox-line|lennox-aurora|lennox-pills|lennox-dots|modern|glass|minimal" >&2; exit 2; }
+        [[ -n "${2:-}" ]] || { echo "usage: lennox-bar style lennox|lennox-line|lennox-aurora|lennox-pills|lennox-dots|lennox-material|lennox-terminal|lennox-mecha|lennox-glow|lennox-dock|modern|glass|minimal" >&2; exit 2; }
         flock -u 9
         exec 9>&-
         lennox-set bar.style "$2"

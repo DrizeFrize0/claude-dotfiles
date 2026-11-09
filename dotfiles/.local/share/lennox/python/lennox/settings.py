@@ -171,6 +171,7 @@ DEFAULTS = {
     "sounds": {
         "enabled": True,               # UI sounds (Lennox Settings > Sound > Sound effects)
         "volume": 40,                  # the master volume for every effect, gentle by default
+        "pack": "soft",                # soft (marimba) | glass (bells) | pop (bubbles) | freedesktop
         "notifications": True,         # not in Do not disturb, focus or game mode
         "volume_keys": False,
         "screenshots": False,
@@ -326,11 +327,13 @@ CHOICES = {
     ("appearance", "window_mode"): ["tiling", "stacking"],
     ("wallpaper", "transition"): ["grow", "fade", "wipe", "wave", "outer", "center", "any", "simple", "none"],
     ("bar", "density"): ["comfortable", "compact"],
-    ("bar", "style"): ["lennox", "lennox-line", "lennox-aurora", "lennox-pills", "lennox-dots", "modern", "glass", "minimal"],
+    ("bar", "style"): ["lennox", "lennox-line", "lennox-aurora", "lennox-pills", "lennox-dots", "lennox-material",
+                        "lennox-terminal", "lennox-mecha", "lennox-glow", "lennox-dock", "modern", "glass", "minimal"],
     ("widgets", "position"): ["top-left", "top-center", "top-right", "center", "bottom-left", "bottom-right"],
     ("widgets", "temperature_unit"): ["celsius", "fahrenheit"],
     ("clips", "mode"): ["gaming", "always", "off"],
     ("widgets", "island_place"): ["bar", "below"],
+    ("sounds", "pack"): ["soft", "glass", "pop", "freedesktop"],
     ("games", "overlay"): ["hidden", "shown"],
     ("input", "accel_profile"): ["", "adaptive", "flat"],
     ("keybinds", "main_mod"): ["SUPER", "ALT"],
