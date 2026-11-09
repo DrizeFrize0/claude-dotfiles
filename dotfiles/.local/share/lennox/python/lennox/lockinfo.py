@@ -113,7 +113,25 @@ def server(now=None):
     return f"󰍳  {esc(name)}  ·  {info.get('players', 0)} online" + (f"  ({esc(names)})" if names else "")
 
 
-PARTS = {"music": music, "alarm": alarm, "weather": weather, "phone": phone, "server": server}
+def battery(base="/sys/class/power_supply"):
+    """The laptop battery for the lock screen's corner: "󰁹 72%" (and a bolt while charging)."""
+    try:
+        names = sorted(n for n in os.listdir(base) if n.startswith("BAT"))
+    except OSError:
+        return ""
+    for name in names:
+        try:
+            with open(os.path.join(base, name, "capacity")) as f:
+                level = int(f.read().strip())
+            with open(os.path.join(base, name, "status")) as f:
+                charging = f.read().strip() in ("Charging", "Full")
+        except (OSError, ValueError):
+            continue
+        return f"{'󰂄' if charging else '󰁹'} {level}%"
+    return ""
+
+
+PARTS = {"music": music, "alarm": alarm, "weather": weather, "phone": phone, "server": server, "battery": battery}
 
 
 def lines(settings):

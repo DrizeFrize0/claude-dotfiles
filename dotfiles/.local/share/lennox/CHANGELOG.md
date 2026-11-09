@@ -3,6 +3,17 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 2.2.0 · 2026-11-09 · Expressive: profiles, a new login, lock and session screen
+
+- Lennox 2.2 borrows the best of end-4's illogical-impulse setup: Material You colors everywhere, smooth Material motion, and screens that greet you by name.
+- Your profile: Settings > Profile sets the name Lennox calls you and your picture. Pick a painted one (your initials in the theme's colors, a sleepy cat, a planet, a palm at sunset or a blocky grass cube) or any photo. The picture shows on the login screen, the lock screen, the welcome animation and the session screen. In a terminal: lennox-profile.
+- New login screen, Lennox Expressive: your wallpaper settles in from a slight zoom while it blurs, the big clock and a glass card with your picture float up one after the other, and the password sits in a pill with a round go button. A wrong password shakes the field; logging in shrinks the card away and fades to black while the desktop loads. With more than one user on the laptop, everyone's picture sits above the card (click one, or use the arrow keys). Sleep, Restart, Shut down and the session are along the bottom. It follows your wallpaper's colors.
+- New lock screen, Expressive: big clock and date, a glass card with your picture, "Good evening, Jado" and a pill-shaped password field, battery in the corner and music and alarms along the bottom, all fading in on Material curves. The old one stays as Classic (Settings > Widgets > Lock screen > Style).
+- New session screen (SUPER + Escape, or the power button in the bar): the screen dims behind a blur, your picture and "See you soon" appear and five big buttons pop in one after another: Lock, Sleep, Log out, Restart, Shut down (or press L, S, O, R, P). Log out, Restart and Shut down say goodbye first: the buttons fall away, the words change and the screen fades to black. The compact menu is still on SUPER + CTRL + P.
+- The welcome animation at login now shows your picture in a ring that floats up, with your name.
+- New animation style, Expressive, with end-4's Material 3 curves: windows pop in from 60 percent, menus glide in and settle softly, workspaces slide. Settings > Appearance > Animations.
+- Rounded screen corners, like end-4's: the corners of the screen are drawn round. On by default, size adjustable, in Settings > Appearance > Effects. Clicks go straight through and fullscreen games cover them.
+
 ## 2.1.0 · 2026-11-09 · New bars, a smarter island, sounds and a command palette
 
 - Five new bar styles, each after a well-known Arch setup: Material (calm tonal islands and a big clock, after end-4 and Caelestia), Terminal (one flat monospace strip with underlined workspace numbers, after Omarchy), Mecha (hard-edged slanted segments, after mechabar), Glow (dark islands with a glowing accent outline, after JaKooLit) and Dock (one glass capsule at the bottom of the screen). Pick one in Settings > Bar & Dock, with SUPER + CTRL + T, or from the command palette.

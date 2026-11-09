@@ -6,7 +6,6 @@ Plays once when the desktop starts (about 4 seconds). Any key or click skips it.
 Settings > Daily care > Greeting turns it off.
 """
 
-import getpass
 import os
 import math
 import random
@@ -14,6 +13,7 @@ import sys
 import time
 
 from . import greeting as G
+from . import profile as P
 from . import overlay as O
 from . import screensaver as SS
 from . import settings as S
@@ -41,8 +41,13 @@ class Window(Gtk.Window):
     def __init__(self, total, style=None):
         super().__init__(title="Lennox welcome", decorated=False)
         self.add_css_class("lennox-overlay")
+        r, g, b = O.accent()
+        ring = f"rgb({int(r * 255)}, {int(g * 255)}, {int(b * 255)})"
         O.css(O.TRANSPARENT + " label.login-title { font-size: 56px; font-weight: 800; color: #eef2ff; } "
-              "label.login-sub { font-size: 20px; color: #a9bbea; }")
+              "label.login-sub { font-size: 20px; color: #a9bbea; } "
+              f".login-face {{ border-radius: 999px; border: 4px solid {ring}; margin-top: 36px; margin-bottom: 14px; "
+              "transition: margin-top 900ms cubic-bezier(0.05, 0.7, 0.1, 1); } "
+              ".login-face.in { margin-top: 0; }")
         self.total, self.t0 = total, time.monotonic()
         self.style = style or S.load()["greeting"]["style"]
         self.stars = SS.Stars(160, random.Random())
@@ -50,12 +55,20 @@ class Window(Gtk.Window):
         self.level = 0.0
         self.canvas = O.Canvas(self.draw, self.step, fps=40)
         settings = S.load()
-        name = settings["greeting"]["name"].strip() or getpass.getuser().capitalize()
+        name = P.display_name(settings)
         title = Gtk.Label(label=f"{G.hello(time.localtime().tm_hour)}, {name}", css_classes=["login-title"])
         sub = Gtk.Label(label=time.strftime("%A %-d %B  ·  %H:%M"), css_classes=["login-sub"])
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
+        self.face = None
         logo = os.path.expanduser("~/.config/lennox/assets/logo/lennox-logo-256.png")
-        if os.path.exists(logo):                       # the Lennox logo above the words
+        if os.path.exists(P.FACE):                     # your profile picture floats up in a ring
+            face = Gtk.Picture.new_for_filename(P.FACE)
+            face.set_content_fit(Gtk.ContentFit.COVER)
+            face.set_size_request(136, 136)
+            self.face = Gtk.Box(css_classes=["login-face"], overflow=Gtk.Overflow.HIDDEN, halign=Gtk.Align.CENTER)
+            self.face.append(face)
+            box.append(self.face)
+        elif os.path.exists(logo):                     # the Lennox logo above the words
             picture = Gtk.Image.new_from_paintable(O.Gdk.Texture.new_from_filename(logo))
             picture.set_pixel_size(128)               # an Image is drawn exactly this big
             picture.set_halign(Gtk.Align.CENTER)
@@ -82,6 +95,8 @@ class Window(Gtk.Window):
             self.scene.step(dt)
         # the text comes in a little after the sky and leaves a little before it
         self.box.set_opacity(ease(envelope(t - 0.35, self.total - 0.7)))
+        if self.face is not None and t > 0.3 and not self.face.has_css_class("in"):
+            self.face.add_css_class("in")
         if t > self.total:
             self.close()
 

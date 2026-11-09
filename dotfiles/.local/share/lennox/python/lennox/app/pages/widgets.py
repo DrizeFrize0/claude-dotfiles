@@ -85,6 +85,9 @@ class Page:
         lock = Adw.PreferencesGroup(
             title="Lock screen",
             description="Lines bottom left on the lock screen. Media keys still work while it's locked.")
+        lock.add(rows.combo_row(store, "lockscreen.style", "Style",
+                                [("expressive", "Expressive: your picture, a greeting and a big clock"),
+                                 ("classic", "Classic: the ML4W lock screen")]))
         lock.add(rows.switch_row(store, "lockscreen.widgets", "Show widgets on the lock screen"))
         for key, title in (("music", "What's playing"), ("alarm", "Next alarm, timer or reminder"),
                            ("weather", "Weather"), ("phone", "Phone battery (Phone link)"),

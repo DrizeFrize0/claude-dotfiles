@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Your name and picture for the login screen, lock screen, welcome and session screen.
+#   lennox-profile | name "Jado" | picture FILE | avatar initials|cat|orbit|palm|blocky | refresh
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.profile "$@"

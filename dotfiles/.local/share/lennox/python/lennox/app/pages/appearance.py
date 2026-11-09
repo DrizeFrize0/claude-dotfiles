@@ -24,6 +24,7 @@ ANIMATIONS = [
     ("moving", "Moving"),
     ("classic", "Classic"),
     ("subtle", "Subtle (recommended)"),
+    ("expressive", "Expressive: Material motion, after end-4"),
     ("fast", "Fast"),
     ("smooth", "Smooth"),
     ("bouncy", "Bouncy"),
@@ -97,6 +98,8 @@ class Page:
         effects.add(rows.spin_row(store, "appearance.inactive_opacity", "Inactive window opacity",
                                   "1.0 = solid", lower=0.5, upper=1.0, step=0.05, digits=2))
         effects.add(rows.switch_row(store, "appearance.dim_inactive", "Dim inactive windows"))
+        effects.add(rows.switch_row(store, "corners.on", "Rounded screen corners", "The screen's corners are drawn round, like a phone's"))
+        effects.add(rows.spin_row(store, "corners.radius", "Corner size", lower=6, upper=40, step=2))
         effects.add(rows.spin_row(store, "appearance.terminal_opacity", "Terminal opacity",
                                   lower=0.5, upper=1.0, step=0.05, digits=2))
         page.add(effects)

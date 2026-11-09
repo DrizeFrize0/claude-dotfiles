@@ -67,14 +67,14 @@ hl.bind(key("SHIFT + R"),      hl.dsp.exec_cmd("hyprctl reload"), { description 
 -- Session ---------------------------------------------
 hl.bind(key("L"),              run("lennox-power lock"),        { description = "Lock the screen" })
 hl.bind(key("CTRL + L"),       run("lennox-power lock"),        { description = "Lock the screen" })
-hl.bind(key("ESCAPE"),         run("lennox-menu power"),        { description = "Power menu" })
+hl.bind(key("ESCAPE"),         run("lennox-leave"),             { description = "Session screen: lock, sleep, log out, restart, shut down" })
 hl.bind(key("ALT + R"),        run("lennox-clips save"),        { description = "Save the last 2 minutes of gameplay (clip)" })
 hl.bind(key("ALT + P"),        run("lennox-perf cycle"),        { description = "Performance: Quiet / Balanced / Max" })
 hl.bind(key("ALT + C"),        run("lennox-clock"),             { description = "Clock: timers, alarms, reminders" })
 hl.bind(key("CTRL + BACKSPACE"), run("lennox-panic"),           { description = "Panic: hide everything, mute and lock" })
 hl.bind(key("F12"),            run("lennox-focus toggle"),      { description = "Focus mode on / off (blocks distractions)" })
 hl.bind(key("CTRL + ESCAPE"),  run("lennox-open system_monitor"), { description = "System monitor (like Task Manager)" })
-hl.bind(key("CTRL + P"),       run("lennox-menu power"),        { description = "Power menu" })
+hl.bind(key("CTRL + P"),       run("lennox-menu power"),        { description = "Power menu (compact list)" })
 
 -- Screenshots -----------------------------------------
 hl.bind("PRINT",               run("lennox-screenshot area"),   { description = "Screenshot an area (copied and saved)" })

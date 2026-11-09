@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=Lennox Expressive
+Description=Material You login screen after end-4's illogical-impulse: blurred wallpaper, big clock, your picture, profiles and smooth motion
+Author=Lennox
+Type=sddm-theme
+Version=2.2
+Screenshot=preview.png
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=lennox-expressive
+Theme-API=2.0
+QtVersion=6

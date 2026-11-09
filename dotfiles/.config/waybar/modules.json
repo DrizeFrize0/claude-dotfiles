@@ -423,8 +423,9 @@
   },
   "custom/exit": {
     "format": "󰐥",
-    "on-click": "~/.local/bin/lennox-menu power",
-    "tooltip-format": "Power menu"
+    "on-click": "~/.local/bin/lennox-leave",
+    "on-click-right": "~/.local/bin/lennox-menu power",
+    "tooltip-format": "Session screen (right-click: compact power menu)"
   },
   "custom/lennox": {
     "format": " ",

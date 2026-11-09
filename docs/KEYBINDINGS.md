@@ -57,7 +57,8 @@ hl.bind("SUPER + B", hl.dsp.exec_cmd("firefox"), { description = "Open Firefox" 
 | Keys | Action |
 | --- | --- |
 | `SUPER + L` / `SUPER + CTRL + L` | Lock |
-| `SUPER + ESC` / `SUPER + CTRL + P` | Power menu |
+| `SUPER + ESC` | Session screen: Lock (L), Sleep (S), Log out (O), Restart (R), Shut down (P) |
+| `SUPER + CTRL + P` | Compact power menu |
 
 ## Screenshots
 

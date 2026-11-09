@@ -47,6 +47,7 @@ KEEP_IF_EXISTS=(
     .config/hypr/colors.conf
     .config/hypr/lennox/settings.lua
     .config/hypr/hypridle.conf
+    .config/hypr/hyprlock.conf
     .config/hypr/hyprsunset.conf
     .config/lennox/colors.json
     .config/waybar/colors.css
@@ -486,6 +487,19 @@ setup_sddm() {
     fi
     rm -rf "$tmp"
 
+    # Lennox Expressive (2.2): the Material You login screen, from this repository
+    local exp=/usr/share/sddm/themes/lennox-expressive
+    sudo rm -rf "$exp"
+    sudo mkdir -p "$exp/backgrounds"
+    sudo cp -r "$SETUP/system/usr/share/sddm/themes/lennox-expressive/." "$exp/"
+    [[ -f /usr/share/sddm/themes/lennox/backgrounds/lennox.jpg ]] \
+        && sudo cp /usr/share/sddm/themes/lennox/backgrounds/lennox.jpg "$exp/backgrounds/lennox.jpg"
+    [[ -f "$HOME/.config/lennox/colors.json" ]] && sudo cp "$HOME/.config/lennox/colors.json" "$exp/backgrounds/colors.json"
+    sudo chown -R "$USER:$(id -gn)" "$exp/backgrounds"
+    install_system_file etc/sddm.conf.d/10-lennox.conf 644
+    ok "Lennox Expressive login screen: your picture, your wallpaper's colors"
+    "$HOME/.local/bin/lennox-profile" ensure >/dev/null 2>&1 || true
+
     # Remember Lennox as the session to start
     sudo install -d -o sddm -g sddm /var/lib/sddm 2>/dev/null
     if ! sudo grep -qs 'lennox.desktop' /var/lib/sddm/state.conf; then
@@ -536,6 +550,8 @@ install_dotfiles() {
     chmod +x "$HOME"/.local/bin/lennox* 2>/dev/null
     # The sound packs are synthesized locally (pure Python, about a second)
     "$HOME/.local/bin/lennox-sound-fx" make >/dev/null 2>&1 || true
+    # Your profile picture (painted initials until you pick one), for the login and lock screens
+    "$HOME/.local/bin/lennox-profile" ensure >/dev/null 2>&1 || true
     echo "$REPO" > "$HOME/.config/lennox/repo"
     lennox_version > "$HOME/.config/lennox/version"
     ok "Configs and lennox-* commands installed"
@@ -771,6 +787,7 @@ if [[ "$MODE" == "update" ]]; then
     old_version="$(cat "$HOME/.config/lennox/version" 2>/dev/null)"
     install_new_packages
     install_system_files
+    setup_sddm
     $HAS_NVIDIA && setup_nvidia
     setup_thermal
     setup_care

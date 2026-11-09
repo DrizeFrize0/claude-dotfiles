@@ -161,6 +161,7 @@ DEFAULTS = {
         "monthly_budget": 200,         # warn at 80% and 100%; 0 = no warnings
     },
     "lockscreen": {
+        "style": "expressive",         # expressive (picture, greeting, big clock) | classic (ML4W)
         "widgets": True,               # lines bottom left on the lock screen
         "music": True,
         "alarm": True,                 # next alarm, timer or reminder
@@ -193,7 +194,8 @@ DEFAULTS = {
         "minutes": 4,                  # idle minutes before it starts
         "style": "stars",
     },
-    "pet": {"on": False},              # a small cat walks along the bottom of the screen
+    "pet": {"on": False},
+    "corners": {"on": True, "radius": 18},  # rounded screen corners (after end-4)              # a small cat walks along the bottom of the screen
     "visualizer": {"on": False},       # the wallpaper area pulses with the music
     "cursorfx": {
         "on": False,
@@ -236,6 +238,10 @@ DEFAULTS = {
     "downloads": {
         "on": True,                    # downloads in the bar
         "folder": "",                  # empty: ~/Downloads
+    },
+    "profile": {
+        "name": "",                    # what Lennox calls you everywhere (empty: your account's name)
+        "picture": "initials",         # initials | cat | orbit | palm | blocky | custom (~/.face)
     },
     "greeting": {
         "on": True,                    # a friendly hello a little after login
@@ -320,7 +326,7 @@ CHOICES = {
         "scheme-fruit-salad", "scheme-monochrome", "scheme-neutral", "scheme-rainbow",
         "scheme-vibrant",
     ],
-    ("appearance", "animations"): ["subtle", "default", "dynamic", "moving", "classic", "fast", "smooth", "bouncy", "off"],
+    ("appearance", "animations"): ["subtle", "expressive", "default", "dynamic", "moving", "classic", "fast", "smooth", "bouncy", "off"],
     ("appearance", "border_style"): ["gradient", "animated", "solid", "none"],
     ("appearance", "workspace_anim"): ["preset", "slide", "slidevert", "fade", "slidefade"],
     ("appearance", "layout"): ["dwindle", "master"],
@@ -334,6 +340,8 @@ CHOICES = {
     ("clips", "mode"): ["gaming", "always", "off"],
     ("widgets", "island_place"): ["bar", "below"],
     ("sounds", "pack"): ["soft", "glass", "pop", "freedesktop"],
+    ("lockscreen", "style"): ["expressive", "classic"],
+    ("profile", "picture"): ["initials", "cat", "orbit", "palm", "blocky", "custom"],
     ("games", "overlay"): ["hidden", "shown"],
     ("input", "accel_profile"): ["", "adaptive", "flat"],
     ("keybinds", "main_mod"): ["SUPER", "ALT"],
@@ -371,6 +379,7 @@ RANGES = {
     ("appearance", "terminal_opacity"): (0.5, 1.0),
     ("wallpaper", "auto_change_minutes"): (0, 1440),
     ("dock", "icon_size"): (24, 64),
+    ("corners", "radius"): (6, 40),
     ("display", "scale"): (0.5, 3.0),
     ("input", "repeat_rate"): (10, 80),
     ("input", "repeat_delay"): (150, 1000),
@@ -467,6 +476,7 @@ APPLY_PARTS = {
     "bar": ["bar"],
     "dock": ["dock"],
     "widgets": ["widgets"],
+    "lockscreen": ["lock"],
     "ai": ["aispend"],
     "games": ["games"],
     "cleanup": ["cleanup"],
@@ -475,6 +485,7 @@ APPLY_PARTS = {
     "fan": ["fan"],
     "network": ["network"],
     "pet": ["overlays"],
+    "corners": ["overlays"],
     "musiccolors": ["overlays"],
     "visualizer": ["overlays"],
     "cursorfx": ["overlays", "hypr"],

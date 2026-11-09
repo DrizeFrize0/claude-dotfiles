@@ -60,7 +60,8 @@ ACTIONS = [
     ("Ask Claude", "dialog-question-symbolic", "lennox-ask"),
     ("Lock the screen", "system-lock-screen-symbolic", "lennox-power lock"),
     ("Sleep", "weather-clear-night-symbolic", "lennox-power suspend"),
-    ("Power menu", "system-shutdown-symbolic", "lennox-menu power"),
+    ("Session screen: lock, sleep, log out, restart, shut down", "system-shutdown-symbolic", "lennox-leave"),
+    ("Profile: your name and picture", "avatar-default-symbolic", "lennox-settings --page profile"),
 ]
 
 BAR_STYLES = [("lennox", "Islands"), ("lennox-line", "Line"), ("lennox-aurora", "Aurora"), ("lennox-pills", "Pills"),

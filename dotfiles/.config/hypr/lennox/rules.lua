@@ -122,9 +122,12 @@ hl.layer_rule({ name = "anim-rofi",     match = { namespace = "^(rofi)$" },     
 hl.layer_rule({ name = "anim-swaync",   match = { namespace = "^(swaync-control-center|swaync-notification-window)$" }, animation = "slide right" })
 hl.layer_rule({ name = "blur-widgets",   match = { namespace = "^(lennox-widgets|lennox-dashboard)$" }, blur = true, ignore_alpha = 0.3 })
 hl.layer_rule({ name = "blur-overview",  match = { namespace = "^(lennox-overview)$" },             blur = true, ignore_alpha = 0.2 })
+hl.layer_rule({ name = "blur-session",   match = { namespace = "^(lennox-session)$" },              blur = true, ignore_alpha = 0.0 })
+hl.layer_rule({ name = "anim-session",   match = { namespace = "^(lennox-session)$" },              animation = "fade" })
 hl.layer_rule({ name = "anim-overview",  match = { namespace = "^(lennox-overview)$" },             animation = "fade" })
 hl.layer_rule({ name = "anim-dashboard", match = { namespace = "^(lennox-dashboard)$" },             animation = "slide left" })
 hl.layer_rule({ name = "anim-widgets",   match = { namespace = "^(lennox-widgets)$" },               animation = "fade" })
 -- The island moves by itself: no fade or box from the compositor on top
 hl.layer_rule({ name = "no-anim-island", match = { namespace = "^(lennox-island)$" }, no_anim = true })
+hl.layer_rule({ name = "no-anim-corners", match = { namespace = "^(lennox-corners)$" }, no_anim = true })
 hl.layer_rule({ name = "no-anim-picker", match = { namespace = "^(selection|hyprpicker)$" },       no_anim = true })

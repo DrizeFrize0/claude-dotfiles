@@ -184,12 +184,17 @@ if command -v magick >/dev/null; then
     printf '* { current-image: url("%s", height); }\n' "$CACHE/blurred.png" > "$CACHE/rofi.rasi"
 fi
 
-# Login screen background, if the SDDM theme folder was handed to this user
-SDDM_BG="/usr/share/sddm/themes/lennox/backgrounds"
-if [[ -w "$SDDM_BG" ]] && command -v magick >/dev/null; then
-    magick "${image}[0]" -resize '2560x2560>' -quality 92 "$SDDM_BG/lennox.jpg.tmp.jpg" \
-        && mv -f "$SDDM_BG/lennox.jpg.tmp.jpg" "$SDDM_BG/lennox.jpg"
-fi
+# Login screen background (and, for Lennox Expressive, its colors), if the SDDM theme
+# folders were handed to this user
+for SDDM_BG in /usr/share/sddm/themes/lennox/backgrounds /usr/share/sddm/themes/lennox-expressive/backgrounds; do
+    if [[ -w "$SDDM_BG" ]] && command -v magick >/dev/null; then
+        magick "${image}[0]" -resize '2560x2560>' -quality 92 "$SDDM_BG/lennox.jpg.tmp.jpg" \
+            && mv -f "$SDDM_BG/lennox.jpg.tmp.jpg" "$SDDM_BG/lennox.jpg"
+        [[ -f "$HOME/.config/lennox/colors.json" ]] && cp -f "$HOME/.config/lennox/colors.json" "$SDDM_BG/colors.json"
+    fi
+done
+# A painted "initials" profile picture follows the new colors
+[[ "$(lennox-get profile.picture 2>/dev/null)" == "initials" ]] && (lennox-profile refresh >/dev/null 2>&1 &)
 fi
 
 # ---------------------------------------------------------------- reload
