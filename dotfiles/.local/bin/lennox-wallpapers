@@ -262,7 +262,123 @@ def graphite(w, h, out, tmp, rnd):
     finish(f"{tmp}/g.png", out, w, h, grain=0.06)
 
 
+# ---------------------------------------------------------------- Lennox 2.0 designs
+
+def orbit(w, h, out, tmp, rnd):
+    """A planet rising over the edge, thin orbit rings, deep space."""
+    sw, sh = w // 2, h // 2
+    px, py, pr = sw * 0.5, sh * 1.55, sh * 0.95
+    rings = []
+    for i, a in enumerate((0.55, 0.35, 0.22, 0.14)):
+        rx, ry = pr * (1.25 + i * 0.22), pr * (0.30 + i * 0.06)
+        rings += ["-stroke", f"rgba(170,190,255,{a})", "-strokewidth", max(1, sh // 360), "-fill", "none",
+                  "-draw", f"ellipse {px:.0f},{py - pr * 0.62:.0f} {rx:.0f},{ry:.0f} 180,360"]
+    run(["-size", f"{sw}x{sh}", "gradient:#05060f-#141a3a", *stars(sw, sh, rnd, 260, top=0.9, scale=sh / 1080),
+         f"{tmp}/sky.png"])
+    run(["-size", f"{sw}x{sh}", "xc:none", "-fill", "rgba(120,110,255,0.55)",
+         "-draw", f"circle {px:.0f},{py:.0f} {px + pr * 1.12:.0f},{py:.0f}", "-blur", f"0x{sh // 12}", f"{tmp}/glow.png"])
+    run(["-size", f"{sw}x{sh}", "xc:none", "-fill", "#0b0e22", "-draw", f"circle {px:.0f},{py:.0f} {px + pr:.0f},{py:.0f}",
+         "-stroke", "rgba(190,200,255,0.85)", "-strokewidth", max(1, sh // 300), "-fill", "none",
+         "-draw", f"arc {px - pr:.0f},{py - pr:.0f} {px + pr:.0f},{py + pr:.0f} 200,340", f"{tmp}/planet.png"])
+    run([f"{tmp}/sky.png", f"{tmp}/glow.png", "-compose", "screen", "-composite",
+         f"{tmp}/planet.png", "-compose", "over", "-composite", *rings, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.04)
+
+
+def waves(w, h, out, tmp, rnd):
+    """Smooth glassy bands flowing across the screen."""
+    sw, sh = w // 2, h // 2
+    colors = ["#1b1f4b", "#28307a", "#3b47a8", "#5a5fd6", "#7d6cf0", "#4cc3d9"]
+    draws = []
+    for i, c in enumerate(colors):
+        draws += ["-fill", c, "-draw", ridge(sw, sh, sh * (0.30 + i * 0.12), sh * 0.09, rnd, waves=3)]
+    run(["-size", f"{sw}x{sh}", "gradient:#0d0f26-#171a3d", *draws, "-blur", f"0x{sh // 220 + 1}", f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.03)
+
+
+def palm(x, base, height, lean, color, s):
+    """A palm tree silhouette: a curved trunk and a fan of leaves."""
+    tx, ty = x + lean, base - height
+    draws = ["-stroke", color, "-strokewidth", max(2, s * 0.018), "-fill", "none",
+             "-draw", f"path 'M {x:.0f},{base:.0f} Q {x + lean * 0.2:.0f},{base - height * 0.6:.0f} {tx:.0f},{ty:.0f}'"]
+    for ang in (-160, -130, -100, -70, -40, -15, 15):
+        r = math.radians(ang)
+        ex, ey = tx + math.cos(r) * s * 0.16, ty + math.sin(r) * s * 0.10 + s * 0.05
+        mx, my = tx + math.cos(r) * s * 0.09, ty + math.sin(r) * s * 0.10 - s * 0.03
+        draws += ["-strokewidth", max(2, s * 0.02),
+                  "-draw", f"path 'M {tx:.0f},{ty:.0f} Q {mx:.0f},{my:.0f} {ex:.0f},{ey:.0f}'"]
+    return draws
+
+
+def palm_night(w, h, out, tmp, rnd):
+    """Beach paradise at night: moon over a calm sea, palms on the shore."""
+    horizon = h * 0.64
+    mx, my, mr = w * 0.62, h * 0.30, h * 0.07
+    run(["-size", f"{w}x{h}", "gradient:#0a0f2e-#3a3a7a", *stars(w, h, rnd, 300, top=0.6, scale=h / 1080),
+         "-fill", "#f6eed6", "-draw", f"circle {mx:.0f},{my:.0f} {mx + mr:.0f},{my:.0f}", f"{tmp}/sky.png"])
+    run(["-size", f"{w}x{h}", "xc:none", "-fill", "rgba(246,238,214,0.45)",
+         "-draw", f"circle {mx:.0f},{my:.0f} {mx + mr * 2.6:.0f},{my:.0f}", "-blur", f"0x{mr:.0f}", f"{tmp}/glow.png"])
+    lines = []
+    for i in range(40):
+        y = horizon + (h - horizon) * (i / 40) ** 1.5
+        half = mr * (1.4 - i / 40) * rnd.uniform(0.3, 1.0)
+        lines += ["-fill", f"rgba(246,238,214,{0.6 * (1 - i / 42):.2f})",
+                  "-draw", f"roundrectangle {mx - half:.0f},{y:.0f} {mx + half:.0f},{y + max(2, h * 0.003):.0f} 2,2"]
+    shore = h * 0.90
+    trees = palm(w * 0.12, shore, h * 0.42, w * 0.05, "#05060f", h) + palm(w * 0.20, shore, h * 0.30, -w * 0.02, "#05060f", h * 0.8)
+    run([f"{tmp}/sky.png", f"{tmp}/glow.png", "-compose", "screen", "-composite",
+         "-fill", "#141a45", "-draw", f"rectangle 0,{horizon:.0f} {w},{h}", *lines,
+         "-fill", "#05060f", "-draw", ridge(w, h, shore, h * 0.012, rnd, waves=2), *trees, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h)
+
+
+def skyline(w, h, out, tmp, rnd):
+    """A city at night: two rows of towers with a few lit windows."""
+    draws = []
+    for row, (color, top, bottom) in enumerate((("#1d2147", 0.45, 0.72), ("#0b0d22", 0.55, 0.95))):
+        x = -rnd.uniform(0, w * 0.03)
+        while x < w:
+            bw = rnd.uniform(0.03, 0.07) * w
+            by = h * rnd.uniform(top, bottom - 0.12)
+            draws += ["-fill", color, "-draw", f"rectangle {x:.0f},{by:.0f} {x + bw:.0f},{h}"]
+            if row == 1:
+                win = max(3, h * 0.006)
+                for wy in range(int(by + win * 3), h, int(win * 3.2)):
+                    for wx in range(int(x + win * 1.5), int(x + bw - win * 1.5), int(win * 2.8)):
+                        if rnd.random() < 0.13:
+                            draws += ["-fill", rnd.choice(("#ffd28a", "#ffe7b8", "#9ad7ff")),
+                                      "-draw", f"rectangle {wx},{wy} {wx + win:.0f},{wy + win * 1.3:.0f}"]
+            x += bw + rnd.uniform(0, w * 0.008)
+    run(["-size", f"{w}x{h}", "gradient:#120d2e-#c2567a", *stars(w, h, rnd, 120, top=0.4, scale=h / 1080),
+         *draws, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h)
+
+
+def topo(w, h, out, tmp, rnd):
+    """Clean topographic contour lines on a dark slate."""
+    lines = []
+    for cx, cy, n in ((w * 0.72, h * 0.38, 16), (w * 0.18, h * 0.82, 10)):
+        ph = [rnd.uniform(0, math.tau) for _ in range(3)]
+        for k in range(1, n + 1):
+            r0 = k * h * 0.045
+            pts = []
+            for i in range(0, 121):
+                t = i / 120 * math.tau
+                r = r0 * (1 + 0.10 * math.sin(3 * t + ph[0]) + 0.06 * math.sin(5 * t + ph[1]) + 0.04 * math.sin(2 * t + ph[2]))
+                pts.append(f"{cx + math.cos(t) * r * 1.25:.0f},{cy + math.sin(t) * r:.0f}")
+            alpha = 0.45 if k % 4 == 0 else 0.18
+            lines += ["-stroke", f"rgba(150,200,190,{alpha})", "-strokewidth", max(1, h / 900), "-fill", "none",
+                      "-draw", "polyline " + " ".join(pts)]
+    run(["-size", f"{w}x{h}", "gradient:#13201f-#0a1112", *lines, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.03)
+
+
 DESIGNS = {
+    "orbit": ("Orbit (Lennox 2.0)", orbit),
+    "glass-waves": ("Glass waves", waves),
+    "palm-night": ("Palm night", palm_night),
+    "city-night": ("City at night", skyline),
+    "topo": ("Topographic", topo),
     "aurora": ("Aurora", aurora),
     "sunset-beach": ("Sunset beach", sunset_beach),
     "night-owl": ("Night owl", night_owl),

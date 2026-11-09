@@ -100,6 +100,26 @@ On the login screen choose **Lennox (Hyprland)** (bottom-left session menu) and 
 2. `SUPER + I` → **Health Check**: confirms graphics, sound, mic and touchpad drivers.
 3. `SUPER + I` → **Sound** → *Test the microphone*.
 
+## Reinstalling over a broken Lennox (keeping Windows)
+
+Use this when the Linux partition is damaged and you want a clean one without touching Windows. It was written for Jado's HP Victus, where the disk looks like this (`lsblk -f` on the live USB):
+
+| Partition | What it is | During the reinstall |
+| --- | --- | --- |
+| `nvme0n1p1`, `p2`, `p3`, `p4`, `p5` | Windows (boot files, system, recovery) | **Do not touch** |
+| `nvme0n1p6` (1 GB, FAT32) | Linux boot partition | Mount at `/boot`, **do not format** |
+| `nvme0n1p7` (btrfs) | Linux (the damaged one) | **Format as btrfs**, mount at `/` |
+
+1. **Test the RAM first.** Damaged files that differ by exactly one bit (what `lennox-disk check` found) mean memory flipping bits, and a new install on bad RAM breaks again. At the live USB's boot menu choose **Memtest86+** (if your stick's menu has it) and let it run at least one full pass, 20 to 40 minutes. Any red error: the RAM needs replacing (or reseating) before you install. Also turn **XMP / memory overclock off** in the BIOS (`F10`) if it's on.
+2. Your files are on the backup stick. Check once more (`mount /dev/sdb1 /mnt/usb && ls /mnt/usb/jado-backup`), then `umount /mnt/usb`.
+3. Run `archinstall` as in [step 4](#4-run-archinstall), but in **Disk configuration** choose **Manual partitioning** → `nvme0n1`:
+   - select `nvme0n1p7` → *Set desired filesystem*: **btrfs** → *Mark/Unmark to be formatted*: **yes** → *Set mountpoint*: `/` → *Mark/Unmark as compressed*: **yes** → *Set subvolumes*: add `@` at `/`, `@home` at `/home`, `@log` at `/var/log`, `@pkg` at `/var/cache/pacman/pkg`, `@.snapshots` at `/.snapshots`.
+   - select `nvme0n1p6` → *Set mountpoint*: `/boot` → **not** formatted.
+   - leave every other partition alone. When the summary lists anything other than `p7` to be formatted, go back.
+4. Bootloader **GRUB**, everything else as in the table above. Install, reboot, then [install Lennox](#5-install-lennox). The installer now sets up zram, the freeze guard, capped logs, a monthly disk check and a **Memory test** entry in the boot menu.
+5. Copy your files back: plug the backup stick in, then `rsync -rt --info=progress2 /run/media/$USER/BACKUP/jado-backup/ ~/` (Zen: copy `.zen` back **before** opening Zen the first time).
+6. Windows in the boot menu: the last step of [Dual boot](#dual-boot-with-windows) (os-prober).
+
 ## Dual boot with Windows
 
 If you want to keep Windows:

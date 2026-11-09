@@ -55,6 +55,7 @@ python3 -W ignore tests/test_net.py 2>&1 | tail -3 | grep -q "^OK" && echo ok ne
 python3 -W ignore tests/test_vpn.py 2>&1 | tail -3 | grep -q "^OK" && echo ok vpn || { python3 tests/test_vpn.py 2>&1 | tail -15; fail=1; }
 python3 -W ignore tests/test_disk.py 2>&1 | tail -3 | grep -q "^OK" && echo ok disk || { python3 tests/test_disk.py 2>&1 | tail -15; fail=1; }
 bash tests/test_disk_live.sh | grep -q "^OK" && echo ok disk-live || { bash tests/test_disk_live.sh | tail; fail=1; }
+bash tests/test_install_care.sh | grep -q "^OK" && echo ok install-care || { bash tests/test_install_care.sh | grep FAIL; fail=1; }
 python3 -W ignore tests/test_more.py 2>&1 | tail -3 | grep -q "^OK" && echo ok helpers || { python3 tests/test_more.py 2>&1 | tail -15; fail=1; }
 bash tests/test_colors_only.sh | grep -q FAIL && { bash tests/test_colors_only.sh | grep FAIL; fail=1; } || echo ok colors-from-music
 

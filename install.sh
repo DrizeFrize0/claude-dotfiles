@@ -190,6 +190,7 @@ detect_hardware() {
     FS_TYPE="$(findmnt -n -o FSTYPE /)"
     BOOTLOADER="other"
     [[ -f /boot/grub/grub.cfg ]] && BOOTLOADER="grub"
+    [[ "$BOOTLOADER" == "other" && -d /boot/loader/entries ]] && BOOTLOADER="systemd-boot"
     ok "Root filesystem: $FS_TYPE, bootloader: $BOOTLOADER"
 }
 
@@ -394,6 +395,47 @@ setup_snapshots() {
     else
         note "Your bootloader is not GRUB: restore snapshots with Btrfs Assistant."
     fi
+}
+
+setup_care() {
+    # Lennox 2.0: less RAM, less disk, and the disk and memory checked so a failure is caught early
+    step "Memory and disk care"
+    pacman_install zram-generator earlyoom pacman-contrib memtest86+-efi || warn "Some care packages could not be installed"
+    install_system_file etc/sysctl.d/99-lennox-memory.conf 644
+    install_system_file etc/systemd/journald.conf.d/lennox.conf 644
+    install_system_file etc/systemd/coredump.conf.d/lennox.conf 644
+    install_system_file etc/default/earlyoom 644
+    if [[ ! -f /etc/systemd/zram-generator.conf ]] || ! grep -q "Lennox" /etc/systemd/zram-generator.conf; then
+        install_system_file etc/systemd/zram-generator.conf 644
+        note "Compressed RAM swap (zram) is set to half your RAM from the next start"
+    fi
+    sudo sysctl --system >/dev/null 2>&1
+    sudo systemctl restart systemd-journald >/dev/null 2>&1
+    local svc
+    for svc in earlyoom.service paccache.timer fstrim.timer; do
+        sudo systemctl enable --now "$svc" >/dev/null 2>&1 || warn "Could not enable $svc"
+    done
+    ok "zram tuned, logs capped at 200 MB, old package downloads cleaned weekly, no more freezes when RAM fills up"
+    if [[ "$(findmnt -n -o FSTYPE /)" == "btrfs" ]]; then
+        sudo systemctl enable --now btrfs-scrub@-.timer >/dev/null 2>&1 \
+            && ok "The disk checks every block once a month (btrfs scrub)" || warn "Could not enable the monthly disk check"
+    fi
+    setup_memtest
+}
+
+setup_memtest() {
+    # A RAM test in the boot menu: bad memory silently corrupts files (it is what broke Lennox 1.x)
+    local efi="${LENNOX_BOOT:-/boot}/memtest86+/memtest86x64.efi"
+    [[ -f "$efi" ]] || { note "memtest86+ is not in /boot: no RAM test in the boot menu"; return 0; }
+    case "$BOOTLOADER" in
+        systemd-boot)
+            printf 'title   Memory test (memtest86+)\nefi     /memtest86+/memtest86x64.efi\n' \
+                | sudo tee /boot/loader/entries/lennox-memtest.conf >/dev/null && ok "Memory test added to the boot menu" ;;
+        grub)
+            # The package brings its own GRUB entry; the menu only needs rebuilding
+            sudo grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 && ok "Memory test added to the GRUB menu" ;;
+        *) note "Unknown bootloader: start the memory test from $efi yourself" ;;
+    esac
 }
 
 install_system_files() {
@@ -661,6 +703,11 @@ first_theme() {
     step "Building your theme from the wallpaper"
     export PATH="$HOME/.local/bin:$PATH"
     lennox-apply --no-reload all >/dev/null 2>&1 || warn "lennox-apply reported a problem"
+    # A fresh install starts on the Lennox 2.0 wallpaper (an existing choice is kept)
+    local cache="${XDG_CACHE_HOME:-$HOME/.cache}/lennox/wallpaper" orbit="$HOME/.config/lennox/wallpapers/lennox/lennox-orbit.jpg"
+    if [[ ! -s "$cache/current" && -f "$orbit" ]]; then
+        mkdir -p "$cache" && echo "$orbit" > "$cache/current"
+    fi
     if lennox-wallpaper --restore --quiet --no-reload >/dev/null 2>&1; then
         ok "Colors, lock screen and login screen match the wallpaper"
     else
@@ -724,12 +771,13 @@ if [[ "$MODE" == "update" ]]; then
     install_system_files
     $HAS_NVIDIA && setup_nvidia
     setup_thermal
+    setup_care
     install_dotfiles
     build_fast
     build_browser
     restore_backup
     dir="$HOME/.config/lennox/wallpapers"
-    [[ -d "$dir/lennox" ]] || { step "Painting the Lennox wallpaper pack"; paint_wallpapers; }
+    step "Lennox wallpaper pack (new designs only)"; paint_wallpapers
     personalize
     first_theme
     if [[ "$old_version" != "$(lennox_version)" ]]; then
@@ -750,6 +798,7 @@ install_flatpaks
 setup_nvidia
 setup_thermal
 install_system_files
+setup_care
 setup_snapshots
 setup_sddm
 enable_services

@@ -3,6 +3,18 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 2.0.0 · 2026-11-09 · Lennox 2.0
+
+- Lennox 2.0 is built for a fresh start: everything learned from the disk failure is now part of the system, so a problem is caught early instead of breaking it.
+- Less RAM pressure: compressed swap in RAM (zram, half your memory, about 3 times smaller), memory settings tuned for it, and folder names kept cached longer for faster file pickers.
+- No more freezes when RAM fills up: a freeze guard closes the biggest app (browser tabs first) before the laptop locks up. Hyprland, the bar, sound and Java (your Minecraft server) are never touched.
+- Less disk use: logs never grow past 200 MB, crash dumps are capped, and old package downloads are cleaned every week.
+- Disk and memory care: the disk checks every block once a month, and a Memory test entry in the boot menu tests the RAM whenever you want.
+- Health check has a new Memory and disk section: read-only disk, space, zram, freeze guard, the monthly check and the memory test.
+- Five new painted wallpapers: Orbit (the new default on a fresh install), Glass waves, Palm night, City at night and Topographic. lennox upgrade paints any new ones in the pack.
+- fastfetch shows the Lennox logo and version.
+- The install guide has a new section for reinstalling over a broken Lennox while keeping Windows, with the RAM test first.
+
 ## 1.43.0 · 2026-11-09 · Disk doctor
 
 - New: lennox-disk, a doctor for the btrfs disk. "lennox-disk check" says whether the disk went read-only and why. It reads the kernel's error lines and tells a failing drive (the drive reports its own errors) from flipped bits in memory (damage that differs by exactly one bit), which points at the RAM.

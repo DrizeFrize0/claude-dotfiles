@@ -1,0 +1,4 @@
+# Lennox: when RAM and swap are almost full, close the biggest app instead of freezing the laptop.
+# Browser tabs go first; the desktop, sound and Java (your Minecraft server) are never touched.
+# No spaces or quotes below: systemd splits this line on spaces (a dot matches the space in names).
+EARLYOOM_ARGS=-m 4 -s 8 -r 0 --prefer (^|/)(Web.Content|Isolated.Web.Co|WebKitWebProcess|chrome|electron)$ --avoid (^|/)(Hyprland|Xwayland|waybar|sddm|systemd|pipewire|wireplumber|sshd|java)$

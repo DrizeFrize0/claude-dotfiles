@@ -131,6 +131,33 @@ fi
 pacnew="$(find /etc -name '*.pacnew' 2>/dev/null | wc -l)"
 (( pacnew > 0 )) && record warn updates "$pacnew updated config file(s) waiting (.pacnew)" "Review them with: sudo pacdiff"
 
+# ---------------------------------------------------------------- memory and disk
+section "Memory & disk"
+if awk '$2=="/" {print $4}' /proc/mounts | tr ',' '\n' | grep -qx ro; then
+    record fail disk "The disk is READ-ONLY (btrfs found damaged data and protected it)" "Run: lennox-disk check"
+else
+    record ok disk "Disk writable"
+fi
+used="$(df --output=pcent / 2>/dev/null | tail -1 | tr -dc 0-9)"
+if [[ -n "$used" ]] && (( used >= 90 )); then
+    record warn disk "Disk ${used}% full" "Lennox Settings > Storage shows what is using it; lennox-tidy cleans caches."
+elif [[ -n "$used" ]]; then
+    record ok disk "Disk ${used}% used"
+fi
+grep -q zram /proc/swaps 2>/dev/null && record ok disk "Compressed RAM swap (zram) on" \
+    || record warn disk "No zram swap" "lennox upgrade sets it up (zram-generator), then restart."
+sys_active earlyoom && record ok disk "Freeze guard on (earlyoom closes the biggest app before RAM runs out)" \
+    || record warn disk "Freeze guard (earlyoom) is off" "sudo systemctl enable --now earlyoom"
+if findmnt -n -o FSTYPE / 2>/dev/null | grep -q btrfs; then
+    systemctl is-enabled --quiet btrfs-scrub@-.timer 2>/dev/null && record ok disk "Monthly disk check (btrfs scrub) on" \
+        || record warn disk "No monthly disk check" "sudo systemctl enable --now btrfs-scrub@-.timer"
+fi
+if [[ -f /boot/memtest86+/memtest86x64.efi ]]; then
+    record ok disk "Memory test in the boot menu (Memory test (memtest86+))"
+else
+    record warn disk "No memory test in the boot menu" "sudo pacman -S memtest86+-efi, then lennox upgrade"
+fi
+
 # ---------------------------------------------------------------- desktop
 section "Desktop"
 for proc in waybar swaync hypridle awww-daemon; do

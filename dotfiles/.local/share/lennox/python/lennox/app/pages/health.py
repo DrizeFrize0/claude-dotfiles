@@ -9,7 +9,8 @@ from ..util import lennox_bin, run_async
 
 ICONS = {"ok": "emblem-ok-symbolic", "warn": "dialog-warning-symbolic", "fail": "dialog-error-symbolic"}
 SECTIONS = {"graphics": "Graphics", "audio": "Sound and microphone", "input": "Keyboard and touchpad",
-            "net": "Network and Bluetooth", "updates": "Updates and safety", "desktop": "Desktop"}
+            "net": "Network and Bluetooth", "updates": "Updates and safety",
+            "disk": "Memory and disk", "desktop": "Desktop"}
 
 
 class Page:
