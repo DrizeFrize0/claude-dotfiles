@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Disk doctor for btrfs: why the disk went read-only, which files are damaged, safe cleanup.
+#   lennox-disk check | map [PATH] | fix | watch | export DIR
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.disk "$@"

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Repair a damaged btrfs disk WITHOUT reinstalling. Run this from an Arch live USB (the disk
+# must not be mounted), as root:   bash lennox-disk-live [/dev/nvme0n1p7]
+# It only reads until you confirm, saves every log next to itself, and never touches other partitions.
+set -u
+LOG_DIR="${LENNOX_LIVE_LOG:-$PWD}"
+say() { printf '%s\n' "$*"; }
+ask() { local a; read -r -p "$1 " a; printf '%s' "$a"; }
+
+[[ -n "${LENNOX_LIVE_NOROOT:-}" || $(id -u) -eq 0 ]] || { say "Run as root: sudo bash $0"; exit 1; }
+
+dev="${1:-}"
+if [[ -z "$dev" ]]; then
+    mapfile -t parts < <(lsblk -rpno NAME,FSTYPE | awk '$2=="btrfs"{print $1}')
+    case ${#parts[@]} in
+        0) say "No btrfs partition found."; exit 1 ;;
+        1) dev="${parts[0]}" ;;
+        *) say "Several btrfs partitions:"; printf '  %s\n' "${parts[@]}"
+           dev="$(ask 'Which one?')" ;;
+    esac
+fi
+[[ -n "$dev" ]] || exit 1
+say "Disk to check: $dev"
+
+if grep -q "^$dev " /proc/mounts 2>/dev/null; then
+    umount "$dev" 2>/dev/null || { say "$dev is mounted and will not unmount: reboot the live USB and try again."; exit 1; }
+fi
+
+if command -v smartctl >/dev/null; then
+    say ""; say "Drive health:"
+    base="${dev%p[0-9]*}"; [[ "$base" == "$dev" ]] && base="${dev%[0-9]*}"
+    smartctl -a "$base" 2>&1 | grep -iE "integrity|spare|percentage used|critical|overall" || say "  (no health lines found)"
+else
+    say "(smartctl is not installed here: run  pacman -Sy smartmontools  to see the drive health)"
+fi
+
+say ""; say "Step 1: read-only check (changes nothing)..."
+btrfs check --readonly "$dev" >"$LOG_DIR/btrfs-check.log" 2>&1
+errors=$(grep -ciE "^(error|ERROR)|transid|csum|corrupt|checksum" "$LOG_DIR/btrfs-check.log" || true)
+tail -n 8 "$LOG_DIR/btrfs-check.log"
+say "Full log: $LOG_DIR/btrfs-check.log"
+
+if [[ "$errors" -eq 0 ]]; then
+    say ""; say "No problems found in the filesystem structure. Reboot, then run: sudo btrfs scrub start -Bd /"
+    exit 0
+fi
+
+say ""; say "$errors problem line(s) found."
+say "Step 2 repairs the filesystem. It usually works but can lose the damaged files, and a failed"
+say "repair can make things worse. Do it only with your backup finished."
+[[ "$(ask 'Is your backup done? (yes/no)')" == "yes" ]] || { say "Stopping. Nothing was changed."; exit 0; }
+[[ "$(ask 'Type REPAIR to run btrfs check --repair now:')" == "REPAIR" ]] || { say "Stopping. Nothing was changed."; exit 0; }
+
+btrfs rescue zero-log "$dev" >"$LOG_DIR/btrfs-zero-log.log" 2>&1 || true
+btrfs check --repair "$dev" >"$LOG_DIR/btrfs-repair.log" 2>&1
+tail -n 8 "$LOG_DIR/btrfs-repair.log"
+
+say ""; say "Step 3: checking again (read-only)..."
+btrfs check --readonly "$dev" >"$LOG_DIR/btrfs-check-after.log" 2>&1
+after=$(grep -ciE "^(error|ERROR)|transid|csum|corrupt|checksum" "$LOG_DIR/btrfs-check-after.log" || true)
+if [[ "$after" -eq 0 ]]; then
+    say "Repaired. Reboot, then run: sudo btrfs scrub start -Bd /   and   lennox-disk map"
+    exit 0
+fi
+say "Still $after problem line(s). Your files are not lost yet. Last resort, copying them out:"
+say "  mount your backup stick at /mnt/usb, then:"
+say "  btrfs restore -v --ignore-errors $dev /mnt/usb/restored"
+say "Send me $LOG_DIR/btrfs-check-after.log and we decide together."
+exit 2

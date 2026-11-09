@@ -60,6 +60,8 @@ start lennox-battery
 # The fan profile (processor limit) is lost at every boot: put it back
 setsid -f lennox-fan apply >/dev/null 2>&1 </dev/null
 setsid -f lennox-powerauto watch >/dev/null 2>&1 </dev/null
+# A warning if the disk reports errors or went read-only
+setsid -f lennox-disk watch >/dev/null 2>&1 </dev/null
 # Game clips: the recorder runs while a game is open
 setsid -f lennox-clips watch >/dev/null 2>&1
 # Phone link (KDE Connect): phones find this PC as soon as you log in

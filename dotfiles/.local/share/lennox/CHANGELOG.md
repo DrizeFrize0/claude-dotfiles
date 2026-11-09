@@ -3,6 +3,13 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 1.43.0 · 2026-11-09 · Disk doctor
+
+- New: lennox-disk, a doctor for the btrfs disk. "lennox-disk check" says whether the disk went read-only and why. It reads the kernel's error lines and tells a failing drive (the drive reports its own errors) from flipped bits in memory (damage that differs by exactly one bit), which points at the RAM.
+- "lennox-disk map" reads every file and lists the ones that can no longer be read, plus the packages to reinstall for damaged system files. "lennox-disk fix" deletes the unreadable files that are safe to lose (caches, logs) and lists the rest so you restore them from your backup.
+- A warning pops up at login if the disk reports errors or went read-only, once per problem.
+- New: lennox-disk-live, the repair that needs no reinstall. Run it from an Arch live USB: it checks the disk without changing anything, then repairs it only after you confirm your backup is done and type REPAIR, checks again, and tells you the last-resort way to copy your files out. "lennox-disk export FOLDER" puts it on your backup stick.
+
 ## 1.42.0 · 2026-11-07 · VPN profiles
 
 - New: VPN for the whole laptop. Import a profile from your provider (OpenVPN .ovpn, WireGuard .conf, or a whole VPNBook .zip), then connect and disconnect with one click. Settings > Extras > VPN, or in a terminal: lennox-vpn import FILE, list, status, connect NAME, disconnect, remove NAME.
