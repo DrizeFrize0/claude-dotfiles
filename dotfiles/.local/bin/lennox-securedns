@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# Encrypted DNS for the whole laptop: names are looked up over TLS (Cloudflare, then Quad9)
+# through systemd-resolved, so nothing on the network (router, Pi-hole, provider) can change
+# or block the answers. Fixes sites that fail with "Unable to connect" while ping works and
+# `getent hosts SITE` shows "::" or "0.0.0.0".
+#   lennox-securedns on              switch it on (asks for your password)
+#   lennox-securedns off             back to the DNS your network hands out
+#   lennox-securedns status          what is in use
+#   lennox-securedns test [SITE]     does SITE get a real address? (default www.netflix.com)
+set -u
+
+RESOLVED_CONF=/etc/systemd/resolved.conf.d/lennox-dns.conf
+NM_CONF=/etc/NetworkManager/conf.d/lennox-dns.conf
+STUB=/run/systemd/resolve/stub-resolv.conf
+BACKUP=/etc/resolv.conf.lennox-backup
+
+say() { printf '%s\n' "$*"; }
+
+# The addresses a name gets; "blocked" when there are none or only fake ones (::, 0.0.0.0, 127.x)
+lookup() {
+    getent ahosts "$1" 2>/dev/null | awk '{print $1}' | sort -u | tr '\n' ' '
+}
+is_real() {
+    local addr
+    for addr in $1; do
+        case "$addr" in
+            ::|0.0.0.0|127.*|::1) ;;
+            *) return 0 ;;
+        esac
+    done
+    return 1
+}
+
+test_site() {
+    local site="${1:-www.netflix.com}" addrs
+    addrs="$(lookup "$site")"
+    if is_real "$addrs"; then
+        say "  ok       $site -> $addrs"
+        return 0
+    fi
+    say "  BLOCKED  $site -> ${addrs:-no answer}"
+    return 1
+}
+
+write_resolved() {
+    # $1: yes (strict: only encrypted) or opportunistic (encrypted when the network allows it)
+    sudo mkdir -p /etc/systemd/resolved.conf.d
+    printf '%s\n' \
+        "# Lennox: encrypted DNS for the whole laptop (lennox-securedns). Remove with: lennox-securedns off" \
+        "[Resolve]" \
+        "DNS=1.1.1.1#cloudflare-dns.com 1.0.0.1#cloudflare-dns.com 2606:4700:4700::1111#cloudflare-dns.com 9.9.9.9#dns.quad9.net" \
+        "FallbackDNS=149.112.112.112#dns.quad9.net 8.8.8.8#dns.google" \
+        "DNSOverTLS=$1" \
+        "DNSSEC=no" \
+        "Domains=~." \
+        | sudo tee "$RESOLVED_CONF" >/dev/null
+}
+
+on() {
+    say "Switching to encrypted DNS (you may be asked for your password)..."
+    write_resolved yes
+    # NetworkManager stops pushing the network's DNS servers; systemd-resolved answers instead
+    printf '%s\n' "# Lennox: DNS comes from systemd-resolved (lennox-securedns)" "[main]" "dns=none" \
+        | sudo tee "$NM_CONF" >/dev/null
+    if [[ -f /etc/resolv.conf && ! -L /etc/resolv.conf && ! -f "$BACKUP" ]]; then
+        sudo cp /etc/resolv.conf "$BACKUP"
+    fi
+    sudo systemctl enable --now systemd-resolved >/dev/null 2>&1 || { say "Could not start systemd-resolved."; exit 1; }
+    sudo systemctl restart systemd-resolved
+    sudo ln -sf "$STUB" /etc/resolv.conf
+    sudo systemctl restart NetworkManager
+    sleep 4
+    if ! test_site www.google.com >/dev/null; then
+        # Encrypted DNS (port 853) is not getting through: use it where possible, plain otherwise
+        say "Encrypted DNS is not getting through this network; using it where possible instead."
+        write_resolved opportunistic
+        sudo systemctl restart systemd-resolved
+        sleep 2
+    fi
+    say "Checking:"
+    test_site www.google.com
+    test_site www.netflix.com
+    test_site www.youtube.com
+    if test_site www.google.com >/dev/null && test_site www.netflix.com >/dev/null; then
+        say "Done. Restart Zen (or any app that was open) and try again."
+    else
+        say "Something still answers wrong. Send this output to Claude; undo with: lennox-securedns off"
+    fi
+}
+
+off() {
+    say "Back to the DNS your network hands out..."
+    sudo rm -f "$RESOLVED_CONF" "$NM_CONF"
+    if [[ -L /etc/resolv.conf ]]; then
+        sudo rm -f /etc/resolv.conf
+        [[ -f "$BACKUP" ]] && sudo cp "$BACKUP" /etc/resolv.conf
+    fi
+    sudo systemctl disable --now systemd-resolved >/dev/null 2>&1
+    sudo systemctl restart NetworkManager
+    sleep 4
+    test_site www.google.com
+}
+
+status() {
+    if [[ -f "$RESOLVED_CONF" ]]; then
+        say "Encrypted DNS: on ($(sed -n 's/^DNSOverTLS=//p' "$RESOLVED_CONF"))"
+    else
+        say "Encrypted DNS: off (using the network's DNS)"
+    fi
+    say "resolv.conf: $(readlink /etc/resolv.conf 2>/dev/null || echo 'a plain file')"
+    command -v resolvectl >/dev/null && systemctl is-active --quiet systemd-resolved \
+        && resolvectl status 2>/dev/null | grep -E "Current DNS Server|DNS Servers|DNSOverTLS" | sed 's/^/  /' | head -n 6
+    say "Lookups:"
+    test_site www.google.com
+    test_site www.netflix.com
+}
+
+case "${1:-status}" in
+    on) on ;;
+    off) off ;;
+    status) status ;;
+    test) test_site "${2:-www.netflix.com}" ;;
+    *) say "usage: lennox-securedns on | off | status | test [SITE]"; exit 2 ;;
+esac

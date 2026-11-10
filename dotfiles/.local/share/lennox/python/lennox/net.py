@@ -34,6 +34,10 @@ PROVIDERS = {
 DOMAINS = ["google.com", "youtube.com", "wikipedia.org", "github.com", "discord.com", "reddit.com", "amazon.com", "microsoft.com"]
 SITES = ["https://www.google.com", "https://www.cloudflare.com", "https://discord.com", "https://github.com"]
 HOSTS = os.environ.get("LENNOX_HOSTS_FILE", "/etc/hosts")
+# Popular sites a DNS filter (router, Pi-hole, provider) likes to block by answering a fake address
+WATCH = ["www.netflix.com", "www.youtube.com", "www.twitch.tv", "www.tiktok.com", "www.instagram.com",
+         "store.steampowered.com", "www.epicgames.com", "discord.com"]
+FAKE = {"::", "0.0.0.0", "::1"}
 FOCUS_TOOL = os.environ.get("LENNOX_FOCUS_HOSTS_TOOL", "/usr/local/bin/lennox-focus-hosts")
 FOCUS_MARK = "# >>> lennox focus"
 # NetworkManager says "ethernet" and "wifi" in newer versions, "802-3-ethernet" and "802-11-wireless" in older ones
@@ -292,6 +296,22 @@ def link_info():
     return out
 
 
+def fake_answer(addrs):
+    """True when a lookup only gave fake addresses (::, 0.0.0.0, 127.x): the DNS blocked the name."""
+    return bool(addrs) and all(a in FAKE or a.startswith("127.") for a in addrs)
+
+
+def dns_blocked(names=None, resolve=None):
+    """Names the DNS answers with a fake address."""
+    def lookup(name):
+        try:
+            return {info[4][0] for info in socket.getaddrinfo(name, 443, proto=socket.IPPROTO_TCP)}
+        except (OSError, UnicodeError):
+            return set()
+    resolve = resolve or lookup
+    return [n for n in (names or WATCH) if fake_answer(resolve(n))]
+
+
 def snapshot():
     try:
         with open(HOSTS, encoding="utf-8") as f:
@@ -302,7 +322,7 @@ def snapshot():
     return {
         "hosts_blocked": focus_block_present(hosts), "focus_active": focus_active(),
         "system_dns_ms": system_dns_ms(), "public_dns_ok": query_time("1.1.1.1", "google.com") is not None,
-        "ip_ok": tcp_ok("1.1.1.1"), "sites": {u: https_ok(u) for u in SITES},
+        "ip_ok": tcp_ok("1.1.1.1"), "sites": {u: https_ok(u) for u in SITES}, "dns_blocked": dns_blocked(),
         "ipv6_addr": v6_addr, "ipv6_ok": tcp_ok("2606:4700:4700::1111") if v6_addr else None,
         "mtu_now": mtu_now(), "mtu_ok": ping_df(mtu_now() - 28), "mtu_best": None,
         "links": link_info(), "proxy": [k for k in ("http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY") if os.environ.get(k)],
@@ -326,6 +346,10 @@ def diagnose(s):
                         "Switch to a public DNS: lennox-net fix", True))
         elif s["system_dns_ms"] is not None and s["system_dns_ms"] > 150:
             out.append((f"Looking up a name takes {s['system_dns_ms']:.0f} ms (slow)", "A faster DNS: lennox-net fix", True))
+        if s.get("dns_blocked"):
+            out.append((f"The DNS answers a fake address (:: or 0.0.0.0) for: {', '.join(s['dns_blocked'])}",
+                        "Something on the network (router, Pi-hole, provider) filters names. Encrypted DNS goes around it: "
+                        "lennox-securedns on", False))
         failed = [u for u, ok in s["sites"].items() if not ok]
         if failed and len(failed) < len(s["sites"]):
             out.append((f"Some sites don't open: {', '.join(u.split('//')[1] for u in failed)}",

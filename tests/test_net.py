@@ -121,6 +121,21 @@ class Diagnose(unittest.TestCase):
         self.assertEqual([k for k, _t in net.plan_fix(snap(hosts_blocked=True, focus_active=True))], [])
 
 
+class DnsBlock(unittest.TestCase):
+    def test_fake_answers(self):
+        self.assertTrue(net.fake_answer({"::"}))
+        self.assertTrue(net.fake_answer({"0.0.0.0", "::"}))
+        self.assertFalse(net.fake_answer({"52.1.1.1"}))
+        self.assertFalse(net.fake_answer(set()))                     # no answer is a different problem
+        answers = {"www.netflix.com": {"::"}, "discord.com": {"162.159.1.1"}}
+        self.assertEqual(net.dns_blocked(["www.netflix.com", "discord.com"], lambda n: answers[n]), ["www.netflix.com"])
+
+    def test_diagnose_names_them(self):
+        found = net.diagnose(snap(dns_blocked=["www.netflix.com"]))
+        self.assertTrue(any("www.netflix.com" in p and "lennox-securedns on" in w for p, w, _f in found))
+        self.assertEqual(net.diagnose(snap()), [])
+
+
 class FocusBlock(unittest.TestCase):
     def test_marker(self):
         self.assertTrue(net.focus_block_present("127.0.0.1 localhost\n# >>> lennox focus (sites blocked while focusing) >>>\n0.0.0.0 youtube.com\n"))

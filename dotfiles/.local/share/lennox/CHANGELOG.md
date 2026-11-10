@@ -3,6 +3,11 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 2.2.1 · 2026-11-10 · Sites the network's DNS blocks
+
+- New: lennox-securedns. When a site fails with "Unable to connect" while the internet works, the DNS your network hands out may be answering a fake address for it. lennox-securedns on switches the whole laptop to encrypted DNS (Cloudflare, then Quad9), which nothing on the network can change or block. It checks itself, falls back gracefully if the network blocks encrypted DNS, and lennox-securedns off undoes it. Also in the command palette.
+- lennox-net check now spots this: it looks up popular sites (Netflix, YouTube, Twitch, Steam, Epic, Discord and more) and says which ones the DNS answers with a fake address, instead of "nothing is wrong".
+
 ## 2.2.0 · 2026-11-09 · Expressive: profiles, a new login, lock and session screen
 
 - Lennox 2.2 borrows the best of end-4's illogical-impulse setup: Material You colors everywhere, smooth Material motion, and screens that greet you by name.

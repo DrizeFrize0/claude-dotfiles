@@ -52,6 +52,8 @@ ACTIONS = [
     ("Update everything", "software-update-available-symbolic", "lennox-update"),
     ("Disk check (why is my disk read-only?)", "drive-harddisk-symbolic", "kitty --hold lennox-disk check"),
     ("Health check in a terminal", "emblem-ok-symbolic", "kitty --hold lennox-doctor"),
+    ("Network check (why won't a site open?)", "network-wired-symbolic", "kitty --hold lennox-net check"),
+    ("Encrypted DNS on (fixes sites the network's DNS blocks)", "security-high-symbolic", "kitty --hold lennox-securedns on"),
     ("System monitor", "utilities-system-monitor-symbolic", "lennox-open system_monitor"),
     ("Audio mixer", "multimedia-volume-control-symbolic", "lennox-open audio_mixer"),
     ("Terminal", "utilities-terminal-symbolic", "lennox-open terminal"),

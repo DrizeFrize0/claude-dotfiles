@@ -64,6 +64,7 @@ if python3 -c "import PySide6" 2>/dev/null; then out=$(timeout -k 5 90 xvfb-run 
 python3 tests/test_hyprlock.py | grep -q "^OK hyprlock" && echo ok hyprlock || { python3 tests/test_hyprlock.py | grep FAIL; fail=1; }
 out=$(timeout -k 5 90 xvfb-run -a -s "-screen 0 1280x720x24" dbus-run-session /usr/bin/python3.12 tests/test_leave.py 2>&1); grep -q "^OK leave" <<<"$out" && echo ok session-screen || { grep -E "FAIL|Error" <<<"$out"; fail=1; }
 out=$(timeout -k 5 60 xvfb-run -a -s "-screen 0 400x300x24" /usr/bin/python3.12 tests/test_corners.py 2>&1); grep -q "^OK corners" <<<"$out" && echo ok screen-corners || { grep FAIL <<<"$out"; fail=1; }
+bash tests/test_securedns.sh | grep -q "^OK" && echo ok securedns || { bash tests/test_securedns.sh | grep FAIL; fail=1; }
 bash tests/test_bar_fit.sh | grep -q "^OK" && echo ok bar-fit || { bash tests/test_bar_fit.sh | grep FAIL; fail=1; }
 out=$(timeout -k 5 120 xvfb-run -a -s "-screen 0 1280x800x24" dbus-run-session /usr/bin/python3.12 tests/test_island_fit.py 2>&1); grep -q "^OK island-fit" <<<"$out" && echo ok island-fit || { grep FAIL <<<"$out"; fail=1; }
 python3 -W ignore tests/test_more.py 2>&1 | tail -3 | grep -q "^OK" && echo ok helpers || { python3 tests/test_more.py 2>&1 | tail -15; fail=1; }
