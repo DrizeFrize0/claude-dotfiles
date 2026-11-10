@@ -3,10 +3,13 @@
 # Every problem comes with a hint on how to fix it.
 #   lennox-doctor          readable report
 #   lennox-doctor --json   machine readable (used by Lennox Settings)
+#   lennox-doctor --fix    fix what can be fixed (same as lennox-heal fix)
 export PATH="$HOME/.local/bin:$PATH"
 
 json=false
 [[ "${1:-}" == "--json" ]] && json=true
+# --fix: apply every fix lennox-heal knows (blocked sites, stuck lock, full disk, stopped desktop pieces)
+[[ "${1:-}" == "--fix" ]] && exec lennox-heal fix
 
 green=$'\e[32m'; yellow=$'\e[33m'; red=$'\e[31m'; bold=$'\e[1m'; reset=$'\e[0m'
 $json && { green=""; yellow=""; red=""; bold=""; reset=""; }
@@ -130,6 +133,12 @@ else
 fi
 pacnew="$(find /etc -name '*.pacnew' 2>/dev/null | wc -l)"
 (( pacnew > 0 )) && record warn updates "$pacnew updated config file(s) waiting (.pacnew)" "Review them with: sudo pacdiff"
+
+if have lennox-safety; then
+    while IFS=$'\t' read -r lvl txt hint; do
+        [[ -n "$txt" ]] && record "$lvl" updates "$txt" "$hint"
+    done < <(lennox-safety status --json 2>/dev/null | jq -r '.advice[]? | [.level, .text, .hint] | @tsv')
+fi
 
 # ---------------------------------------------------------------- memory and disk
 section "Memory & disk"

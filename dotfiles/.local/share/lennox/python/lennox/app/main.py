@@ -45,6 +45,8 @@ PAGES = [
     ("apps", "Default Apps", "applications-system-symbolic", "apps"),
     ("updates", "Updates", "software-update-available-symbolic", "updates"),
     ("cleanup", "Cleanup", "user-trash-symbolic", "cleanup"),
+    ("safety", "Safety & Restore", "security-high-symbolic", "safety"),
+    ("school", "School", "alarm-symbolic", "school"),
     ("backup", "Backup", "document-save-symbolic", "backup"),
     ("clipboard", "Clipboard", "edit-paste-symbolic", "clipboard"),
     ("passwords", "Passwords", "dialog-password-symbolic", "passwords"),
@@ -59,8 +61,8 @@ GROUPS = [
     (None, ["welcome", "profile"]),
     ("Look & feel", ["appearance", "wallpaper", "bar", "widgets"]),
     ("Devices", ["sound", "display", "input", "connections", "phone", "power", "graphics"]),
-    ("Everyday", ["focus", "care", "extras", "trophies", "night", "games", "store", "apps", "clipboard", "passwords"]),
-    ("Keep it safe", ["updates", "cleanup", "storage", "backup", "clockdate", "health"]),
+    ("Everyday", ["focus", "school", "care", "extras", "trophies", "night", "games", "store", "apps", "clipboard", "passwords"]),
+    ("Keep it safe", ["updates", "safety", "cleanup", "storage", "backup", "clockdate", "health"]),
     ("Help", ["keybinds", "about"]),
 ]
 
@@ -68,6 +70,8 @@ PAGE_IDS_IN_ORDER = [page_id for _title, ids in GROUPS for page_id in ids]
 
 # Words that find a page in the search box besides its title
 KEYWORDS = {
+    "safety": "restore point snapshot undo rollback update broke backup files usb drive copy heal fix blocked disk full",
+    "school": "deadline homework due exam quiet hours class notifications study pomodoro",
     "profile": "name picture photo avatar face account user login lock screen me",
     "appearance": "theme colors dark light mode rounded corners gaps blur animations border opacity font cursor icons",
     "wallpaper": "background live video animated gif lock screen picture",

@@ -39,4 +39,10 @@ if [[ -r "$repo/setup/lib/ui.sh" ]]; then
     fi
     export LENNOX_BANNER_DONE=1
 fi
+# A restore point first, so a bad upgrade can be undone from the boot menu (lennox-safety undo)
+if command -v snapper >/dev/null && command -v lennox-safety >/dev/null \
+        && [[ "$(lennox-get safety.snapshot_on_upgrade 2>/dev/null)" != "false" ]]; then
+    echo ":: Taking a restore point first"
+    lennox-safety snap "Before lennox upgrade ${new_version:-}" || echo "   (no restore point: needs btrfs + snapper, carrying on)"
+fi
 exec "$repo/install.sh" --update

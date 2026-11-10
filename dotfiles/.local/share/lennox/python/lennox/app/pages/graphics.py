@@ -1,6 +1,6 @@
 """Graphics: Intel + NVIDIA (GTX 1650) hybrid setup, game mode."""
 
-from gi.repository import Adw
+from gi.repository import Adw, Gtk
 
 from .. import rows
 from ..util import have, launch, lennox_bin, run_async
@@ -45,7 +45,50 @@ class Page:
             gaming.add(rows.link_row("NVIDIA Settings", "Driver details, temperature, clocks",
                                      lambda: launch(["nvidia-settings"]), "applications-games-symbolic"))
         page.add(gaming)
+
+        self.pin_group = Adw.PreferencesGroup(
+            title="Apps that always use the NVIDIA GPU",
+            description="Pinned apps run on the GTX 1650 however you open them. The chip sleeps again when they close.")
+        self.pin_rows = []
+        self.add_row = Adw.ComboRow(title="Add an app", enable_search=True)
+        self.add_row.connect("notify::selected", self._on_add)
+        self.pin_group.add(self.add_row)
+        page.add(self.pin_group)
         self.widget = page
+        self._fill_pins()
+
+    def _fill_pins(self):
+        from ... import gpuapps
+        for row in self.pin_rows:
+            self.pin_group.remove(row)
+        self.pin_rows = []
+        everything = gpuapps.apps()
+        self.free = [a for a in everything if not a["pinned"]]
+        self.updating = True
+        self.add_row.set_model(Gtk.StringList.new(["Choose…"] + [a["name"] for a in self.free]))
+        self.add_row.set_selected(0)
+        self.updating = False
+        for a in (x for x in everything if x["pinned"]):
+            row = Adw.ActionRow(title=a["name"], subtitle=a["id"][:-8])
+            button = Gtk.Button(label="Unpin", valign=Gtk.Align.CENTER)
+            button.connect("clicked", lambda _b, i=a["id"]: self._unpin(i))
+            row.add_suffix(button)
+            self.pin_group.add(row)
+            self.pin_rows.append(row)
+
+    def _on_add(self, row, _p):
+        index = row.get_selected()
+        if self.updating or index <= 0 or index > len(self.free):
+            return
+        from ... import gpuapps
+        ok, msg = gpuapps.pin(self.free[index - 1]["id"])
+        self.ctx.toast(msg)
+        self._fill_pins()
+
+    def _unpin(self, app):
+        from ... import gpuapps
+        self.ctx.toast(gpuapps.unpin(app)[1])
+        self._fill_pins()
 
     def refresh(self):
         def got_status(ok, out, _err):

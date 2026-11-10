@@ -3,6 +3,17 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 2.3.0 · 2026-11-10 · Safe, fixed, and a little tour
+
+- Restore points: lennox upgrade now takes a system restore point first. New lennox-safety: snap (a restore point now), list, and undo (takes back what the last update changed, after you type UNDO). The boot menu still starts from any restore point.
+- Your files on a drive: lennox-safety files copies your folders (documents, pictures, SSH keys, Minecraft, the Zen profile) to a USB stick or the Windows drive without ever deleting anything there, and lennox-safety restore brings them back with the private keys made private again. The doctor nags you when it has been too long.
+- Self-heal: lennox-heal (and lennox-doctor --fix) finds a network that blocks sites, a stuck package lock, a nearly full disk, a stopped bar or notifications, the NVIDIA driver missing for a new kernel, and fixes what is safe. A quiet watcher tells you when a site is blocked or the disk is almost full, with a Fix it now button.
+- New Settings page, Safety and Restore, and new palette entries for all of it.
+- GPU: pin any app to the GTX 1650 for good (lennox-gpu pin blender), from every launcher. Settings > Graphics lists them. The chip still sleeps when they are closed.
+- School: new lennox-school and a School page. Deadlines remind you a day and two hours before, quiet hours switch notifications off during school (Sunday to Thursday by default), and study starts a focus session for a subject.
+- Battery: set a charge limit (lennox-laptop limit 80 or Settings > Power). It is written into the battery when this laptop allows that, and kept across restarts. If it does not, Lennox tells you to unplug at the limit. The keyboard light now switches off when you stop typing and comes back when you return.
+- A tour: the first time you log in (and after upgrades) a short tour shows the shortcuts, the safety tools, school and games, and what is new. Open it any time with lennox-tour.
+
 ## 2.2.2 · 2026-11-10 · The network check checks everything
 
 - lennox-net check now tries about 60 sites in five groups (streaming, gaming, chat and social, downloads and updates, school and work) plus the sites you visit most, read from Zen, Firefox and the Lennox Browser history. All at once, in a few seconds.

@@ -62,6 +62,7 @@ setsid -f lennox-fan apply >/dev/null 2>&1 </dev/null
 setsid -f lennox-powerauto watch >/dev/null 2>&1 </dev/null
 # A warning if the disk reports errors or went read-only
 setsid -f lennox-disk watch >/dev/null 2>&1 </dev/null
+setsid -f lennox-heal watch >/dev/null 2>&1 </dev/null
 # Game clips: the recorder runs while a game is open
 setsid -f lennox-clips watch >/dev/null 2>&1
 # Phone link (KDE Connect): phones find this PC as soon as you log in
@@ -109,8 +110,8 @@ setsid -f lennox-autoprofile watch >/dev/null 2>&1 </dev/null
 lennox-sound-fx login >/dev/null 2>&1 &
 # Focus mode: a session that was running before a restart picks up again
 lennox-focus restore >/dev/null 2>&1
-# After an upgrade: what's new, once
-(sleep 20 && lennox-whatsnew check) >/dev/null 2>&1 &
+# The tour the first time (it also shows what's new); after that, a notification once per upgrade
+(sleep 12 && { lennox-tour first; [ "$?" -eq 10 ] && lennox-whatsnew check; }) >/dev/null 2>&1 &
 disown
 
 echo ":: done"

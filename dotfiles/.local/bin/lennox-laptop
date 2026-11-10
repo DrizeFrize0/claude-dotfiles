@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Battery charge limit and keyboard light.
+#   lennox-laptop status | limit 80 | kbd on|off|color RRGGBB
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.laptop "$@"

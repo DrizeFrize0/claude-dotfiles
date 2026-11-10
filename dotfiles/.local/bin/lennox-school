@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Deadlines, quiet hours and a school-day schedule.
+#   lennox-school add TITLE DATE [HH:MM] | list | done ID | next | quiet until 15:00 | study SUBJECT | watch
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.school "$@"

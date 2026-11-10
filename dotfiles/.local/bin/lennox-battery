@@ -70,6 +70,12 @@ while true; do
         warned_critical=false
     fi
 
+    # A charge limit below 100 on a charger: remind to unplug (hardware limits need no reminder)
+    if [[ "$power" == "ac" ]]; then
+        limit="$(jq -r '.laptop.charge_limit // 100' "$SETTINGS" 2>/dev/null)"
+        [[ "${limit:-100}" =~ ^[0-9]+$ ]] && (( limit < 100 )) && lennox-laptop tick
+    fi
+
     if [[ "$power" == "battery" ]]; then
         low="$(power_setting low_battery_warning)"
         critical="$(power_setting critical_battery)"

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# A short tour of Lennox (first login) and What's new (after every upgrade).
+#   lennox-tour | lennox-tour first | lennox-tour whatsnew
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.tour "$@"

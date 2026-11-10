@@ -6,7 +6,7 @@ import os
 from gi.repository import Adw, Gtk
 
 from .. import rows
-from ..util import lennox_bin, read_file, run_async
+from ..util import launch, lennox_bin, read_file, run_async
 
 PROFILE_LABELS = {"performance": "Performance", "balanced": "Balanced", "power-saver": "Battery saver"}
 
@@ -30,6 +30,17 @@ class Page:
         battery.add(rows.spin_row(store, "power.low_battery_warning", "Warn me at", "Percent", lower=5, upper=50))
         battery.add(rows.spin_row(store, "power.critical_battery", "Urgent warning at", "Percent", lower=2, upper=20))
         page.add(battery)
+
+        care = Adw.PreferencesGroup(
+            title="Battery care",
+            description="A battery that sits at 100% on the charger wears out faster; stopping at 80% roughly doubles its life. "
+                        "If this laptop cannot stop charging by itself, Lennox tells you to unplug at the limit.")
+        care.add(rows.spin_row(store, "laptop.charge_limit", "Charge limit", "Percent (100 = no limit)", lower=50, upper=100, step=5))
+        care.add(rows.button_row("Apply the limit", "Asks for your password: the limit is set in the battery itself when it can be",
+                                 "Apply", self._apply_limit, "battery-full-charged-symbolic"))
+        care.add(rows.spin_row(store, "laptop.kbd_off_minutes", "Keyboard light off after", "Minutes without typing (0 = never)",
+                               lower=0, upper=30))
+        page.add(care)
 
         modes = [("performance", "Performance"), ("balanced", "Balanced"), ("power-saver", "Power saver")]
         auto = Adw.PreferencesGroup(
@@ -114,6 +125,10 @@ class Page:
         else:
             self.doctor_summary.value_label.set_label("Not enough yet: it needs a few minutes on battery")
         self.doctor_tips.value_label.set_label("  ".join(data.get("tips", [])))
+
+    def _apply_limit(self):
+        limit = str(int(self.ctx.store.get("laptop.charge_limit")))
+        launch(["kitty", "--class", "lennox-floating", "--title", "Lennox", "--hold", lennox_bin("lennox-laptop"), "limit", limit])
 
     def refresh(self):
         run_async([lennox_bin("lennox-batterydoc"), "report", "--json"], self._got_doctor)

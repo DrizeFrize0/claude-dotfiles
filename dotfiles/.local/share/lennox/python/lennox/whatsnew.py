@@ -102,7 +102,7 @@ def check():
     except (OSError, subprocess.TimeoutExpired):
         return True
     if choice == "open":
-        subprocess.Popen(["setsid", "-f", os.path.expanduser("~/.local/bin/lennox-settings"), "--page", "about"],
+        subprocess.Popen(["setsid", "-f", os.path.expanduser("~/.local/bin/lennox-tour"), "whatsnew"],
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return True
 

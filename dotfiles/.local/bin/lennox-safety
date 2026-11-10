@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Restore points for the system and copies of your files on a drive.
+#   lennox-safety status | snap [TEXT] | list | undo | drives | files [FOLDER] | restore [FOLDER]
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.safety "$@"

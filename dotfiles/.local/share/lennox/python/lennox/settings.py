@@ -280,6 +280,24 @@ DEFAULTS = {
         "quiet": True,                 # notifications wait in the panel
         "sound": True,                 # a soft sound at the end of focus and of the break
     },
+    "safety": {
+        "snapshot_on_upgrade": True,   # a system restore point before every `lennox upgrade`
+        "folders": "Documents, Pictures, Desktop, Videos, Music, .ssh, .gnupg, .minecraft, .zen",   # copied to a drive
+        "drive": "",                   # where file copies go ('' = the roomiest USB / Windows drive)
+        "remind_days": 14,             # nudge when your files were not copied for this long
+        "heal": True,                  # watch for blocked sites and full disks and offer the fix
+    },
+    "school": {
+        "schedule": False,             # quiet notifications during school hours
+        "days": "sun, mon, tue, wed, thu",
+        "from": "07:30",
+        "to": "14:30",
+        "remind": True,                # nudge before a deadline (a day and two hours ahead)
+    },
+    "laptop": {
+        "charge_limit": 100,           # stop charging here to spare the battery (100 = no limit)
+        "kbd_off_minutes": 1,          # the keyboard light goes off after this long without typing (0 = never)
+    },
     "backup": {
         "folder": "",                  # where backups go (a drive that survives a reinstall)
         "weekly": False,               # back up every week (needs a folder)
@@ -395,6 +413,9 @@ RANGES = {
     ("clips", "seconds"): (10, 600),
     ("cleanup", "trash_days"): (0, 365),
     ("backup", "keep"): (1, 50),
+    ("safety", "remind_days"): (1, 365),
+    ("laptop", "charge_limit"): (50, 100),
+    ("laptop", "kbd_off_minutes"): (0, 30),
     ("focus", "minutes"): (5, 240),
     ("sounds", "volume"): (0, 100),
     ("focus", "break_minutes"): (0, 60),

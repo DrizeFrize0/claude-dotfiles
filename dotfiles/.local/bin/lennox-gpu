@@ -3,6 +3,8 @@
 #   lennox-gpu status          what is running where
 #   lennox-gpu run CMD...      run an app on the NVIDIA GPU (same as prime-run)
 #   lennox-gpu waybar          bar indicator (reading this never wakes the GPU)
+#   lennox-gpu apps            every app (a star = always on the NVIDIA GPU)
+#   lennox-gpu pin APP | unpin APP   always run APP on the NVIDIA GPU (from any launcher)
 #   lennox-gpu check-driver    exit 0 if the NVIDIA module is built for every kernel
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -62,5 +64,7 @@ case "${1:-status}" in
         echo "Desktop runs on: ${hypr_env:-all GPUs (default)}"
         echo "GPU mode:        $(lennox-get gpu.mode)"
         ;;
-    *) echo "usage: lennox-gpu status|run CMD|waybar|check-driver" >&2; exit 2 ;;
+    apps) shift; PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.gpuapps list "$@" ;;
+    pin|unpin) PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.gpuapps "$@" ;;
+    *) echo "usage: lennox-gpu status|run CMD|apps|pin APP|unpin APP|waybar|check-driver" >&2; exit 2 ;;
 esac
