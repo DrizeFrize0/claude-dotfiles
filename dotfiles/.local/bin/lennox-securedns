@@ -6,7 +6,7 @@
 #   lennox-securedns on              switch it on (asks for your password)
 #   lennox-securedns off             back to the DNS your network hands out
 #   lennox-securedns status          what is in use
-#   lennox-securedns test [SITE]     does SITE get a real address? (default www.netflix.com)
+#   lennox-securedns test [SITE]     does SITE get a real address? (no SITE: check every site)
 set -u
 
 RESOLVED_CONF=/etc/systemd/resolved.conf.d/lennox-dns.conf
@@ -15,6 +15,19 @@ STUB=/run/systemd/resolve/stub-resolv.conf
 BACKUP=/etc/resolv.conf.lennox-backup
 
 say() { printf '%s\n' "$*"; }
+
+# The Lennox library sits next to this script, here and in the repository (../share/lennox/python)
+PYLIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/../share/lennox/python" 2>/dev/null && pwd)"
+
+# Every site lennox-net knows (streaming, games, chat, downloads, school) plus the ones you visit most
+full_check() {
+    [[ -n "${LENNOX_SECUREDNS_QUICK:-}" ]] && return 0
+    if [[ -n "$PYLIB" && -f "$PYLIB/lennox/net.py" ]] && grep -q "def probe_all" "$PYLIB/lennox/net.py"; then
+        say ""
+        say "Checking every site (a few seconds)..."
+        PYTHONPATH="$PYLIB" python3 -m lennox.net sites
+    fi
+}
 
 # The addresses a name gets; "blocked" when there are none or only fake ones (::, 0.0.0.0, 127.x)
 lookup() {
@@ -81,6 +94,7 @@ on() {
     test_site www.google.com
     test_site www.netflix.com
     test_site www.youtube.com
+    full_check
     if test_site www.google.com >/dev/null && test_site www.netflix.com >/dev/null; then
         say "Done. Restart Zen (or any app that was open) and try again."
     else
@@ -113,12 +127,14 @@ status() {
     say "Lookups:"
     test_site www.google.com
     test_site www.netflix.com
+    full_check
 }
 
 case "${1:-status}" in
     on) on ;;
     off) off ;;
     status) status ;;
-    test) test_site "${2:-www.netflix.com}" ;;
+    test)
+        if [[ -n "${2:-}" ]]; then test_site "$2"; else test_site www.netflix.com; full_check; fi ;;
     *) say "usage: lennox-securedns on | off | status | test [SITE]"; exit 2 ;;
 esac

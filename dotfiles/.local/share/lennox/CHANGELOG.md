@@ -3,6 +3,13 @@
 Newest first. After `lennox upgrade` you get a notification with the
 highlights, and Lennox Settings > About lists everything.
 
+## 2.2.2 · 2026-11-10 · The network check checks everything
+
+- lennox-net check now tries about 60 sites in five groups (streaming, gaming, chat and social, downloads and updates, school and work) plus the sites you visit most, read from Zen, Firefox and the Lennox Browser history. All at once, in a few seconds.
+- Each site is checked two ways: does the DNS give a real address, and does a secure connection actually open. It tells apart a DNS block, a missing address, a connection that never opens, and traffic that is intercepted (the wrong certificate), and says what to do for each.
+- New: lennox-net sites, the same check on its own, or for the sites you name (lennox-net sites www.netflix.com modrinth.com).
+- lennox-securedns on, status and test now run that full check too, instead of three sites.
+
 ## 2.2.1 · 2026-11-10 · Sites the network's DNS blocks
 
 - New: lennox-securedns. When a site fails with "Unable to connect" while the internet works, the DNS your network hands out may be answering a fake address for it. lennox-securedns on switches the whole laptop to encrypted DNS (Cloudflare, then Quad9), which nothing on the network can change or block. It checks itself, falls back gracefully if the network blocks encrypted DNS, and lennox-securedns off undoes it. Also in the command palette.

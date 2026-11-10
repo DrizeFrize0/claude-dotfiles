@@ -136,6 +136,60 @@ class DnsBlock(unittest.TestCase):
         self.assertEqual(net.diagnose(snap()), [])
 
 
+class SiteProbe(unittest.TestCase):
+    def test_states(self):
+        real, fake = (lambda n: {"52.1.1.1"}), (lambda n: {"::"})
+        self.assertEqual(net.probe("a.com", resolve=fake, connect=lambda n: "ok"), "dns-fake")
+        self.assertEqual(net.probe("a.com", resolve=lambda n: set(), connect=lambda n: "ok"), "dns-none")
+        self.assertEqual(net.probe("a.com", resolve=real, connect=lambda n: "intercepted"), "intercepted")
+        self.assertEqual(net.probe("a.com", resolve=real, connect=lambda n: "ok"), "ok")
+
+    def test_probe_all_keeps_order_and_drops_repeats(self):
+        states = net.probe_all(["b.com", "a.com", "b.com"], resolve=lambda n: {"1.2.3.4"}, connect=lambda n: "ok")
+        self.assertEqual(list(states), ["b.com", "a.com"])
+
+    def test_every_group_has_sites_and_no_repeats(self):
+        self.assertGreaterEqual(len(net.WATCH), 50)
+        self.assertEqual(len(net.WATCH), len(set(net.WATCH)))
+        self.assertIn("www.netflix.com", net.CATEGORIES["Streaming"])
+
+    def test_hosts_from_urls_skips_home_addresses(self):
+        urls = ["https://www.netflix.com/browse", "http://192.168.1.20:8080/", "https://jado-pi.local/",
+                "about:blank", "https://www.netflix.com/title/1", "https://hub.tail1234.ts.net/", "https://Modrinth.com/mods"]
+        self.assertEqual(net._hosts_from_urls(urls), ["www.netflix.com", "modrinth.com"])
+
+    def test_browser_sites_reads_zen_and_lennox_browser(self):
+        import sqlite3
+        import tempfile
+        home = tempfile.mkdtemp()
+        zen = os.path.join(home, ".zen", "abc.Default")
+        os.makedirs(zen)
+        with sqlite3.connect(os.path.join(zen, "places.sqlite")) as db:
+            db.execute("CREATE TABLE moz_places (url TEXT, visit_count INTEGER, frecency INTEGER)")
+            db.executemany("INSERT INTO moz_places VALUES (?, ?, ?)", [("https://modrinth.com/", 5, 900),
+                           ("https://www.netflix.com/", 9, 2000), ("https://never.example/", 0, 5000)])
+        lb = os.path.join(home, ".local", "share", "lennox", "browser")
+        os.makedirs(lb)
+        with sqlite3.connect(os.path.join(lb, "browser.sqlite")) as db:
+            db.execute("CREATE TABLE history (url TEXT PRIMARY KEY, title TEXT, visits INTEGER, last INTEGER)")
+            db.execute("INSERT INTO history VALUES ('https://www.curseforge.com/', 't', 3, 1)")
+        self.assertEqual(net.browser_sites(home=home), ["www.netflix.com", "modrinth.com", "www.curseforge.com"])
+
+    def test_report_lines_and_diagnosis(self):
+        states = {n: "ok" for n in net.WATCH}
+        states["www.netflix.com"] = "dns-fake"
+        states["www.roblox.com"] = "unreachable"
+        states["modrinth.com"] = "ok"
+        s = snap(probe=states, mine=["modrinth.com"], dns_blocked=["www.netflix.com"])
+        lines = "\n".join(net.site_lines(s))
+        self.assertIn(f"Sites ({len(states) - 2} of {len(states)} work)", lines)
+        self.assertIn("www.netflix.com (blocked by DNS)", lines)
+        self.assertIn("Your sites", lines)
+        found = text(s)
+        self.assertIn("No secure connection to: www.roblox.com", found)
+        self.assertIn("lennox-securedns on", found)
+
+
 class FocusBlock(unittest.TestCase):
     def test_marker(self):
         self.assertTrue(net.focus_block_present("127.0.0.1 localhost\n# >>> lennox focus (sites blocked while focusing) >>>\n0.0.0.0 youtube.com\n"))

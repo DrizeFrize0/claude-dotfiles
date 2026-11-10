@@ -21,7 +21,7 @@ grep "^$name " "$FAKE/dns" | while read -r _ a; do echo "$a STREAM $name"; done
 X
 printf '#!/bin/sh\nexit 0\n' > "$T/bin/sleep"
 chmod +x "$T/bin/"*
-export PATH="$T/bin:$PATH" FAKE="$T"
+export PATH="$T/bin:$PATH" FAKE="$T" LENNOX_SECUREDNS_QUICK=1
 
 printf 'www.netflix.com ::\nwww.google.com 142.250.1.1\nwww.youtube.com 0.0.0.0\n' > "$T/dns"
 out="$(bash "$S" test www.netflix.com)"; code=$?
@@ -47,5 +47,11 @@ check "port 853 blocked: falls back to opportunistic" "grep -q '^DNSOverTLS=oppo
 bash "$S" off >/dev/null
 check "off: removes both files and stops resolved" "grep -q 'rm -f /etc/systemd/resolved.conf.d/lennox-dns.conf /etc/NetworkManager/conf.d/lennox-dns.conf' $T/log && grep -q 'disable --now systemd-resolved' $T/log"
 out="$(bash "$S" nonsense)"; check "usage on a wrong word" "[ \$? -ne 0 ] || grep -q usage <<<\"\$out\""
+# The full check runs lennox.net from the library next to the script (here: the repository)
+printf '#!/bin/sh\necho "FULLCHECK $PYTHONPATH $*"\n' > "$T/bin/python3"; chmod +x "$T/bin/python3"
+out="$(LENNOX_SECUREDNS_QUICK= bash "$S" test 2>&1)"
+check "no SITE: checks every site with lennox.net" "grep -q 'FULLCHECK .*/share/lennox/python -m lennox.net sites' <<<\"\$out\""
+out="$(LENNOX_SECUREDNS_QUICK= bash "$S" test www.netflix.com 2>&1)"
+check "one SITE: only that one" "! grep -q FULLCHECK <<<\"\$out\""
 [ "$fail" = 0 ] && echo "OK securedns" || echo "FAILED securedns"
 exit "$fail"

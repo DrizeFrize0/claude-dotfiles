@@ -2,6 +2,7 @@
 
     python3 -m lennox.net check              what is wrong and why (it tests; it changes nothing)
     python3 -m lennox.net fix [--yes]        what the fixes would be / do them
+    python3 -m lennox.net sites [SITE...]    can each site be found and reached? (default: popular sites + yours)
     python3 -m lennox.net dns bench          which DNS answers fastest from this laptop
     python3 -m lennox.net dns set NAME       cloudflare | google | quad9 | fastest   (all wired and Wi-Fi connections)
     python3 -m lennox.net dns apply          what Settings says (network.dns)
@@ -34,9 +35,23 @@ PROVIDERS = {
 DOMAINS = ["google.com", "youtube.com", "wikipedia.org", "github.com", "discord.com", "reddit.com", "amazon.com", "microsoft.com"]
 SITES = ["https://www.google.com", "https://www.cloudflare.com", "https://discord.com", "https://github.com"]
 HOSTS = os.environ.get("LENNOX_HOSTS_FILE", "/etc/hosts")
-# Popular sites a DNS filter (router, Pi-hole, provider) likes to block by answering a fake address
-WATCH = ["www.netflix.com", "www.youtube.com", "www.twitch.tv", "www.tiktok.com", "www.instagram.com",
-         "store.steampowered.com", "www.epicgames.com", "discord.com"]
+# What `lennox-net check` tries, by group (plus the sites you visit most, from your browsers)
+CATEGORIES = {
+    "Streaming": ["www.netflix.com", "www.youtube.com", "i.ytimg.com", "www.twitch.tv", "open.spotify.com",
+                  "www.primevideo.com", "www.disneyplus.com", "shahid.mbc.net", "www.crunchyroll.com"],
+    "Gaming": ["store.steampowered.com", "steamcommunity.com", "cdn.akamai.steamstatic.com", "www.epicgames.com",
+               "www.fortnite.com", "www.minecraft.net", "sessionserver.mojang.com", "api.minecraftservices.com",
+               "login.live.com", "www.roblox.com", "www.xbox.com", "www.ea.com"],
+    "Chat & social": ["discord.com", "cdn.discordapp.com", "gateway.discord.gg", "web.whatsapp.com", "www.instagram.com",
+                      "www.tiktok.com", "x.com", "www.reddit.com", "www.snapchat.com", "www.facebook.com", "t.me"],
+    "Downloads & updates": ["archlinux.org", "geo.mirror.pkgbuild.com", "aur.archlinux.org", "flathub.org", "dl.flathub.org",
+                            "github.com", "objects.githubusercontent.com", "raw.githubusercontent.com", "pypi.org",
+                            "files.pythonhosted.org", "registry.npmjs.org", "static.crates.io", "download.nvidia.com"],
+    "School & work": ["www.google.com", "mail.google.com", "drive.google.com", "docs.google.com", "classroom.google.com",
+                      "www.microsoft.com", "outlook.live.com", "www.wikipedia.org", "zoom.us", "claude.ai",
+                      "api.anthropic.com", "www.cloudflare.com"],
+}
+WATCH = [name for names in CATEGORIES.values() for name in names]
 FAKE = {"::", "0.0.0.0", "::1"}
 FOCUS_TOOL = os.environ.get("LENNOX_FOCUS_HOSTS_TOOL", "/usr/local/bin/lennox-focus-hosts")
 FOCUS_MARK = "# >>> lennox focus"
@@ -312,6 +327,95 @@ def dns_blocked(names=None, resolve=None):
     return [n for n in (names or WATCH) if fake_answer(resolve(n))]
 
 
+def probe(name, timeout=4.0, resolve=None, connect=None):
+    """One site: "ok", "dns-fake" (the DNS answered a fake address), "dns-none" (no address at all),
+    "intercepted" (something answered with the wrong certificate) or "unreachable" (no secure connection)."""
+    import ssl
+
+    def lookup(n):
+        try:
+            return {info[4][0] for info in socket.getaddrinfo(n, 443, proto=socket.IPPROTO_TCP)}
+        except (OSError, UnicodeError):
+            return set()
+
+    def tls(n):
+        ctx = ssl.create_default_context()
+        try:
+            with socket.create_connection((n, 443), timeout=timeout) as raw:
+                with ctx.wrap_socket(raw, server_hostname=n):
+                    return "ok"
+        except ssl.SSLCertVerificationError:
+            return "intercepted"
+        except (OSError, ssl.SSLError):
+            return "unreachable"
+
+    addrs = (resolve or lookup)(name)
+    if not addrs:
+        return "dns-none"
+    if fake_answer(addrs):
+        return "dns-fake"
+    return (connect or tls)(name)
+
+
+def probe_all(names, workers=24, **kw):
+    """{name: state} for every name, many at once (a few seconds for a hundred)."""
+    from concurrent.futures import ThreadPoolExecutor
+    names = list(dict.fromkeys(names))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        return dict(zip(names, pool.map(lambda n: probe(n, **kw), names)))
+
+
+def _hosts_from_urls(urls):
+    import ipaddress
+    from urllib.parse import urlsplit
+    out = []
+    for url in urls:
+        try:
+            host = (urlsplit(url).hostname or "").lower()
+        except ValueError:
+            continue
+        if not host or "." not in host or host.endswith((".local", ".lan", ".home", ".internal", ".ts.net")) or host == "localhost":
+            continue
+        try:
+            ipaddress.ip_address(host)
+            continue                                   # a bare address (your router, your Pi): not a site
+        except ValueError:
+            pass
+        if host not in out:
+            out.append(host)
+    return out
+
+
+def browser_sites(limit=40, home=None):
+    """The sites you visit most, from Zen, Firefox and the Lennox Browser (read from copies; nothing is changed)."""
+    import glob
+    import shutil
+    import sqlite3
+    import tempfile
+    home = home or os.path.expanduser("~")
+    queries = []
+    for pattern in (".zen/*/places.sqlite", ".mozilla/firefox/*/places.sqlite",
+                    ".var/app/app.zen_browser.zen/.zen/*/places.sqlite"):
+        for path in glob.glob(os.path.join(home, pattern)):
+            queries.append((path, "SELECT url FROM moz_places WHERE visit_count > 0 ORDER BY frecency DESC LIMIT 400"))
+    lennox = os.path.join(home, ".local", "share", "lennox", "browser", "browser.sqlite")
+    if os.path.exists(lennox):
+        queries.append((lennox, "SELECT url FROM history ORDER BY visits DESC LIMIT 400"))
+    urls = []
+    for path, sql in queries:
+        with tempfile.TemporaryDirectory() as tmp:
+            copy = os.path.join(tmp, "db.sqlite")
+            try:
+                shutil.copyfile(path, copy)
+                if os.path.exists(path + "-wal"):
+                    shutil.copyfile(path + "-wal", copy + "-wal")
+                with sqlite3.connect(copy) as db:
+                    urls += [row[0] for row in db.execute(sql)]
+            except (OSError, sqlite3.Error):
+                continue
+    return _hosts_from_urls(urls)[:limit]
+
+
 def snapshot():
     try:
         with open(HOSTS, encoding="utf-8") as f:
@@ -319,10 +423,14 @@ def snapshot():
     except OSError:
         hosts = ""
     v6_addr = bool(global_ipv6(default_device()))                           # the connection in use, not every device
+    mine = [n for n in browser_sites() if n not in WATCH]
+    states = probe_all(WATCH + mine)
     return {
+        "probe": states, "mine": mine,
+        "dns_blocked": [n for n, st in states.items() if st == "dns-fake"],
         "hosts_blocked": focus_block_present(hosts), "focus_active": focus_active(),
         "system_dns_ms": system_dns_ms(), "public_dns_ok": query_time("1.1.1.1", "google.com") is not None,
-        "ip_ok": tcp_ok("1.1.1.1"), "sites": {u: https_ok(u) for u in SITES}, "dns_blocked": dns_blocked(),
+        "ip_ok": tcp_ok("1.1.1.1"), "sites": {u: https_ok(u) for u in SITES},
         "ipv6_addr": v6_addr, "ipv6_ok": tcp_ok("2606:4700:4700::1111") if v6_addr else None,
         "mtu_now": mtu_now(), "mtu_ok": ping_df(mtu_now() - 28), "mtu_best": None,
         "links": link_info(), "proxy": [k for k in ("http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY") if os.environ.get(k)],
@@ -350,6 +458,21 @@ def diagnose(s):
             out.append((f"The DNS answers a fake address (:: or 0.0.0.0) for: {', '.join(s['dns_blocked'])}",
                         "Something on the network (router, Pi-hole, provider) filters names. Encrypted DNS goes around it: "
                         "lennox-securedns on", False))
+        probe_states = s.get("probe", {})
+        intercepted = [n for n, st in probe_states.items() if st == "intercepted"]
+        unreachable = [n for n, st in probe_states.items() if st == "unreachable"]
+        nameless = [n for n, st in probe_states.items() if st == "dns-none"]
+        if intercepted:
+            out.append((f"Something answers with the wrong certificate for: {', '.join(intercepted)}",
+                        "Traffic to these is intercepted (a filter or a captive portal). Check the router's filters; "
+                        "encrypted DNS alone can't go around this", False))
+        if unreachable:
+            out.append((f"No secure connection to: {', '.join(unreachable)}",
+                        "The name looks up fine but the site doesn't answer. If it's only one or two, the site may be down; "
+                        "if many, the router or provider blocks them by address", False))
+        if nameless and len(nameless) < len(probe_states):
+            out.append((f"No address at all for: {', '.join(nameless)}",
+                        "The DNS says these don't exist. Encrypted DNS usually fixes it: lennox-securedns on", False))
         failed = [u for u, ok in s["sites"].items() if not ok]
         if failed and len(failed) < len(s["sites"]):
             out.append((f"Some sites don't open: {', '.join(u.split('//')[1] for u in failed)}",
@@ -377,6 +500,27 @@ def diagnose(s):
     return out
 
 
+STATE_WORDS = {"dns-fake": "blocked by DNS", "dns-none": "no address", "intercepted": "intercepted",
+               "unreachable": "no connection"}
+
+
+def site_lines(s):
+    """One line per group: "Streaming 9/9 ok" or which ones fail and how."""
+    states = s.get("probe")
+    if not states:
+        return ["  sites: " + ", ".join(f"{u.split('//')[1]} {'ok' if ok else 'BLOCKED'}" for u, ok in s["sites"].items())]
+    groups = dict(CATEGORIES)
+    if s.get("mine"):
+        groups["Your sites"] = s["mine"]
+    total = sum(1 for st in states.values() if st == "ok")
+    lines = ["", f"Sites ({total} of {len(states)} work):"]
+    for group, names in groups.items():
+        names = [n for n in names if n in states]
+        bad = [f"{n} ({STATE_WORDS.get(states[n], states[n])})" for n in names if states[n] != "ok"]
+        lines.append(f"  {group:<20} {len(names) - len(bad)}/{len(names)} ok" + (": " + ", ".join(bad) if bad else ""))
+    return lines
+
+
 def report(s):
     found = diagnose(s)
     lines = ["Connection:"]
@@ -384,7 +528,7 @@ def report(s):
         lines.append(f"  {link['dev']}: {'connected' if link['up'] else 'no cable'}" + (f", {link['speed']} Mb/s {link['duplex']}" if link["up"] and link["speed"] else ""))
     lines.append(f"  internet: {'yes' if s['ip_ok'] else 'NO'}  ·  looking up a name: " + (f"{s['system_dns_ms']:.0f} ms" if s["system_dns_ms"] is not None else "fails")
                  + "  ·  IPv6: " + ("works" if s["ipv6_ok"] else "broken" if s["ipv6_ok"] is False else "none"))
-    lines.append("  sites: " + ", ".join(f"{u.split('//')[1]} {'ok' if ok else 'BLOCKED'}" for u, ok in s["sites"].items()))
+    lines += site_lines(s)
     lines += ["", "What I found:"]
     lines += [f"  - {p}\n      -> {w}" for p, w, _f in found] or ["  - Nothing is wrong that I can see"]
     if any(f for _p, _w, f in found):
@@ -418,6 +562,16 @@ def apply_dns_choice(choice):
 
 def main(argv):
     mode = argv[1] if len(argv) > 1 else "check"
+    if mode == "sites":
+        names = argv[2:] or WATCH + [n for n in browser_sites() if n not in WATCH]
+        states = probe_all(names)
+        for name in names:
+            state = states[name]
+            print(f"  {'ok  ' if state == 'ok' else 'FAIL'}  {name}" + ("" if state == "ok" else f"  ({STATE_WORDS.get(state, state)})"))
+        bad = sum(1 for st in states.values() if st != "ok")
+        print(f"\n{len(states) - bad} of {len(states)} work." + (" Blocked by DNS? Try: lennox-securedns on" if
+              any(st in ("dns-fake", "dns-none") for st in states.values()) else ""))
+        return 1 if bad else 0
     if mode == "check":
         s = snapshot()
         if not s["mtu_ok"]:
