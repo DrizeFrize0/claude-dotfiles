@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# The session screen: Lock, Sleep, Log out, Restart, Shut down (SUPER + Escape). Again closes it.
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.leave "$@"

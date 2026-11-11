@@ -1,0 +1,268 @@
+#!/usr/bin/env bash
+# A boot menu (rEFInd) so the laptop asks "Arch or Windows?" instead of going straight to Windows.
+#   lennox-bootmenu status         what the computer has now (partitions, boot entries, Secure Boot)
+#   lennox-bootmenu plan           what "enable" would do (changes nothing)
+#   lennox-bootmenu enable --yes   install it, make it the first thing the laptop starts
+#   lennox-bootmenu disable --yes  take it out again and put the old boot order back
+#   lennox-bootmenu restyle        redo the look and the entry list (after an upgrade)
+#   lennox-bootmenu clean [--yes]  list (then remove) boot entries of partitions that no longer exist
+# It never touches Windows. Your own way in (F9 boot menu > boot from EFI file) keeps working.
+# Tests point LENNOX_ESP, LENNOX_SUDO, LENNOX_SB_FILE and LENNOX_STATE at a fake system.
+SUDO="${LENNOX_SUDO-sudo}"
+STATE="${LENNOX_STATE:-$HOME/.local/state/lennox}"
+SB_FILE="${LENNOX_SB_FILE:-/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c}"
+mkdir -p "$STATE"
+
+find_esp() {
+    if [[ -n "${LENNOX_ESP:-}" ]]; then echo "$LENNOX_ESP"; return; fi
+    local d first=""
+    for d in /efi /boot /boot/efi; do
+        if [[ "$(findmnt -rno FSTYPE -M "$d" 2>/dev/null)" == vfat ]]; then
+            [[ -n "$(find_ukis "$d")" ]] && { echo "$d"; return; }      # the one that holds your Arch file
+            first="${first:-$d}"
+        fi
+    done
+    [[ -n "$first" ]] && echo "$first"
+}
+
+secure_boot_on() { [[ -r "$SB_FILE" && "$(od -An -t u1 -j4 -N1 "$SB_FILE" 2>/dev/null | tr -d ' ')" == 1 ]]; }
+
+# The Linux boot files on the boot partition: any .efi that isn't rEFInd, Windows, the generic fallback or a tool
+# (/boot is readable by root only on Arch, so it is read with sudo when needed)
+as_reader() { if [[ -r "$1" && -x "$1" ]]; then "${@:2}"; else $SUDO "${@:2}"; fi; }
+
+find_ukis() {
+    [[ -d "$1" ]] || return 0
+    local all
+    all="$(as_reader "$1" find "$1" -maxdepth 4 -type f -iname '*.efi' ! -ipath '*/refind/*' ! -ipath '*/Microsoft/*' ! -ipath '*/grub/*' \
+        ! -iname 'bootx64.efi' ! -iname 'bootmgfw.efi' ! -iname 'bootmgr.efi' ! -iname 'shell*.efi' ! -iname 'memtest*' 2>/dev/null | sort)"
+    # Files in EFI/Linux (where Arch puts them) first
+    { grep -i '/EFI/Linux/' <<<"$all"; grep -vi '/EFI/Linux/' <<<"$all"; } | sed '/^$/d'
+}
+
+status() {
+    local esp; esp="$(find_esp)"
+    echo "Started in UEFI mode: $([[ -d /sys/firmware/efi || -n "${LENNOX_ESP:-}" ]] && echo yes || echo NO)"
+    echo "Secure Boot:          $(secure_boot_on && echo ON || echo off)"
+    echo "Boot partition:       ${esp:-not found}"
+    if [[ -n "$esp" ]]; then
+        echo "Linux boot files:"; find_ukis "$esp" | sed "s#^$esp#  #"
+    fi
+    echo "rEFInd installed:     $([[ -n "$esp" ]] && as_reader "$esp" test -d "$esp/EFI/refind" && echo yes || echo no)"
+    echo; echo "Boot entries (efibootmgr):"; efibootmgr 2>/dev/null | sed 's/^/  /' || echo "  (efibootmgr isn't installed)"
+    echo; echo "Disks:"; lsblk -o NAME,SIZE,FSTYPE,PARTTYPENAME,MOUNTPOINT 2>/dev/null | grep -iE "NAME|EFI|vfat|ntfs|ext4|btrfs" | sed 's/^/  /'
+}
+
+problems() {
+    local esp="$1"
+    [[ -d /sys/firmware/efi || -n "${LENNOX_ESP:-}" ]] || echo "The laptop didn't start in UEFI mode: this can't work."
+    [[ -n "$esp" ]] || echo "Can't find the boot partition (no vfat partition at /efi, /boot or /boot/efi). Mount it, then set LENNOX_ESP=/where."
+    if [[ -n "$esp" && -z "$(find_ukis "$esp")" ]]; then
+        echo "No Linux boot file (like archlinux.efi) on $esp. Is this the right partition?"
+        echo "    These are the .efi files that ARE there: $(as_reader "$esp" find "$esp" -maxdepth 4 -iname '*.efi' 2>/dev/null | sed "s#^$esp#  #" | tr '\n' ' ')"
+        echo "    FAT partitions mounted: $(findmnt -rno TARGET,FSTYPE 2>/dev/null | awk '$2=="vfat"{print $1}' | tr '\n' ' ')"
+        echo "    Run: lsblk -f   (the EFI partition holding archlinux.efi may not be mounted: sudo mount /dev/nvme0n1pN /mnt, then LENNOX_ESP=/mnt lennox-bootmenu plan)"
+    fi
+    if secure_boot_on; then
+        echo "Secure Boot is ON: rEFInd isn't signed, so the laptop would refuse it. Turn Secure Boot off in the BIOS (F10) first."
+    fi
+}
+
+plan() {
+    local esp; esp="$(find_esp)"
+    echo "Boot partition: ${esp:-?}"
+    echo "Steps:"
+    echo " 1. save the current boot entries to $STATE/efi-backup-DATE.txt"
+    command -v refind-install >/dev/null || echo " 2. install the refind package"
+    echo " 3. put rEFInd on $esp/EFI/refind and make it the first boot entry (Windows stays untouched)"
+    echo " 4. add a Lennox look (dark background) and an 'Arch Linux' entry for: $(find_ukis "${esp:-/nonexistent}" | head -1 | sed "s#^$esp##")"
+    echo " 5. wait 8 seconds on the menu, then start Arch (Windows is one arrow key away)"
+    local p; p="$(problems "$esp")"
+    [[ -n "$p" ]] && { echo; echo "Blocked:"; sed 's/^/  - /' <<<"$p"; }
+    return 0
+}
+
+# The look: a night-sky background, a glowing selection, only the entries you want (Arch and Windows)
+# ImageMagick 7 wants "magick"; version 6 only has "convert"
+im() { if command -v magick >/dev/null; then magick "$@"; else convert "$@"; fi 2>/dev/null; }
+
+# A bold font FILE (a named font is often not found): from fontconfig, else the first font on the system
+pick_font() {
+    local f
+    f="$(fc-match -f '%{file}' 'DejaVu Sans:bold' 2>/dev/null)"
+    [[ -f "$f" ]] || f="$(fc-match -f '%{file}' 'sans-serif:bold' 2>/dev/null)"
+    [[ -f "$f" ]] || f="$(find /usr/share/fonts -iname '*.ttf' -o -iname '*.otf' 2>/dev/null | head -1)"
+    [[ -f "$f" ]] && echo "$f"
+}
+
+LOGO_DIR="${LENNOX_LOGO_DIR:-$HOME/.config/lennox/assets/logo}"
+
+make_art() {   # make_art DIR
+    command -v magick >/dev/null || command -v convert >/dev/null || return 0
+    local dir="$1" tmp font; tmp="$(mktemp -d)"; font="$(pick_font)"
+    im -size 1920x1080 radial-gradient:'#22356e-#05070f' "$tmp/base.png"
+    im -size 1920x1080 xc:black +noise Random -colorspace Gray -threshold 98.8% -blur 0x0.7 -level 0,55% "$tmp/stars.png"
+    im "$tmp/base.png" "$tmp/stars.png" -compose screen -composite "$tmp/banner.png"
+    if [[ -n "$font" ]]; then    # the name along the bottom (skipped, not failed, when no font can be found)
+        im "$tmp/banner.png" -font "$font" -pointsize 54 -kerning 18 -fill '#cfe0ff' -gravity south -annotate +0+64 'LENNOX' "$tmp/named.png" \
+            && [[ -s "$tmp/named.png" ]] && mv -f "$tmp/named.png" "$tmp/banner.png"
+    fi
+    if [[ -f "$LOGO_DIR/lennox-logo-512.png" ]]; then    # the Lennox logo above the entries
+        im "$tmp/banner.png" \( "$LOGO_DIR/lennox-logo-512.png" -resize 190x190 \) -gravity north -geometry +0+250 -composite "$tmp/logo-banner.png" \
+            && [[ -s "$tmp/logo-banner.png" ]] && mv -f "$tmp/logo-banner.png" "$tmp/banner.png"
+    fi
+    [[ -f "$LOGO_DIR/lennox-logo-128.png" ]] && cp "$LOGO_DIR/lennox-logo-128.png" "$tmp/lennox-icon.png"
+    im -size 144x144 xc:none -fill 'rgba(130,170,255,0.20)' -stroke 'rgba(175,205,255,0.95)' -strokewidth 3 \
+        -draw 'roundrectangle 5,5 138,138 22,22' "$tmp/selection_big.png"
+    im -size 64x64 xc:none -fill 'rgba(130,170,255,0.20)' -stroke 'rgba(175,205,255,0.95)' -strokewidth 2 \
+        -draw 'roundrectangle 3,3 60,60 12,12' "$tmp/selection_small.png"
+    $SUDO cp "$tmp"/*.png "$dir/" && rm -rf "$tmp"
+}
+
+# The partition GUID of the disk part that holds Windows' boot manager (from the laptop's own boot list)
+windows_guid() {
+    efibootmgr -v 2>/dev/null | grep -i 'Windows Boot Manager' | grep -oiE 'HD\([0-9]+,GPT,[0-9a-f-]{36}' | head -1 | sed -E 's/.*,GPT,//'
+}
+
+lennox_conf() {   # lennox_conf UKI_PATH_ON_ESP ART(yes|no) WINDOWS_GUID_OR_EMPTY LOGO_ICON(yes|no)
+    cat <<CONF
+# Lennox boot menu look (lennox-bootmenu). Changes here are kept; 'disable' removes the file.
+timeout 8
+resolution max
+use_graphics_for linux,windows
+enable_mouse
+enable_touch
+hideui hints
+big_icon_size 128
+small_icon_size 48
+default_selection "Arch Linux"
+# Only Arch and Windows: no kernel lists, no leftovers from other installs
+scan_all_linux_kernels false
+$([[ -n "$3" ]] && echo "# Two fixed entries (below) and no scanning: other disks' boot files can't show up" && echo "scanfor manual" || echo "scanfor internal,external,manual")
+# EFI/Linux holds your Arch file: it gets its own entry below, so the automatic one is hidden
+dont_scan_dirs ESP:/EFI/BOOT,ESP:/EFI/systemd,ESP:/EFI/Linux,ESP:/grub,ESP:/EFI/grub
+dont_scan_files grubx64.efi,shimx64.efi,mmx64.efi,BOOTX64.EFI,core.efi,grub.efi,systemd-bootx64.efi,$(basename "$1")
+CONF
+    if [[ "$2" == yes ]]; then
+        echo "banner lennox-banner.png"
+        echo "banner_scale fillscreen"
+        echo "selection_big selection_big.png"
+        echo "selection_small selection_small.png"
+    fi
+    cat <<CONF
+
+menuentry "Arch Linux" {
+    icon $([[ "$4" == yes ]] && echo /EFI/refind/lennox-icon.png || echo /EFI/refind/icons/os_arch.png)
+    loader $1
+}
+CONF
+    if [[ -n "$3" ]]; then
+        cat <<CONF
+
+menuentry "Windows" {
+    icon /EFI/refind/icons/os_win.png
+    volume $3
+    loader /EFI/Microsoft/Boot/bootmgfw.efi
+}
+CONF
+    fi
+}
+
+write_look() {   # write_look ESP UKI
+    local dir="$1/EFI/refind" art=no icon=no
+    if make_art "$dir"; then
+        # the banner file names the files make_art wrote (renamed to what the config says)
+        $SUDO mv -f "$dir/banner.png" "$dir/lennox-banner.png" && art=yes
+    fi
+    as_reader "$dir" test -f "$dir/lennox-icon.png" && icon=yes
+    lennox_conf "${2#"$1"}" "$art" "$(windows_guid)" "$icon" | $SUDO tee "$dir/lennox.conf" >/dev/null
+    # The include line exactly once, however many times this ran before (the file may only be readable by root)
+    $SUDO sed -i '/^include lennox\.conf$/d' "$dir/refind.conf" 2>/dev/null
+    echo 'include lennox.conf' | $SUDO tee -a "$dir/refind.conf" >/dev/null
+}
+
+enable() {
+    local esp uki p stamp
+    esp="$(find_esp)"; p="$(problems "$esp")"
+    if [[ -n "$p" ]]; then echo "Not changing anything:"; sed 's/^/  - /' <<<"$p"; exit 1; fi
+    uki="$(find_ukis "$esp" | head -1)"
+    stamp="$STATE/efi-backup-$(date +%F-%H%M).txt"
+    efibootmgr -v > "$stamp" 2>/dev/null && echo "Saved your boot entries: $stamp"
+    command -v refind-install >/dev/null || $SUDO pacman -S --needed --noconfirm refind || exit 1
+    if [[ -z "${LENNOX_ESP:-}" ]]; then
+        $SUDO refind-install || { echo "refind-install failed: nothing else was changed." >&2; exit 1; }
+    else
+        $SUDO mkdir -p "$esp/EFI/refind/icons"; $SUDO touch "$esp/EFI/refind/refind.conf"
+    fi
+    write_look "$esp" "$uki"
+    echo "Done. Restart: you should see a menu with Arch Linux and Windows."
+    echo "If the laptop still goes straight to Windows: press F9 at the HP logo and pick rEFInd, or tell me what 'lennox-bootmenu status' says."
+    echo "To remove it: lennox-bootmenu disable --yes"
+}
+
+disable() {
+    local esp backup order; esp="$(find_esp)"
+    backup="$(ls -t "$STATE"/efi-backup-*.txt 2>/dev/null | tail -1)"      # the oldest: from before rEFInd
+    if [[ -n "$esp" ]] && as_reader "$esp" test -d "$esp/EFI/refind"; then
+        $SUDO rm -rf "$esp/EFI/refind"
+        echo "Removed rEFInd from $esp"
+    fi
+    local num
+    for num in $(efibootmgr 2>/dev/null | sed -n 's/^Boot\([0-9A-F]\{4\}\)\*\? rEFInd.*/\1/p'); do
+        $SUDO efibootmgr -B -b "$num" >/dev/null && echo "Removed boot entry $num"
+    done
+    if [[ -n "$backup" ]]; then
+        order="$(sed -n 's/^BootOrder: //p' "$backup")"
+        [[ -n "$order" ]] && $SUDO efibootmgr -o "$order" >/dev/null && echo "Boot order back to: $order"
+    fi
+    echo "Done."
+}
+
+# Boot entries whose disk partition no longer exists (old installs): "NUM<TAB>name". Windows, rEFInd, USB
+# and firmware entries are never listed, and nothing is listed if the partitions can't be read.
+PARTUUIDS="${LENNOX_PARTUUID_DIR:-/dev/disk/by-partuuid}"
+dead_entries() {
+    local known line num name guid
+    known="$(ls "$PARTUUIDS" 2>/dev/null | tr 'A-F' 'a-f')"
+    [[ "$(grep -c . <<<"$known")" -ge 3 ]] || return 0
+    while IFS= read -r line; do
+        [[ "$line" == *PciRoot\(* || "$line" == *USB\(* ]] && continue
+        [[ "$line" =~ ^Boot([0-9A-Fa-f]{4})\*?[[:space:]]+([^[:cntrl:]]*)[[:cntrl:]]+HD\([0-9]+,GPT,([0-9a-fA-F-]{36}) ]] || continue
+        num="${BASH_REMATCH[1]}"; name="${BASH_REMATCH[2]}"; guid="${BASH_REMATCH[3],,}"
+        [[ "$name" =~ [Ww]indows|rEFInd ]] && continue
+        grep -qx "$guid" <<<"$known" || printf '%s\t%s\n' "$num" "$name"
+    done < <(efibootmgr -v 2>/dev/null)
+}
+
+clean() {
+    local list num name stamp
+    list="$(dead_entries)"
+    if [[ -z "$list" ]]; then echo "No dead boot entries (or the partitions couldn't be read): nothing to clean."; return 0; fi
+    echo "Boot entries that point to partitions that no longer exist:"
+    while IFS=$'\t' read -r num name; do echo "  Boot$num  $name"; done <<<"$list"
+    if [[ "${1:-}" != --yes ]]; then echo; echo "Nothing was removed. To remove them: lennox-bootmenu clean --yes"; return 0; fi
+    stamp="$STATE/efi-backup-$(date +%F-%H%M)-before-clean.txt"
+    efibootmgr -v > "$stamp" 2>/dev/null && echo "Saved your boot entries first: $stamp"
+    while IFS=$'\t' read -r num name; do
+        $SUDO efibootmgr -B -b "$num" >/dev/null && echo "Removed Boot$num  $name"
+    done <<<"$list"
+}
+
+restyle() {
+    local esp uki; esp="$(find_esp)"; uki="$(find_ukis "$esp" | head -1)"
+    as_reader "$esp" test -d "$esp/EFI/refind" || { echo "The boot menu isn't installed: run enable first." >&2; exit 1; }
+    [[ -n "$uki" ]] || { echo "Can't find your Arch boot file: nothing changed." >&2; exit 1; }
+    write_look "$esp" "$uki"
+    echo "The boot menu look is updated. It shows at the next restart."
+}
+
+case "${1:-status}" in
+    restyle) restyle ;;
+    clean) clean "${2:-}" ;;
+    status) status ;;
+    plan) plan ;;
+    enable|disable)
+        [[ "${2:-}" == --yes ]] || { echo "This changes how the laptop starts. See what it does: lennox-bootmenu plan"; echo "Then: lennox-bootmenu $1 --yes"; exit 1; }
+        "$1" ;;
+    *) echo "usage: lennox-bootmenu status | plan | enable --yes | disable --yes | restyle | clean [--yes]" >&2; exit 2 ;;
+esac

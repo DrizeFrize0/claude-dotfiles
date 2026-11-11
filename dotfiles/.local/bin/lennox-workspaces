@@ -1,0 +1,253 @@
+#!/usr/bin/env python3
+"""Keep the workspace buttons in the bar up to date.
+
+Waybar's built-in Hyprland workspaces module (0.15) still sends the old
+pre-Lua dispatch commands, which Hyprland 0.55+ rejects, so clicking a
+workspace would do nothing. Lennox shows workspaces as ten small custom
+modules instead (custom/ws1 ... custom/ws10), and this daemon writes their
+state to $XDG_RUNTIME_DIR/lennox/ws/N.json (and the number of minimized
+windows to minimized.json) and pokes Waybar (SIGRTMIN+8) whenever
+Hyprland reports a workspace or window change.
+
+Started at login by lennox-autostart; only one copy runs at a time.
+"""
+
+import fcntl
+import json
+import os
+import select
+import signal
+import socket
+import sys
+import tempfile
+import time
+
+PERSISTENT = 5  # workspaces 1-5 are always shown, like ML4W
+MAX_WS = 10
+WAYBAR_SIGNAL = signal.SIGRTMIN + 8
+
+RUNTIME = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+OUT_DIR = os.path.join(RUNTIME, "lennox", "ws")
+
+RELEVANT = {
+    "workspace", "workspacev2", "focusedmon", "focusedmonv2",
+    "createworkspace", "createworkspacev2", "destroyworkspace", "destroyworkspacev2",
+    "moveworkspace", "moveworkspacev2", "renameworkspace",
+    "activespecial", "activespecialv2",
+    "openwindow", "closewindow", "movewindow", "movewindowv2",
+    "monitoradded", "monitoraddedv2", "monitorremoved", "monitorremovedv2",
+    "urgent", "configreloaded",
+}
+
+
+def log(msg):
+    print(f"lennox-workspaces: {msg}", file=sys.stderr, flush=True)
+
+
+def instance_dir():
+    """Directory holding Hyprland's sockets for the current session."""
+    base = os.path.join(RUNTIME, "hypr")
+    sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    if sig:
+        path = os.path.join(base, sig)
+        return path if os.path.exists(os.path.join(path, ".socket2.sock")) else None
+    try:
+        candidates = [os.path.join(base, d) for d in os.listdir(base)]
+    except OSError:
+        return None
+    candidates = [d for d in candidates if os.path.exists(os.path.join(d, ".socket2.sock"))]
+    return max(candidates, key=os.path.getmtime) if candidates else None
+
+
+def request(hypr, command):
+    """Send a hyprctl request (e.g. "j/workspaces") and return the reply text."""
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+        s.settimeout(2)
+        s.connect(os.path.join(hypr, ".socket.sock"))
+        s.sendall(command.encode())
+        chunks = []
+        while True:
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            chunks.append(chunk)
+    return b"".join(chunks).decode("utf-8", errors="replace")
+
+
+def request_json(hypr, what):
+    try:
+        return json.loads(request(hypr, f"j/{what}"))
+    except (OSError, ValueError):
+        return []
+
+
+def write_atomic(path, text):
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".ws-")
+    with os.fdopen(fd, "w") as f:
+        f.write(text)
+    os.replace(tmp, path)
+
+
+def signal_waybar():
+    uid = os.getuid()
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        try:
+            with open(f"/proc/{pid}/comm") as f:
+                if f.read().strip() != "waybar":
+                    continue
+            if os.stat(f"/proc/{pid}").st_uid != uid:
+                continue
+            os.kill(int(pid), WAYBAR_SIGNAL)
+        except (OSError, ValueError):
+            continue
+
+
+class State:
+    def __init__(self):
+        self.urgent = set()
+        self.last = {}
+
+    def mark_urgent(self, hypr, address):
+        for client in request_json(hypr, "clients"):
+            if client.get("address", "").removeprefix("0x") == address.removeprefix("0x"):
+                ws = client.get("workspace", {}).get("id")
+                if isinstance(ws, int) and 1 <= ws <= MAX_WS:
+                    self.urgent.add(ws)
+
+    def update(self, hypr):
+        monitors = request_json(hypr, "monitors")
+        workspaces = request_json(hypr, "workspaces")
+        if not isinstance(monitors, list) or not isinstance(workspaces, list):
+            return
+
+        focused, visible = None, set()
+        for mon in monitors:
+            ws_id = (mon.get("activeWorkspace") or {}).get("id")
+            if not isinstance(ws_id, int):
+                continue
+            visible.add(ws_id)
+            if mon.get("focused"):
+                focused = ws_id
+        windows = {ws.get("id"): ws.get("windows", 0) for ws in workspaces}
+        self.urgent.discard(focused)
+
+        changed = False
+        for n in range(1, MAX_WS + 1):
+            exists = n in windows
+            if not exists and n > PERSISTENT and n != focused:
+                data = {"text": ""}
+            else:
+                classes = ["ws"]
+                if n == focused:
+                    classes.append("active")
+                elif n in visible:
+                    classes.append("visible")
+                count = windows.get(n, 0)
+                classes.append("occupied" if count else "empty")
+                if n in self.urgent:
+                    classes.append("urgent")
+                plural = "window" if count == 1 else "windows"
+                if "urgent" in classes:
+                    alt = "urgent"
+                elif n == focused:
+                    alt = "active"
+                else:
+                    alt = "occupied" if count else "empty"
+                data = {
+                    "text": str(n),
+                    "alt": alt,
+                    "class": classes,
+                    "tooltip": f"Workspace {n} · {count} {plural}" if count else f"Workspace {n}",
+                }
+            line = json.dumps(data) + "\n"
+            if self.last.get(n) != line:
+                write_atomic(os.path.join(OUT_DIR, f"{n}.json"), line)
+                self.last[n] = line
+                changed = True
+        # Minimized windows live on the hidden special:minimized workspace
+        hidden = sum(ws.get("windows", 0) for ws in workspaces if ws.get("name") == "special:minimized")
+        if hidden:
+            plural = "window" if hidden == 1 else "windows"
+            data = {"text": str(hidden), "alt": "minimized", "class": "minimized",
+                    "tooltip": f"{hidden} minimized {plural}\nLeft: bring one back   Right: bring all back"}
+        else:
+            data = {"text": ""}
+        line = json.dumps(data) + "\n"
+        if self.last.get("minimized") != line:
+            write_atomic(os.path.join(OUT_DIR, "minimized.json"), line)
+            self.last["minimized"] = line
+            changed = True
+        if changed:
+            signal_waybar()
+
+
+def run_session(hypr, state):
+    """Follow one Hyprland session until its event socket closes."""
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as events:
+        events.connect(os.path.join(hypr, ".socket2.sock"))
+        state.update(hypr)
+        buffer = b""
+        while True:
+            ready, _, _ = select.select([events], [], [], 30)
+            if not ready:
+                state.update(hypr)  # periodic safety refresh
+                continue
+            chunk = events.recv(65536)
+            if not chunk:
+                return
+            buffer += chunk
+            dirty = False
+            # Drain everything that arrives within 30 ms, then update once
+            while True:
+                *lines, buffer = buffer.split(b"\n")
+                for raw in lines:
+                    name, _, data = raw.decode("utf-8", errors="replace").partition(">>")
+                    if name == "urgent":
+                        state.mark_urgent(hypr, data)
+                    if name in RELEVANT:
+                        dirty = True
+                ready, _, _ = select.select([events], [], [], 0.03)
+                if not ready:
+                    break
+                chunk = events.recv(65536)
+                if not chunk:
+                    return
+                buffer += chunk
+            if dirty:
+                state.update(hypr)
+
+
+def main():
+    os.makedirs(OUT_DIR, exist_ok=True)
+    lock = open(os.path.join(RUNTIME, "lennox-workspaces.lock"), "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        return 0  # already running
+
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    state = State()
+    misses = 0
+    while misses < 30:
+        hypr = instance_dir()
+        if hypr is None:
+            misses += 1
+            time.sleep(1)
+            continue
+        started = time.monotonic()
+        try:
+            run_session(hypr, state)
+            log("Hyprland event socket closed")
+        except OSError as e:
+            log(f"connection problem: {e}")
+        # A session that ran for a while was healthy: start counting again
+        misses = 0 if time.monotonic() - started > 10 else misses + 1
+        time.sleep(1)
+    log("Hyprland is gone, exiting")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

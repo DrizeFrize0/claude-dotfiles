@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# The desktop colors follow the cover of the playing song.
+#   lennox-musiccolors start | stop | sync
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.musiccolors "$@"

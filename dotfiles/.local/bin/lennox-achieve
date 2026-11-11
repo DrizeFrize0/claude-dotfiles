@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Trophies for using Lennox.
+#   lennox-achieve list | tick NAME | check
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.achievements "$@"

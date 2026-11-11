@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# How many people are online in your Discord server.
+#   lennox-discord status
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.discordwidget "$@"

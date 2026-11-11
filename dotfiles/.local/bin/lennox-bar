@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+# The top bar (Waybar).
+#   lennox-bar start|stop|reload|toggle
+#   lennox-bar refresh   rebuild, restart only if what the bar shows changed
+#   lennox-bar style lennox|lennox-line|lennox-aurora|lennox-pills|lennox-dots|lennox-material|lennox-terminal|lennox-mecha|lennox-glow|lennox-dock|modern|glass|minimal
+# Style and visible modules are set in Lennox Settings > Bar.
+export PATH="$HOME/.local/bin:$PATH"
+
+WAYBAR="$HOME/.config/waybar"
+RUN="${XDG_RUNTIME_DIR:-/tmp}/lennox"
+mkdir -p "$RUN"
+
+build_config() {
+    local style="$1" off=() h24=true media=false compact=false
+    [[ "$(lennox-get bar.density)" == compact && -f "$WAYBAR/themes/$style/compact.css" ]] && compact=true
+    [[ "$(lennox-get bar.show_window_title)" == "true" ]] || off+=("hyprland/window")
+    [[ "$(lennox-get bar.show_hardware)" == "true" ]] || off+=("group/hardware")
+    [[ "$(lennox-get bar.show_tray)" == "true" ]] || off+=("tray")
+    [[ "$(lennox-get bar.show_updates)" == "true" ]] || off+=("custom/updates")
+    [[ "$(lennox-get bar.show_media)" == "true" ]] && media=true
+    [[ "$(lennox-get bar.clock_24h)" == "true" ]] || h24=false
+    # The dynamic island sits in the middle of the bar: it is the clock,
+    # the timer countdown and "now playing" there
+    if [[ "$(lennox-get widgets.island)" == "true" && "$(lennox-get widgets.island_place)" == "bar" ]]; then
+        off+=("clock" "custom/clocknext")
+        media=false
+    fi
+    # No battery on desktops: hide the module instead of showing "0%"
+    ls /sys/class/power_supply/BAT* >/dev/null 2>&1 || off+=("battery")
+
+    local off_json
+    off_json="$(printf '%s\n' "${off[@]}" | jq -R . | jq -s 'map(select(length > 0))')"
+
+    # A theme's "x-lennox" block (optional) sets:
+    #   clock-24 / clock-12   clock formats
+    #   media-in              where "now playing" goes (first in that part)
+    #   ws-dots               workspaces as dots; the active one shows its number
+    #   compact-height        the height with "compact" density (with the theme's compact.css)
+    jq -s \
+        --argjson off "$off_json" \
+        --argjson media "$media" \
+        --argjson h24 "$h24" \
+        --argjson compact "$compact" '
+        def drop: map(select(. as $m | ($off | index($m)) | not));
+        (.[1] + .[0]) as $c
+        | ($c["x-lennox"] // {}) as $x
+        | $c | del(.["x-lennox"])
+        | .["modules-left"] |= drop
+        | .["modules-center"] |= drop
+        | .["modules-right"] |= drop
+        | if $media then
+              (if $x["media-in"] then .[$x["media-in"]] |= (["mpris"] + .) else .["modules-left"] += ["mpris"] end)
+          else . end
+        | if $compact and $x["compact-height"] then .height = $x["compact-height"] else . end
+        | .clock.format = (if $h24 then ($x["clock-24"] // "{:%H:%M  %a}")
+                           else ($x["clock-12"] // "{:%I:%M %p  %a}") end)
+        | if $x["ws-dots"] then
+              reduce range(1; 11) as $n (.;
+                  .["custom/ws\($n)"] += {
+                      "format": "{icon}",
+                      "format-icons": { "active": "\($n)", "urgent": "\($n)", "default": " " }
+                  })
+          else . end
+        ' "$WAYBAR/themes/$style/config.json" "$WAYBAR/modules.json" > "$RUN/waybar.json.tmp" \
+        && mv -f "$RUN/waybar.json.tmp" "$RUN/waybar.json"
+}
+
+# The CSS Waybar loads: the theme's, plus its compact.css and texture.css when
+# those are turned on (Settings > Bar & Dock). Prints the file to use.
+style_file() {
+    local t="$WAYBAR/themes/$1" extra=()
+    [[ "$(lennox-get bar.density)" == compact && -f "$t/compact.css" ]] && extra+=("$t/compact.css")
+    [[ "$(lennox-get bar.texture)" == true && -f "$t/texture.css" ]] && extra+=("$t/texture.css")
+    if (( ${#extra[@]} == 0 )); then
+        echo "$t/style.css" > "$RUN/style-path"
+    else
+        printf '@import url("%s");\n' "$t/style.css" "${extra[@]}" > "$RUN/waybar-style.css"
+        echo "$RUN/waybar-style.css" > "$RUN/style-path"
+    fi
+    cat "$RUN/style-path"
+}
+
+start() {
+    # "start force" shows the bar even if it is turned off in the settings
+    if [[ "${1:-}" != "force" && "$(lennox-get bar.enabled)" != "true" ]]; then
+        echo "bar is turned off in Lennox Settings"
+        return 0
+    fi
+    pgrep -x waybar >/dev/null && return 0
+    local style
+    style="$(lennox-get bar.style)"
+    [[ -f "$WAYBAR/themes/$style/config.json" ]] || style="lennox"
+    build_config "$style" || { notify-send -a Lennox -i dialog-error "Bar" "Could not build the bar config (is jq installed?)"; return 1; }
+    # 9>&- : waybar must not inherit (and keep holding) our lock
+    setsid -f waybar -c "$RUN/waybar.json" -s "$(style_file "$style")" >"$RUN/waybar.log" 2>&1 </dev/null 9>&-
+    ( island_fit "$style" ) >/dev/null 2>&1 </dev/null 9>&- &
+}
+
+# Where the island goes: the bar's real position and height, measured from the running
+# bar (works for every style, even ones with an automatic height), plus the island's
+# look for this style ("x-lennox": {"island": "black|match|glass|flat|glow"}).
+# The widgets watch this file and refit the island when it changes.
+island_fit() {
+    local style="$1" cfg="$RUN/waybar.json" skin pos top h geo=""
+    skin="$(jq -r '.["x-lennox"].island // "black"' "$WAYBAR/themes/$style/config.json" 2>/dev/null)"
+    pos="$(jq -r '.position // "top"' "$cfg" 2>/dev/null)"
+    top="$(jq -r '.["margin-top"] // 0' "$cfg" 2>/dev/null)"
+    h="$(jq -r '.height // 34' "$cfg" 2>/dev/null)"
+    if command -v hyprctl >/dev/null; then
+        for _ in $(seq 30); do
+            geo="$(hyprctl layers -j 2>/dev/null | jq -r '[.. | objects | select(.namespace? == "waybar")][0] | select(. != null) | "\(.y) \(.h)"' 2>/dev/null)"
+            [[ -n "$geo" ]] && break
+            sleep 0.1
+        done
+    fi
+    if [[ -n "$geo" && "$pos" == "top" ]]; then
+        top="${geo%% *}"; h="${geo##* }"
+    fi
+    jq -n --arg style "$style" --arg skin "${skin:-black}" --arg pos "${pos:-top}" \
+        --argjson top "${top:-0}" --argjson h "${h:-34}" \
+        '{style: $style, skin: $skin, position: $pos, top: $top, height: $h}' > "$RUN/island.json.tmp" \
+        && mv -f "$RUN/island.json.tmp" "$RUN/island.json"
+}
+
+stop() {
+    pkill -x waybar
+    for _ in $(seq 20); do
+        pgrep -x waybar >/dev/null || return 0
+        sleep 0.1
+    done
+    pkill -9 -x waybar
+}
+
+# Several reloads in a row (e.g. a wallpaper change) only run once at a time
+exec 9>"$RUN/bar.lock"
+flock -w 10 9 || exit 0
+
+case "${1:-reload}" in
+    start) start ;;
+    stop) stop ;;
+    reload|restart) stop; start ;;
+    refresh)
+        # Restart only if the settings change what the bar shows
+        looks() { cat "$RUN/waybar.json" "$RUN/style-path" "$RUN/waybar-style.css" 2>/dev/null; }
+        before="$(looks)"
+        style="$(lennox-get bar.style)"
+        [[ -f "$WAYBAR/themes/$style/config.json" ]] || style="lennox"
+        build_config "$style"
+        style_file "$style" >/dev/null
+        if pgrep -x waybar >/dev/null && [[ "$(looks)" != "$before" ]]; then
+            stop; start
+        fi
+        ;;
+    toggle) if pgrep -x waybar >/dev/null; then stop; else start force; fi ;;
+    style)
+        [[ -n "${2:-}" ]] || { echo "usage: lennox-bar style lennox|lennox-line|lennox-aurora|lennox-pills|lennox-dots|lennox-material|lennox-terminal|lennox-mecha|lennox-glow|lennox-dock|modern|glass|minimal" >&2; exit 2; }
+        flock -u 9
+        exec 9>&-
+        lennox-set bar.style "$2"
+        ;;
+    *) echo "usage: lennox-bar start|stop|reload|refresh|toggle|style NAME" >&2; exit 2 ;;
+esac

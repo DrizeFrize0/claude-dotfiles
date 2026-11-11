@@ -1,0 +1,10 @@
+[Unit]
+Description=Check for Lennox automatic updates every hour (installs at most once a day)
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=1h
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Fan and noise profiles: caps the processor so the fans stay quiet (root, run
+# through pkexec without a password: see /etc/polkit-1/rules.d/50-lennox-cpucap.rules).
+# It only writes the Intel power limits and boost preference below, so it can't be used for anything else.
+#   lennox-cpucap silent|cool|normal|turbo|fan-max|fan-auto
+set -euo pipefail
+DIR="${LENNOX_PSTATE_DIR:-/sys/devices/system/cpu/intel_pstate}"
+# Fan control the HP laptop driver (hp-wmi) offers: max speed or the laptop's own curve
+hp_fans() {
+    local d
+    for d in "${LENNOX_HWMON_DIR:-/sys/class/hwmon}"/hwmon*; do
+        case "$(cat "$d/name" 2>/dev/null)" in hp|hp_wmi|hp-wmi) [[ -w "$d/pwm1_enable" ]] && echo "$d/pwm1_enable" ;; esac
+    done
+}
+case "${1:-}" in
+    fan-max) for f in $(hp_fans); do echo 0 > "$f"; done; exit 0 ;;
+    fan-auto) for f in $(hp_fans); do echo 2 > "$f"; done; exit 0 ;;
+esac
+[[ -d "$DIR" ]] || exit 0                     # another kind of processor: nothing to cap
+case "${1:-}" in
+    silent) turbo=1; pct=60; epp=power ;;
+    cool) turbo=0; pct=80; epp=balance_power ;;
+    normal) turbo=0; pct=90; epp=balance_performance ;;
+    turbo) turbo=0; pct=100; epp=performance ;;
+    *) echo "usage: lennox-cpucap silent|cool|normal|turbo|fan-max|fan-auto" >&2; exit 2 ;;
+esac
+# The laptop's own fan curve (firmware profile): HP has a "cool" one that runs the fans harder
+PLAT="${LENNOX_PLATFORM_DIR:-/sys/firmware/acpi}/platform_profile"
+case "$1" in silent) plat=quiet ;; cool) plat=cool ;; normal) plat=balanced ;; turbo) plat=performance ;; esac
+if [[ -w "$PLAT" ]] && grep -qw "$plat" "${PLAT}_choices" 2>/dev/null; then echo "$plat" > "$PLAT" 2>/dev/null || true; fi
+echo "$turbo" > "$DIR/no_turbo"
+echo "$pct" > "$DIR/max_perf_pct"
+# How eagerly the processor boosts (a cooler default than the kernel's)
+for f in "${LENNOX_CPU_DIR:-/sys/devices/system/cpu}"/cpu[0-9]*/cpufreq/energy_performance_preference; do
+    [[ -w "$f" ]] && echo "$epp" > "$f" 2>/dev/null || true
+done

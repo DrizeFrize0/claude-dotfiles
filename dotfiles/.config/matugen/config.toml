@@ -1,0 +1,53 @@
+# matugen: builds the whole color scheme from the current wallpaper.
+# Run by lennox-wallpaper; the reloads happen there, once, after all
+# templates are written.
+
+[config]
+
+[templates.hyprland]
+input_path = '~/.config/matugen/templates/hyprland-colors.lua'
+output_path = '~/.config/hypr/colors.lua'
+
+[templates.hyprlang]
+input_path = '~/.config/matugen/templates/hyprland-colors.conf'
+output_path = '~/.config/hypr/colors.conf'
+
+[templates.lennox]
+input_path = '~/.config/matugen/templates/colors.json'
+output_path = '~/.config/lennox/colors.json'
+
+[templates.waybar]
+input_path = '~/.config/matugen/templates/colors.css'
+output_path = '~/.config/waybar/colors.css'
+
+[templates.swaync]
+input_path = '~/.config/matugen/templates/colors.css'
+output_path = '~/.config/swaync/colors.css'
+
+[templates.dock]
+input_path = '~/.config/matugen/templates/colors.css'
+output_path = '~/.config/nwg-dock-hyprland/colors.css'
+
+[templates.gtk3]
+input_path = '~/.config/matugen/templates/gtk-colors.css'
+output_path = '~/.config/gtk-3.0/colors.css'
+
+[templates.gtk4]
+input_path = '~/.config/matugen/templates/gtk-colors.css'
+output_path = '~/.config/gtk-4.0/colors.css'
+
+[templates.rofi]
+input_path = '~/.config/matugen/templates/rofi-colors.rasi'
+output_path = '~/.config/rofi/colors.rasi'
+
+[templates.kitty]
+input_path = '~/.config/matugen/templates/kitty-colors.conf'
+output_path = '~/.config/kitty/colors-matugen.conf'
+
+[templates.btop]
+input_path = '~/.config/matugen/templates/btop.theme'
+output_path = '~/.config/btop/themes/lennox.theme'
+
+[templates.qt6ct]
+input_path = '~/.config/matugen/templates/qt6ct-colors.conf'
+output_path = '~/.config/qt6ct/colors/lennox.conf'

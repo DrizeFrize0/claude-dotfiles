@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# A friendly hello at login: weather, next prayer, next alarm, focus streak.
+#   lennox-greeting [text|show]
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.greeting "$@"

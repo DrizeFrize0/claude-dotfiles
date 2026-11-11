@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Turn the touchpad on or off: lennox-touchpad toggle|on|off|status
+# (Lasts until the next login or Hyprland reload.)
+export PATH="$HOME/.local/bin:$PATH"
+
+STATE="${XDG_RUNTIME_DIR:-/tmp}/lennox/touchpad-off"
+mkdir -p "$(dirname "$STATE")"
+
+mapfile -t pads < <(hyprctl devices -j 2>/dev/null | jq -r '.mice[]?.name | select(test("touchpad|trackpad|synaptics|elan|glidepoint"; "i"))')
+if [[ ${#pads[@]} -eq 0 ]]; then
+    notify-send -a Lennox -i input-touchpad "No touchpad found" "Hyprland does not see a touchpad on this machine."
+    exit 1
+fi
+
+action="${1:-toggle}"
+if [[ "$action" == "status" ]]; then
+    [[ -f "$STATE" ]] && echo off || echo on
+    exit 0
+fi
+if [[ "$action" == "toggle" ]]; then
+    [[ -f "$STATE" ]] && action=on || action=off
+fi
+
+enabled=true
+[[ "$action" == "off" ]] && enabled=false
+for pad in "${pads[@]}"; do
+    # Device names never contain quotes, but escape them anyway
+    name="${pad//\\/\\\\}"
+    name="${name//\"/\\\"}"
+    hyprctl eval "hl.device({ name = \"$name\", enabled = $enabled })" >/dev/null
+done
+
+if [[ "$action" == "off" ]]; then
+    touch "$STATE"
+    notify-send -a Lennox -i input-touchpad -t 1500 "Touchpad off" "Press the touchpad key again to turn it back on."
+else
+    rm -f "$STATE"
+    notify-send -a Lennox -i input-touchpad -t 1500 "Touchpad on"
+fi

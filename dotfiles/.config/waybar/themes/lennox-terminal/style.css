@@ -1,0 +1,105 @@
+/*
+ * Lennox bar: Terminal
+ *
+ * Inspired by Omarchy and tiling-WM purists: one flat, full-width strip in a
+ * monospace font. No pills, no glass: workspace numbers with an underline on
+ * the active one, plain text everywhere, a hairline along the bottom.
+ */
+
+@import "../lennox/style.css";
+
+* {
+    font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", "Symbols Nerd Font", monospace;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+window#waybar {
+    background: alpha(@surface, 0.96);
+    border-bottom: 1px solid alpha(@outline_variant, 0.8);
+}
+
+#lennox-start,
+.modules-center,
+.modules-right {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+}
+
+#custom-lennox-launcher {
+    background: transparent;
+    color: @primary;
+    border-radius: 0;
+    margin: 0;
+    padding: 0 12px;
+    font-size: 14px;
+}
+
+#custom-lennox-launcher:hover {
+    background: alpha(@primary, 0.12);
+    color: @primary;
+    padding: 0 12px;
+}
+
+/* Workspaces: plain numbers, the one you are on is underlined */
+#workspaces .ws,
+#workspaces .ws.occupied,
+#workspaces .ws.visible {
+    font-size: 12px;
+    color: alpha(@on_surface, 0.45);
+    background: transparent;
+    border-radius: 0;
+    min-width: 22px;
+    margin: 0;
+    padding: 0 4px;
+    border-bottom: 2px solid transparent;
+}
+
+#workspaces .ws.occupied {
+    color: alpha(@on_surface, 0.8);
+}
+
+#workspaces .ws.active {
+    color: @primary;
+    background: transparent;
+    border-bottom: 2px solid @primary;
+    margin: 0;
+    min-width: 22px;
+}
+
+#workspaces .ws.urgent {
+    color: @error;
+    background: transparent;
+    border-bottom: 2px solid @error;
+    margin: 0;
+}
+
+#custom-updates,
+#network,
+#bluetooth,
+#pulseaudio,
+#battery,
+#custom-notification,
+#custom-exit,
+#clock,
+#window {
+    border-radius: 0;
+    margin: 0;
+    padding: 0 8px;
+}
+
+#network:hover,
+#bluetooth:hover,
+#pulseaudio:hover,
+#battery:hover,
+#custom-notification:hover,
+#clock:hover {
+    background: alpha(@on_surface, 0.08);
+}
+
+tooltip {
+    border-radius: 4px;
+}

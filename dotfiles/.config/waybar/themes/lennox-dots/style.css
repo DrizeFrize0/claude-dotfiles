@@ -1,0 +1,98 @@
+/*
+ * Lennox bar: Minimal Dots
+ *
+ * Tiny and quiet: a thin, nearly see-through strip, small dimmed text and
+ * icons that brighten when you point at them, and workspaces as small dots
+ * (the one you are on is a slightly longer dot, no number).
+ * Same modules as the Line style (imported below), only smaller.
+ */
+
+@import "../lennox-line/style.css";
+
+* {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+window#waybar {
+    background: alpha(@surface_container, 0.40);
+    border: 1px solid alpha(@outline_variant, 0.25);
+    border-radius: 14px;
+    color: alpha(@on_surface, 0.80);
+}
+
+/* Workspaces: small dots; the active one stretches a little, no number */
+#workspaces .ws {
+    min-width: 5px;
+    margin: 10px 2px;
+    background: alpha(@on_surface, 0.22);
+    transition: min-width 360ms cubic-bezier(0.22, 1, 0.36, 1), background-color 300ms ease;
+}
+
+#workspaces .ws.occupied {
+    background: alpha(@on_surface, 0.55);
+}
+
+#workspaces .ws.active,
+#workspaces .ws.urgent {
+    font-size: 1px;
+    color: transparent;
+    min-width: 16px;
+    margin: 10px 2px;
+}
+
+#workspaces .ws.active {
+    background: @primary;
+}
+
+#custom-lennox-launcher {
+    font-size: 13px;
+    color: @primary;
+    background: transparent;
+    margin: 2px 2px 2px 1px;
+    padding: 0 7px;
+}
+
+#custom-lennox-launcher:hover {
+    background: alpha(@primary, 0.16);
+    color: @primary;
+    padding: 0 7px;
+}
+
+#window {
+    margin-left: 10px;
+    color: alpha(@on_surface, 0.60);
+    text-shadow: none;
+}
+
+#clock {
+    margin: 2px 0;
+    padding: 0 10px;
+}
+
+/* Status: quiet until you point at them */
+#custom-updates, #custom-system, #custom-tools, #cpu, #memory, #disk, #custom-gpu, #language,
+#custom-cliphist, #custom-idle, #custom-nightlight, #custom-gamemode, #power-profiles-daemon,
+#network, #bluetooth, #pulseaudio, #battery, #custom-notification, #custom-exit,
+#custom-sysmon, #custom-aispend,
+#custom-prayer,
+#custom-downloads, #custom-clocknext, #custom-perf, #custom-mcserver, #mpris {
+    font-size: 12px;
+    margin: 2px 1px;
+    padding: 0 7px;
+    border-radius: 10px;
+    color: alpha(@on_surface, 0.62);
+}
+
+#network:hover, #bluetooth:hover, #pulseaudio:hover, #battery:hover,
+#custom-notification:hover, #custom-exit:hover, #clock:hover {
+    color: @on_surface;
+    background: alpha(@on_surface, 0.08);
+}
+
+#battery.warning { color: @tertiary; }
+#battery.critical { color: @error; }
+
+tooltip {
+    border-radius: 12px;
+}

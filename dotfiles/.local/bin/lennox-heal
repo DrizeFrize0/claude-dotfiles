@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Find what is broken and fix it: blocked sites, a stuck package lock, a full disk, desktop pieces that stopped.
+#   lennox-heal check | fix | watch
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.heal "$@"

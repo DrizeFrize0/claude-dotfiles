@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Lennox widgets: desktop widgets and the dashboard (SUPER + D).
+#   lennox-widgets                         start (done at login)
+#   lennox-widgets dashboard [toggle|open|close]
+#   lennox-widgets desktop [toggle|on|off] show / hide the desktop widgets
+#   lennox-widgets reload                  re-read settings and colors
+#   lennox-widgets quit
+export PYTHONPATH="$HOME/.local/share/lennox/python${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m lennox.widgets.main "$@"

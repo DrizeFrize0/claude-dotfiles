@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+# The Lennox startup animation (Plymouth). It changes how the computer boots, so
+# it only does anything when you say so, and shows its plan first.
+#   lennox-boot-animation status      what is set up
+#   lennox-boot-animation plan        what "enable" would change (changes nothing)
+#   lennox-boot-animation enable --yes
+#   lennox-boot-animation disable --yes   puts back what enable saved
+# Backups: /etc/mkinitcpio.conf.lennox-backup and the boot loader file, same folder, .lennox-backup
+# Tests point ROOT, SUDO and PLYMOUTH_THEME_SRC at a fake system.
+ROOT="${LENNOX_ROOT:-}"
+SUDO="${LENNOX_SUDO-sudo}"
+THEME_SRC="${PLYMOUTH_THEME_SRC:-/usr/share/plymouth/themes/lennox}"
+MKINIT="$ROOT/etc/mkinitcpio.conf"
+GRUB="$ROOT/etc/default/grub"
+ENTRIES="$ROOT/boot/loader/entries"
+CMDLINE="$ROOT/etc/kernel/cmdline"
+CMDLINE_D="$ROOT/etc/cmdline.d"
+PROC_CMDLINE="${LENNOX_PROC_CMDLINE:-/proc/cmdline}"
+
+# "uki": Arch builds one signed-style boot file (mkinitcpio presets with *_uki=) with the kernel options inside,
+# whatever menu starts it. Then the options live in /etc/kernel/cmdline, not in a boot loader file.
+# What goes on the kernel line: no kernel or systemd messages, the splash, and a still console
+SPLASH_ARGS="quiet splash loglevel=3 rd.udev.log_level=3 systemd.show_status=auto vt.global_cursor_default=0"
+
+# The boot file mkinitcpio builds (from its preset), and what kernel options really are inside it
+uki_path() { sed -n -E 's/^[a-z_]*_uki=//p' "$ROOT"/etc/mkinitcpio.d/*.preset 2>/dev/null | head -1 | tr -d "\"'"; }
+# Files a preset names with --cmdline FILE (the build then reads that file and nothing else)
+preset_cmdline_files() {
+    local f
+    for f in $(grep -ohE -- '--cmdline[= ]+[^ "'"'"']+' "$ROOT"/etc/mkinitcpio.d/*.preset 2>/dev/null | sed -E 's/--cmdline[= ]+//'); do
+        [[ -f "$ROOT$f" ]] && echo "$ROOT$f"
+    done
+}
+uki_cmdline() {   # the options baked into the boot file ("" if they can't be read)
+    local f; f="$(uki_path)"; f="${LENNOX_UKI_FILE:-$ROOT$f}"
+    command -v objcopy >/dev/null && [[ -n "$f" ]] || return 0
+    $SUDO objcopy -O binary --only-section=.cmdline "$f" /dev/stdout 2>/dev/null | tr '\0' ' '
+}
+
+uses_uki() { grep -qsE '^[a-z_]*_uki=' "$ROOT"/etc/mkinitcpio.d/*.preset; }
+
+bootloader() {
+    if uses_uki; then echo uki
+    elif [[ -f "$GRUB" ]]; then echo grub
+    elif compgen -G "$ENTRIES/*.conf" >/dev/null; then echo systemd-boot
+    else echo unknown; fi
+}
+has_hook() { grep -E '^HOOKS=' "$MKINIT" 2>/dev/null | grep -qw plymouth; }
+has_splash() {
+    case "$(bootloader)" in
+        uki)
+            # The truth is inside the built boot file. If that can't be read, fall back to the files.
+            local baked; baked="$(uki_cmdline)"
+            if [[ -n "$baked" ]]; then grep -qw splash <<<"$baked" && grep -qw quiet <<<"$baked"
+            else cat "$CMDLINE" "$CMDLINE_D"/*.conf 2>/dev/null | grep -qw splash; fi ;;
+        grub) grep -E '^GRUB_CMDLINE_LINUX_DEFAULT=' "$GRUB" | grep -qw splash ;;
+        systemd-boot) grep -qw splash "$ENTRIES"/*.conf ;;
+        *) return 1 ;;
+    esac
+}
+theme_now() { plymouth-set-default-theme 2>/dev/null; }
+
+plan() {
+    local loader; loader="$(bootloader)"
+    echo "Boot loader: $loader"
+    command -v plymouth >/dev/null || echo " - install the plymouth package"
+    [[ -d "$THEME_SRC" ]] || echo " - (the Lennox theme files are missing: run lennox upgrade)"
+    has_hook || echo " - add the 'plymouth' hook to $MKINIT (after udev), saving a backup"
+    has_splash || echo " - add 'quiet splash' to the kernel options ($loader), saving a backup"
+    [[ "$(theme_now)" == lennox ]] || echo " - make 'lennox' the startup theme and rebuild the initramfs"
+    [[ "$loader" == uki ]] && echo "   (your Arch starts from one boot file built by mkinitcpio: the options go into $CMDLINE, then it is rebuilt)"
+    [[ "$loader" == unknown ]] && echo " ! Can't find a boot file, GRUB or systemd-boot: enable would stop before changing anything"
+    return 0
+}
+
+enable() {
+    local loader; loader="$(bootloader)"
+    [[ "$loader" != unknown ]] || { echo "Can't find a boot file, GRUB or systemd-boot: nothing changed." >&2; exit 1; }
+    [[ -d "$THEME_SRC" ]] || { echo "The theme files are missing (run lennox upgrade): nothing changed." >&2; exit 1; }
+    command -v plymouth >/dev/null || $SUDO pacman -S --needed --noconfirm plymouth || exit 1
+    if ! has_hook; then
+        [[ -f "$MKINIT.lennox-backup" ]] || $SUDO cp "$MKINIT" "$MKINIT.lennox-backup"
+        # after udev (systemd-based images use 'systemd': put it after that instead)
+        $SUDO sed -i -E '/^HOOKS=/ { /plymouth/! { s/\budev\b/udev plymouth/; t; s/\bsystemd\b/systemd plymouth/ } }' "$MKINIT"
+        has_hook || { echo "Couldn't place the hook in $MKINIT (it has no udev or systemd hook): put 'plymouth' in HOOKS yourself, then run this again." >&2; exit 1; }
+    fi
+    if ! has_splash; then
+        case "$loader" in
+            uki)
+                # mkinitcpio reads /etc/cmdline.d/*.conf and /etc/kernel/cmdline (which one wins depends on its
+                # version), so the options go into every place that is in use: all of them are safe to extend.
+                local did=0
+                if compgen -G "$CMDLINE_D/*.conf" >/dev/null; then
+                    echo "$SPLASH_ARGS" | $SUDO tee "$CMDLINE_D/90-lennox-splash.conf" >/dev/null; did=1
+                fi
+                local pf
+                for pf in $(preset_cmdline_files); do
+                    [[ -f "$pf.lennox-backup" ]] || $SUDO cp "$pf" "$pf.lennox-backup"
+                    grep -qw splash "$pf" || $SUDO sed -i -E "1 s/[[:space:]]*\$/ $SPLASH_ARGS/" "$pf"
+                    did=1
+                done
+                if [[ -f "$CMDLINE" ]]; then
+                    [[ -f "$CMDLINE.lennox-backup" ]] || $SUDO cp "$CMDLINE" "$CMDLINE.lennox-backup"
+                    grep -qw splash "$CMDLINE" || $SUDO sed -i -E "1 s/[[:space:]]*\$/ $SPLASH_ARGS/" "$CMDLINE"
+                    did=1
+                fi
+                if [[ $did == 0 ]]; then
+                    # No file yet: mkinitcpio has been copying the running options. Keep them exactly, plus splash.
+                    local now; now="$(sed -E 's/(^| )(BOOT_IMAGE|initrd)=[^ ]*//g; s/^ +//; s/ +$//' "$PROC_CMDLINE")"
+                    [[ "$now" == *root=* ]] || { echo "Can't read the current kernel options (no root=): nothing changed." >&2; exit 1; }
+                    $SUDO mkdir -p "${CMDLINE%/*}"
+                    echo "$now $SPLASH_ARGS" | $SUDO tee "$CMDLINE" >/dev/null
+                    $SUDO touch "$CMDLINE.lennox-created"
+                fi ;;
+            grub)
+                [[ -f "$GRUB.lennox-backup" ]] || $SUDO cp "$GRUB" "$GRUB.lennox-backup"
+                $SUDO sed -i -E 's/^(GRUB_CMDLINE_LINUX_DEFAULT="[^"]*)"/\1 quiet splash"/' "$GRUB"
+                $SUDO grub-mkconfig -o "$ROOT/boot/grub/grub.cfg" ;;
+            systemd-boot)
+                for f in "$ENTRIES"/*.conf; do
+                    [[ -f "$f.lennox-backup" ]] || $SUDO cp "$f" "$f.lennox-backup"
+                    $SUDO sed -i -E '/^options / s/$/ quiet splash/' "$f"
+                done ;;
+        esac
+    fi
+    $SUDO plymouth-set-default-theme -R lennox || exit 1
+    if [[ "$loader" == uki ]]; then
+        local baked; baked="$(uki_cmdline)"
+        if [[ -z "$baked" ]]; then echo "(Couldn't read the options inside the boot file to double check: restart and see.)"
+        elif grep -qw splash <<<"$baked" && grep -qw quiet <<<"$baked"; then echo "Checked: your boot file now contains quiet and splash."
+        else
+            echo "WARNING: the rebuilt boot file ($(uki_path)) still has no 'quiet splash' inside:" >&2
+            echo "  $baked" >&2
+            echo "Send me that line and the output of: cat /etc/mkinitcpio.d/*.preset" >&2
+            exit 1
+        fi
+    fi
+    echo "Done. The next restart shows the Lennox animation."
+    echo "If boot ever looks wrong: lennox-boot-animation disable --yes (or restore the .lennox-backup files)."
+}
+
+disable() {
+    local pf
+    for pf in $(preset_cmdline_files); do [[ -f "$pf.lennox-backup" ]] && $SUDO cp "$pf.lennox-backup" "$pf"; done
+    [[ -f "$CMDLINE.lennox-backup" ]] && $SUDO cp "$CMDLINE.lennox-backup" "$CMDLINE"
+    [[ -f "$CMDLINE.lennox-created" ]] && $SUDO rm -f "$CMDLINE" "$CMDLINE.lennox-created"
+    $SUDO rm -f "$CMDLINE_D/90-lennox-splash.conf"
+    [[ -f "$MKINIT.lennox-backup" ]] && $SUDO cp "$MKINIT.lennox-backup" "$MKINIT"
+    [[ -f "$GRUB.lennox-backup" ]] && { $SUDO cp "$GRUB.lennox-backup" "$GRUB"; $SUDO grub-mkconfig -o "$ROOT/boot/grub/grub.cfg"; }
+    for f in "$ENTRIES"/*.conf.lennox-backup; do [[ -f "$f" ]] && $SUDO cp "$f" "${f%.lennox-backup}"; done
+    command -v mkinitcpio >/dev/null && $SUDO mkinitcpio -P
+    echo "Back to the normal startup."
+}
+
+case "${1:-status}" in
+    status)
+        echo "Plymouth installed:  $(command -v plymouth >/dev/null && echo yes || echo no)"
+        echo "Lennox theme chosen: $([[ "$(theme_now)" == lennox ]] && echo yes || echo no)"
+        echo "Initramfs hook:      $(has_hook && echo yes || echo no)"
+        echo "Kernel 'splash':     $(has_splash && echo yes || echo no)"
+        if uses_uki; then echo "Options inside your boot file: $(uki_cmdline)"; fi
+        echo "Options running now:  $(cat "$PROC_CMDLINE" 2>/dev/null)" ;;
+    plan) plan ;;
+    enable|disable)
+        [[ "${2:-}" == --yes ]] || { echo "This changes how the computer boots. See what it does with: lennox-boot-animation plan"; echo "Then run: lennox-boot-animation $1 --yes"; exit 1; }
+        "$1" ;;
+    *) echo "usage: lennox-boot-animation status | plan | enable --yes | disable --yes" >&2; exit 2 ;;
+esac

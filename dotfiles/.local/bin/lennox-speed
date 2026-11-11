@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# One click for a snappier desktop: lighter blur, solid unfocused windows (no
+# see-through compositing), every other setting stays as it is.
+#   lennox-speed apply      make it fast (remembers what you had)
+#   lennox-speed undo       put your old values back
+#   lennox-speed status     fast / normal
+#   lennox-speed vesktop wayland|x11|reset
+#                           Vesktop (Discord) lag: try the other window mode
+export PATH="$HOME/.local/bin:$PATH"
+
+SAVED="${XDG_CONFIG_HOME:-$HOME/.config}/lennox/speed-before.json"
+KEYS=(appearance.blur_passes appearance.blur_size appearance.inactive_opacity)
+FAST=(2 3 1.0)
+
+case "${1:-status}" in
+    apply)
+        if [[ ! -f "$SAVED" ]]; then
+            mkdir -p "$(dirname "$SAVED")"
+            out="{}"
+            for k in "${KEYS[@]}"; do
+                out="$(jq --arg k "$k" --arg v "$(lennox-get "$k")" '. + {($k): $v}' <<<"$out")"
+            done
+            echo "$out" > "$SAVED"
+        fi
+        last=$(( ${#KEYS[@]} - 1 ))
+        for i in "${!KEYS[@]}"; do
+            if [[ $i -eq $last ]]; then lennox-set "${KEYS[$i]}" "${FAST[$i]}" >/dev/null
+            else lennox-set "${KEYS[$i]}" "${FAST[$i]}" --no-apply >/dev/null; fi
+        done
+        echo "Fast mode on: lighter blur, solid unfocused windows. 'lennox-speed undo' brings the old look back."
+        ;;
+    undo)
+        [[ -f "$SAVED" ]] || { echo "Nothing to undo: fast mode wasn't applied."; exit 0; }
+        last=$(( ${#KEYS[@]} - 1 ))
+        for i in "${!KEYS[@]}"; do
+            v="$(jq -r --arg k "${KEYS[$i]}" '.[$k] // empty' "$SAVED")"
+            [[ -n "$v" ]] || continue
+            if [[ $i -eq $last ]]; then lennox-set "${KEYS[$i]}" "$v" >/dev/null
+            else lennox-set "${KEYS[$i]}" "$v" --no-apply >/dev/null; fi
+        done
+        rm -f "$SAVED"
+        echo "Your old values are back."
+        ;;
+    status)
+        [[ -f "$SAVED" ]] && echo fast || echo normal
+        ;;
+    vesktop)
+        command -v flatpak >/dev/null || { echo "Vesktop isn't installed through Flatpak" >&2; exit 1; }
+        app=dev.vencord.Vesktop
+        case "${2:-}" in
+            x11) flatpak override --user --nosocket=wayland --socket=x11 "$app" ;;
+            wayland) flatpak override --user --socket=wayland "$app" ;;
+            reset) flatpak override --user --reset "$app" ;;
+            *) echo "usage: lennox-speed vesktop wayland|x11|reset" >&2; exit 2 ;;
+        esac
+        echo "Done. Close Vesktop completely and open it again."
+        ;;
+    *) echo "usage: lennox-speed apply | undo | status | vesktop wayland|x11|reset" >&2; exit 2 ;;
+esac

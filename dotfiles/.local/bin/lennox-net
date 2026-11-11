@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# What blocks things on the network, a faster DNS, and the fixes.
+#   lennox-net check | sites [SITE...] | fix [--yes] | dns bench|set NAME|apply|reset|status
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.net "$@"

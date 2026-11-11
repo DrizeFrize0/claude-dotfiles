@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Phone link (KDE Connect): battery, notifications, send files, find your phone.
+#   lennox-phone status
+#   lennox-phone pair|unpair|ring|ping ID
+#   lennox-phone send ID FILE...
+#   lennox-phone clipboard ID
+#   lennox-phone open            Lennox Settings > Phone
+export PATH="$HOME/.local/bin:$PATH"
+[[ "${1:-}" == open ]] && exec lennox-settings --page phone
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.phone "$@"

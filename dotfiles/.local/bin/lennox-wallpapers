@@ -1,0 +1,571 @@
+#!/usr/bin/env python3
+"""More wallpapers for Lennox.
+
+    lennox-wallpapers make [--force] [--size WxH]   paint the Lennox wallpaper pack
+    lennox-wallpapers ml4w                          download the ML4W collection (200+ images)
+    lennox-wallpapers list                          the designs in the Lennox pack
+
+The Lennox pack is drawn on your machine with ImageMagick, at your screen's
+resolution, into the "lennox" folder inside your wallpaper folder. Every design uses a
+fixed random seed, so the pack looks the same everywhere.
+"""
+
+import json
+import math
+import os
+import random
+import shutil
+import subprocess
+import sys
+import tempfile
+
+HOME = os.path.expanduser("~")
+sys.path.insert(0, os.path.join(HOME, ".local", "share", "lennox", "python"))
+try:
+    from lennox import settings as S  # noqa: E402
+
+    WALLS = S.expand(S.load()["wallpaper"]["folder"])  # your wallpaper folder (Lennox Settings)
+except ImportError:
+    WALLS = os.path.join(HOME, ".config", "lennox", "wallpapers")
+PACK = os.path.join(WALLS, "lennox")
+ML4W = os.path.join(WALLS, "ml4w-collection")
+ML4W_URL = "https://github.com/mylinuxforwork/wallpaper.git"
+
+
+def magick_bin():
+    for name in ("magick", "convert"):
+        if shutil.which(name):
+            return name
+    return None
+
+
+MAGICK = magick_bin()
+
+
+def run(args):
+    subprocess.run([MAGICK] + [str(a) for a in args], check=True,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+
+
+def screen_size():
+    """The biggest connected screen, or 2560x1440."""
+    try:
+        out = subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True, timeout=3).stdout
+        mons = json.loads(out)
+        w = max(int(m["width"]) for m in mons)
+        h = max(int(m["height"]) for m in mons)
+        if w >= 800 and h >= 600:
+            return min(w, 3840), min(h, 2160)
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+        pass
+    return 2560, 1440
+
+
+# ---------------------------------------------------------------- helpers
+
+def poly(points):
+    return "polygon " + " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
+
+
+def ridge(w, h, base, amp, rnd, waves=4, step=None, jagged=0.0):
+    """A filled silhouette from the left to the right edge, closed at the bottom."""
+    step = step or max(4, w // 240)
+    phases = [rnd.uniform(0, math.tau) for _ in range(waves)]
+    freqs = [rnd.uniform(0.6, 1.4) * (i + 1) for i in range(waves)]
+    pts = []
+    for x in range(0, w + step, step):
+        t = x / w * math.tau
+        y = sum(math.sin(t * f + p) / (i + 1) for i, (f, p) in enumerate(zip(freqs, phases)))
+        y = base - y * amp + rnd.uniform(-jagged, jagged)
+        pts.append((min(x, w), y))
+    return poly(pts + [(w, h), (0, h)])
+
+
+def blobs(w, h, colors, rnd, count=6, size=(0.25, 0.55)):
+    draws = []
+    for i in range(count):
+        cx, cy = rnd.uniform(-0.1, 1.1) * w, rnd.uniform(-0.1, 1.1) * h
+        r = rnd.uniform(*size) * max(w, h)
+        draws += ["-fill", colors[i % len(colors)], "-draw", f"circle {cx:.0f},{cy:.0f} {cx + r:.0f},{cy:.0f}"]
+    return draws
+
+
+def stars(w, h, rnd, count, top=1.0, scale=1.0):
+    draws = []
+    for _ in range(count):
+        x, y = rnd.uniform(0, w), rnd.uniform(0, h * top) ** 1.15 / (h * top) ** 0.15
+        r = rnd.choice((0.5, 0.6, 0.7, 0.8, 1.0, 1.2, 1.6)) * scale
+        a = rnd.uniform(0.35, 1.0)
+        draws += ["-fill", f"rgba(255,255,255,{a:.2f})", "-draw", f"circle {x:.1f},{y:.1f} {x + r:.1f},{y:.1f}"]
+    return draws
+
+
+def finish(src, out, w, h, grain=0.035):
+    """Resize to the screen, a touch of grain (no gradient banding), save."""
+    run([src, "-resize", f"{w}x{h}!", "-attenuate", grain, "+noise", "Uniform", "-quality", 93, out])
+
+
+# ---------------------------------------------------------------- designs
+# Each design draws into `tmp` and writes `out` (w x h).
+
+def aurora(w, h, out, tmp, rnd):
+    sw, sh = w // 4, h // 4
+    ribbons = []
+    for color, y0, amp, width in (("#2de2a6", 0.38, 0.10, 0.07), ("#36b5ff", 0.30, 0.08, 0.05),
+                                  ("#a45cff", 0.24, 0.07, 0.06), ("#2de2a6", 0.46, 0.06, 0.04)):
+        pts = []
+        ph = rnd.uniform(0, math.tau)
+        for i in range(0, 41):
+            x = i / 40 * sw * 1.2 - sw * 0.1
+            y = (y0 + amp * math.sin(i / 40 * math.tau * 1.3 + ph)) * sh
+            pts.append(f"{x:.0f},{y:.0f}")
+        ribbons += ["-stroke", color, "-strokewidth", max(2, int(width * sh)), "-fill", "none",
+                    "-draw", "polyline " + " ".join(pts)]
+    run(["-size", f"{sw}x{sh}", "gradient:#060914-#0f1b3d", *ribbons, "-blur", f"0x{sw // 30}", f"{tmp}/a.png"])
+    run([f"{tmp}/a.png", "-resize", f"{w}x{h}!", *stars(w, h, rnd, 260, top=0.8, scale=h / 1080),
+         *["-fill", "#05070f", "-draw", ridge(w, h, h * 0.86, h * 0.04, rnd, jagged=h * 0.004)], f"{tmp}/b.png"])
+    finish(f"{tmp}/b.png", out, w, h)
+
+
+def sunset_beach(w, h, out, tmp, rnd):
+    horizon = int(h * 0.62)
+    top = int(horizon * 0.55)
+    sun_r = h * 0.11
+    run(["-size", f"{w}x{top}", "gradient:#1b1840-#b8467a", f"{tmp}/s1.png"])
+    run(["-size", f"{w}x{horizon - top}", "gradient:#b8467a-#ffb36b", f"{tmp}/s2.png"])
+    run([f"{tmp}/s1.png", f"{tmp}/s2.png", "-append",
+         "-fill", "#fff1c9", "-draw", f"circle {w / 2:.0f},{horizon + sun_r * 0.35:.0f} {w / 2 + sun_r:.0f},{horizon + sun_r * 0.35:.0f}",
+         f"{tmp}/sky.png"])
+    # Glow around the sun
+    run(["-size", f"{w}x{horizon}", "xc:none", "-fill", "rgba(255,200,140,0.55)",
+         "-draw", f"circle {w / 2:.0f},{horizon:.0f} {w / 2 + sun_r * 2.4:.0f},{horizon:.0f}",
+         "-blur", f"0x{sun_r:.0f}", f"{tmp}/glow.png"])
+    run([f"{tmp}/sky.png", f"{tmp}/glow.png", "-compose", "screen", "-composite", f"{tmp}/sky2.png"])
+    # Sea with the sun's reflection
+    sea_h = h - horizon
+    lines = []
+    for i in range(46):
+        y = sea_h * (i / 46) ** 1.6
+        half = sun_r * (1.2 - i / 60) * rnd.uniform(0.4, 1.0)
+        a = 0.85 * (1 - i / 50)
+        x0 = w / 2 + rnd.uniform(-sun_r * 0.2, sun_r * 0.2)
+        lines += ["-fill", f"rgba(255,214,160,{a:.2f})",
+                  "-draw", f"roundrectangle {x0 - half:.0f},{y:.0f} {x0 + half:.0f},{y + max(2, h * 0.003):.0f} 3,3"]
+    run(["-size", f"{w}x{sea_h}", "gradient:#d9707a-#1a1338", *lines, "-blur", "0x1.2", f"{tmp}/sea.png"])
+    # A few birds
+    birds = []
+    for _ in range(4):
+        bx, by, s = rnd.uniform(0.15, 0.4) * w, rnd.uniform(0.18, 0.4) * h, rnd.uniform(0.008, 0.014) * h
+        birds += ["-stroke", "#2a1a3d", "-strokewidth", max(2, h / 700), "-fill", "none",
+                  "-draw", f"path 'M {bx - s:.0f},{by:.0f} Q {bx - s / 2:.0f},{by - s * 0.7:.0f} {bx:.0f},{by:.0f} "
+                           f"Q {bx + s / 2:.0f},{by - s * 0.7:.0f} {bx + s:.0f},{by:.0f}'"]
+    run([f"{tmp}/sky2.png", f"{tmp}/sea.png", "-append", *birds, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h)
+
+
+def night_owl(w, h, out, tmp, rnd):
+    mx, my, mr = w * 0.78, h * 0.22, h * 0.065
+    run(["-size", f"{w}x{h}", "gradient:#03050f-#1a2747", *stars(w, h, rnd, 700, top=0.85, scale=h / 1080),
+         f"{tmp}/sky.png"])
+    # Crescent moon with a soft glow
+    run(["-size", f"{w}x{h}", "xc:none", "-fill", "#f6f0d6", "-draw", f"circle {mx:.0f},{my:.0f} {mx + mr:.0f},{my:.0f}",
+         "(", "-size", f"{w}x{h}", "xc:none", "-fill", "black",
+         "-draw", f"circle {mx + mr * 0.45:.0f},{my - mr * 0.25:.0f} {mx + mr * 1.38:.0f},{my - mr * 0.25:.0f}", ")",
+         "-compose", "DstOut", "-composite", f"{tmp}/moon.png"])
+    run([f"{tmp}/moon.png", "-blur", f"0x{mr * 0.6:.0f}", "-channel", "A", "-evaluate", "multiply", "0.7", "+channel",
+         f"{tmp}/glow.png"])
+    run([f"{tmp}/sky.png", f"{tmp}/glow.png", "-compose", "screen", "-composite", f"{tmp}/moon.png", "-compose", "over",
+         "-composite",
+         "-fill", "#121a33", "-draw", ridge(w, h, h * 0.80, h * 0.05, rnd, jagged=h * 0.002),
+         "-fill", "#070b18", "-draw", ridge(w, h, h * 0.88, h * 0.035, rnd), f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h)
+
+
+def layered(w, h, out, tmp, rnd, sky, layers, base0, gap, amp, jag=0.0, mist=None):
+    draws = []
+    for i, color in enumerate(layers):
+        draws += ["-fill", color, "-draw", ridge(w, h, h * (base0 + gap * i), h * amp * (1 - i * 0.08), rnd,
+                                                 waves=5, jagged=h * jag)]
+        if mist and i < len(layers) - 1:
+            draws += ["-fill", mist, "-draw", f"rectangle 0,0 {w},{h}"]
+    run(["-size", f"{w}x{h}", f"gradient:{sky[0]}-{sky[1]}", *draws, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h)
+
+
+def dunes(w, h, out, tmp, rnd):
+    layered(w, h, out, tmp, rnd, ("#ffd3a1", "#f59b85"),
+            ["#f6b36b", "#e88a45", "#cf6630", "#a2461f", "#6e2c17"], 0.48, 0.09, 0.05)
+
+
+def mountains(w, h, out, tmp, rnd):
+    layered(w, h, out, tmp, rnd, ("#1d1a40", "#ff9f7a"),
+            ["#b07aa6", "#8a5e93", "#634778", "#41305c", "#221a3a"], 0.46, 0.1, 0.07, jag=0.0015)
+
+
+def forest(w, h, out, tmp, rnd):
+    layered(w, h, out, tmp, rnd, ("#dfeee4", "#a6cdb7"),
+            ["#86b59a", "#5f9a7a", "#3f7d5f", "#285f46", "#16402f"], 0.42, 0.11, 0.06, jag=0.002,
+            mist="rgba(223,238,228,0.10)")
+
+
+def ocean(w, h, out, tmp, rnd):
+    layered(w, h, out, tmp, rnd, ("#0b1e3a", "#14466e"),
+            ["#1b5d86", "#1f7a99", "#2b98a4", "#56b9b1", "#a7e3d6"], 0.40, 0.11, 0.035)
+
+
+def mesh(palette):
+    def design(w, h, out, tmp, rnd):
+        sw, sh = w // 6, h // 6
+        run(["-size", f"{sw}x{sh}", f"xc:{palette[0]}", *blobs(sw, sh, palette[1:], rnd, count=7),
+             "-blur", f"0x{sw // 9}", f"{tmp}/m.png"])
+        finish(f"{tmp}/m.png", out, w, h, grain=0.05)
+    return design
+
+
+def clouds(w, h, out, tmp, rnd):
+    """Above the clouds: a sea of clouds under a high, clear sky."""
+    sw, sh = w // 2, h // 2
+
+    def bank(base, spread, size, color, count):
+        draws = []
+        for _ in range(count):
+            x = rnd.uniform(-0.05, 1.05) * sw
+            y = base * sh + rnd.uniform(0, spread) * sh
+            r = rnd.uniform(*size) * sh
+            draws += ["-fill", color, "-draw", f"circle {x:.0f},{y:.0f} {x + r:.0f},{y:.0f}"]
+        return draws
+
+    sun = ["-fill", "rgba(255,244,214,0.9)", "-draw", f"circle {sw * 0.72:.0f},{sh * 0.30:.0f} {sw * 0.72 + sh * 0.035:.0f},{sh * 0.30:.0f}"]
+    run(["-size", f"{sw}x{sh}", "gradient:#2563b8-#cfe9ff", *sun, f"{tmp}/sky.png"])
+    run(["-size", f"{sw}x{sh}", "xc:none", "-fill", "rgba(255,240,205,0.6)",
+         "-draw", f"circle {sw * 0.72:.0f},{sh * 0.30:.0f} {sw * 0.72 + sh * 0.16:.0f},{sh * 0.30:.0f}",
+         "-blur", f"0x{sh // 14}", f"{tmp}/glow.png"])
+    run(["-size", f"{sw}x{sh}", "xc:none",
+         *bank(0.58, 0.10, (0.05, 0.10), "rgba(214,228,245,1)", 60),
+         *bank(0.68, 0.10, (0.06, 0.12), "rgba(236,243,252,1)", 55),
+         *bank(0.80, 0.20, (0.07, 0.14), "rgba(248,251,255,1)", 70),
+         "-fill", "rgba(248,251,255,1)", "-draw", f"rectangle 0,{sh * 0.78:.0f} {sw},{sh}",
+         "-blur", f"0x{sh // 140 + 1}", f"{tmp}/clouds.png"])
+    trail = ["-stroke", "rgba(255,255,255,0.7)", "-strokewidth", max(1, sh // 400), "-fill", "none",
+             "-draw", f"line {sw * 0.08:.0f},{sh * 0.30:.0f} {sw * 0.46:.0f},{sh * 0.14:.0f}"]
+    run([f"{tmp}/sky.png", f"{tmp}/glow.png", "-compose", "screen", "-composite", *trail,
+         f"{tmp}/clouds.png", "-compose", "over", "-composite", f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h)
+
+
+def graphite(w, h, out, tmp, rnd):
+    sw, sh = w // 4, h // 4
+    run(["-size", f"{sw}x{sh}", "gradient:#1c1f26-#0b0c10",
+         "-fill", "rgba(120,140,170,0.35)", "-draw", f"ellipse {sw * 0.7:.0f},{sh * 0.2:.0f} {sw * 0.45:.0f},{sh * 0.3:.0f} 0,360",
+         "-fill", "rgba(90,110,140,0.25)", "-draw", f"ellipse {sw * 0.2:.0f},{sh * 0.9:.0f} {sw * 0.35:.0f},{sh * 0.25:.0f} 0,360",
+         "-blur", f"0x{sw // 10}", f"{tmp}/g.png"])
+    finish(f"{tmp}/g.png", out, w, h, grain=0.06)
+
+
+# ---------------------------------------------------------------- Lennox 2.0 designs
+
+def orbit(w, h, out, tmp, rnd):
+    """A planet rising over the edge, thin orbit rings, deep space."""
+    sw, sh = w // 2, h // 2
+    px, py, pr = sw * 0.5, sh * 1.55, sh * 0.95
+    rings = []
+    for i, a in enumerate((0.55, 0.35, 0.22, 0.14)):
+        rx, ry = pr * (1.25 + i * 0.22), pr * (0.30 + i * 0.06)
+        rings += ["-stroke", f"rgba(170,190,255,{a})", "-strokewidth", max(1, sh // 360), "-fill", "none",
+                  "-draw", f"ellipse {px:.0f},{py - pr * 0.62:.0f} {rx:.0f},{ry:.0f} 180,360"]
+    run(["-size", f"{sw}x{sh}", "gradient:#05060f-#141a3a", *stars(sw, sh, rnd, 260, top=0.9, scale=sh / 1080),
+         f"{tmp}/sky.png"])
+    run(["-size", f"{sw}x{sh}", "xc:none", "-fill", "rgba(120,110,255,0.55)",
+         "-draw", f"circle {px:.0f},{py:.0f} {px + pr * 1.12:.0f},{py:.0f}", "-blur", f"0x{sh // 12}", f"{tmp}/glow.png"])
+    run(["-size", f"{sw}x{sh}", "xc:none", "-fill", "#0b0e22", "-draw", f"circle {px:.0f},{py:.0f} {px + pr:.0f},{py:.0f}",
+         "-stroke", "rgba(190,200,255,0.85)", "-strokewidth", max(1, sh // 300), "-fill", "none",
+         "-draw", f"arc {px - pr:.0f},{py - pr:.0f} {px + pr:.0f},{py + pr:.0f} 200,340", f"{tmp}/planet.png"])
+    run([f"{tmp}/sky.png", f"{tmp}/glow.png", "-compose", "screen", "-composite",
+         f"{tmp}/planet.png", "-compose", "over", "-composite", *rings, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.04)
+
+
+def waves(w, h, out, tmp, rnd):
+    """Smooth glassy bands flowing across the screen."""
+    sw, sh = w // 2, h // 2
+    colors = ["#1b1f4b", "#28307a", "#3b47a8", "#5a5fd6", "#7d6cf0", "#4cc3d9"]
+    draws = []
+    for i, c in enumerate(colors):
+        draws += ["-fill", c, "-draw", ridge(sw, sh, sh * (0.30 + i * 0.12), sh * 0.09, rnd, waves=3)]
+    run(["-size", f"{sw}x{sh}", "gradient:#0d0f26-#171a3d", *draws, "-blur", f"0x{sh // 220 + 1}", f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.03)
+
+
+def palm(x, base, height, lean, color, s):
+    """A palm tree silhouette: a curved trunk and a fan of leaves."""
+    tx, ty = x + lean, base - height
+    draws = ["-stroke", color, "-strokewidth", max(2, s * 0.018), "-fill", "none",
+             "-draw", f"path 'M {x:.0f},{base:.0f} Q {x + lean * 0.2:.0f},{base - height * 0.6:.0f} {tx:.0f},{ty:.0f}'"]
+    for ang in (-160, -130, -100, -70, -40, -15, 15):
+        r = math.radians(ang)
+        ex, ey = tx + math.cos(r) * s * 0.16, ty + math.sin(r) * s * 0.10 + s * 0.05
+        mx, my = tx + math.cos(r) * s * 0.09, ty + math.sin(r) * s * 0.10 - s * 0.03
+        draws += ["-strokewidth", max(2, s * 0.02),
+                  "-draw", f"path 'M {tx:.0f},{ty:.0f} Q {mx:.0f},{my:.0f} {ex:.0f},{ey:.0f}'"]
+    return draws
+
+
+def palm_night(w, h, out, tmp, rnd):
+    """Beach paradise at night: moon over a calm sea, palms on the shore."""
+    horizon = h * 0.64
+    mx, my, mr = w * 0.62, h * 0.30, h * 0.07
+    run(["-size", f"{w}x{h}", "gradient:#0a0f2e-#3a3a7a", *stars(w, h, rnd, 300, top=0.6, scale=h / 1080),
+         "-fill", "#f6eed6", "-draw", f"circle {mx:.0f},{my:.0f} {mx + mr:.0f},{my:.0f}", f"{tmp}/sky.png"])
+    run(["-size", f"{w}x{h}", "xc:none", "-fill", "rgba(246,238,214,0.45)",
+         "-draw", f"circle {mx:.0f},{my:.0f} {mx + mr * 2.6:.0f},{my:.0f}", "-blur", f"0x{mr:.0f}", f"{tmp}/glow.png"])
+    lines = []
+    for i in range(40):
+        y = horizon + (h - horizon) * (i / 40) ** 1.5
+        half = mr * (1.4 - i / 40) * rnd.uniform(0.3, 1.0)
+        lines += ["-fill", f"rgba(246,238,214,{0.6 * (1 - i / 42):.2f})",
+                  "-draw", f"roundrectangle {mx - half:.0f},{y:.0f} {mx + half:.0f},{y + max(2, h * 0.003):.0f} 2,2"]
+    shore = h * 0.90
+    trees = palm(w * 0.12, shore, h * 0.42, w * 0.05, "#05060f", h) + palm(w * 0.20, shore, h * 0.30, -w * 0.02, "#05060f", h * 0.8)
+    run([f"{tmp}/sky.png", f"{tmp}/glow.png", "-compose", "screen", "-composite",
+         "-fill", "#141a45", "-draw", f"rectangle 0,{horizon:.0f} {w},{h}", *lines,
+         "-fill", "#05060f", "-draw", ridge(w, h, shore, h * 0.012, rnd, waves=2), *trees, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h)
+
+
+def skyline(w, h, out, tmp, rnd):
+    """A city at night: two rows of towers with a few lit windows."""
+    draws = []
+    for row, (color, top, bottom) in enumerate((("#1d2147", 0.45, 0.72), ("#0b0d22", 0.55, 0.95))):
+        x = -rnd.uniform(0, w * 0.03)
+        while x < w:
+            bw = rnd.uniform(0.03, 0.07) * w
+            by = h * rnd.uniform(top, bottom - 0.12)
+            draws += ["-fill", color, "-draw", f"rectangle {x:.0f},{by:.0f} {x + bw:.0f},{h}"]
+            if row == 1:
+                win = max(3, h * 0.006)
+                for wy in range(int(by + win * 3), h, int(win * 3.2)):
+                    for wx in range(int(x + win * 1.5), int(x + bw - win * 1.5), int(win * 2.8)):
+                        if rnd.random() < 0.13:
+                            draws += ["-fill", rnd.choice(("#ffd28a", "#ffe7b8", "#9ad7ff")),
+                                      "-draw", f"rectangle {wx},{wy} {wx + win:.0f},{wy + win * 1.3:.0f}"]
+            x += bw + rnd.uniform(0, w * 0.008)
+    run(["-size", f"{w}x{h}", "gradient:#120d2e-#c2567a", *stars(w, h, rnd, 120, top=0.4, scale=h / 1080),
+         *draws, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h)
+
+
+def topo(w, h, out, tmp, rnd):
+    """Clean topographic contour lines on a dark slate."""
+    lines = []
+    for cx, cy, n in ((w * 0.72, h * 0.38, 16), (w * 0.18, h * 0.82, 10)):
+        ph = [rnd.uniform(0, math.tau) for _ in range(3)]
+        for k in range(1, n + 1):
+            r0 = k * h * 0.045
+            pts = []
+            for i in range(0, 121):
+                t = i / 120 * math.tau
+                r = r0 * (1 + 0.10 * math.sin(3 * t + ph[0]) + 0.06 * math.sin(5 * t + ph[1]) + 0.04 * math.sin(2 * t + ph[2]))
+                pts.append(f"{cx + math.cos(t) * r * 1.25:.0f},{cy + math.sin(t) * r:.0f}")
+            alpha = 0.45 if k % 4 == 0 else 0.18
+            lines += ["-stroke", f"rgba(150,200,190,{alpha})", "-strokewidth", max(1, h / 900), "-fill", "none",
+                      "-draw", "polyline " + " ".join(pts)]
+    run(["-size", f"{w}x{h}", "gradient:#13201f-#0a1112", *lines, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.03)
+
+
+DESIGNS = {
+    "orbit": ("Orbit (Lennox 2.0)", orbit),
+    "glass-waves": ("Glass waves", waves),
+    "palm-night": ("Palm night", palm_night),
+    "city-night": ("City at night", skyline),
+    "topo": ("Topographic", topo),
+    "aurora": ("Aurora", aurora),
+    "sunset-beach": ("Sunset beach", sunset_beach),
+    "night-owl": ("Night owl", night_owl),
+    "dunes": ("Dunes", dunes),
+    "mountains-dusk": ("Mountains at dusk", mountains),
+    "forest-mist": ("Forest mist", forest),
+    "ocean-layers": ("Ocean layers", ocean),
+    "clouds": ("Above the clouds", clouds),
+    "mesh-lavender": ("Lavender haze", mesh(["#2a2245", "#7c5cd6", "#e08ad6", "#5b8def", "#b9a4ff"])),
+    "mesh-peach": ("Peach", mesh(["#3a1f2b", "#ff8f70", "#ffc371", "#ff5f8f", "#f9d29d"])),
+    "mesh-mint": ("Mint", mesh(["#0e2a2a", "#2ec4b6", "#9be7c4", "#3a86ff", "#cbf3f0"])),
+    "graphite": ("Graphite", graphite),
+    "astral": ("Astral", lambda *a: astral(*a)),
+    "blocky-hills": ("Blocky hills", lambda *a: blocky(*a)),
+    "beach-day": ("Beach day", lambda *a: beach_day(*a)),
+    "nebula": ("Nebula", lambda *a: nebula(*a)),
+}
+
+
+# ---------------------------------------------------------------- Lennox 2.1 designs
+
+def astral(w, h, out, tmp, rnd):
+    """A deep-blue night with a glowing constellation, for AstralNetwork."""
+    sw, sh = w // 2, h // 2
+    run(["-size", f"{sw}x{sh}", "gradient:#070a1f-#1b1446", *stars(sw, sh, rnd, 420, scale=sh / 1080), f"{tmp}/sky.png"])
+    # Milky band: soft blobs along a diagonal
+    band = []
+    for i in range(26):
+        t = i / 25
+        x, y = sw * (0.05 + 0.9 * t), sh * (0.85 - 0.7 * t) + rnd.uniform(-1, 1) * sh * 0.05
+        r = rnd.uniform(0.04, 0.09) * sh
+        band += ["-fill", rnd.choice(("rgba(130,110,255,0.20)", "rgba(80,160,255,0.16)", "rgba(220,140,255,0.14)")),
+                 "-draw", f"circle {x:.0f},{y:.0f} {x + r:.0f},{y:.0f}"]
+    run(["-size", f"{sw}x{sh}", "xc:none", *band, "-blur", f"0x{sh // 25}", f"{tmp}/band.png"])
+    # The constellation: a few bright stars joined by thin lines
+    pts = [(0.62, 0.28), (0.70, 0.22), (0.78, 0.30), (0.74, 0.42), (0.84, 0.48), (0.66, 0.40)]
+    pts = [(x * sw, y * sh) for x, y in pts]
+    lines = []
+    for (x1, y1), (x2, y2) in zip(pts, pts[1:]):
+        lines += ["-stroke", "rgba(200,210,255,0.45)", "-strokewidth", max(1, sh // 600), "-draw", f"line {x1:.0f},{y1:.0f} {x2:.0f},{y2:.0f}"]
+    glows = []
+    for x, y in pts:
+        r = sh * 0.006
+        glows += ["-stroke", "none", "-fill", "#ffffff", "-draw", f"circle {x:.0f},{y:.0f} {x + r:.0f},{y:.0f}"]
+    run(["-size", f"{sw}x{sh}", "xc:none", *glows, "-blur", f"0x{sh // 120 + 1}", f"{tmp}/glow.png"])
+    run([f"{tmp}/sky.png", f"{tmp}/band.png", "-compose", "screen", "-composite", f"{tmp}/glow.png", "-compose", "screen",
+         "-composite", *lines, *glows, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.03)
+
+
+def blocky(w, h, out, tmp, rnd):
+    """Blocky hills: a voxel landscape with grass, dirt, stone, a square sun and square clouds."""
+    px = max(8, h // 54)                       # one block
+    cols, rows = w // px + 1, h // px + 1
+    draws = []
+    # Square sun and clouds
+    sx, sy = int(cols * 0.78), int(rows * 0.14)
+    draws += ["-fill", "#fff3b0", "-draw", f"rectangle {sx * px},{sy * px} {(sx + 4) * px},{(sy + 4) * px}"]
+    for _ in range(5):
+        cx, cy, cw = rnd.randrange(0, cols), rnd.randrange(2, rows // 3), rnd.randrange(5, 11)
+        draws += ["-fill", "rgba(255,255,255,0.92)", "-draw", f"rectangle {cx * px},{cy * px} {(cx + cw) * px},{(cy + 2) * px}"]
+    # The terrain: a smooth height per column, snapped to blocks
+    phase = [rnd.uniform(0, math.tau) for _ in range(3)]
+    for c in range(cols):
+        t = c / cols * math.tau
+        height = rows * (0.58 + 0.07 * math.sin(t * 1.3 + phase[0]) + 0.04 * math.sin(t * 3.1 + phase[1])
+                         + 0.02 * math.sin(t * 7 + phase[2]))
+        top = int(height)
+        x0, x1 = c * px, (c + 1) * px - 1
+        draws += ["-fill", rnd.choice(("#5fbf4a", "#58b443", "#66c552")), "-draw", f"rectangle {x0},{top * px} {x1},{(top + 1) * px - 1}"]
+        for r in range(top + 1, rows):
+            depth = r - top
+            color = (rnd.choice(("#8a5a35", "#7f522f", "#94633c")) if depth < 4 else
+                     rnd.choice(("#7d7d7d", "#737373", "#868686", "#6b6b6b")))
+            if depth > 6 and rnd.random() < 0.02:
+                color = rnd.choice(("#5fd3e6", "#e6c35f"))      # a diamond, or gold
+            draws += ["-fill", color, "-draw", f"rectangle {x0},{r * px} {x1},{(r + 1) * px - 1}"]
+        if rnd.random() < 0.05 and 3 < c < cols - 3:           # a tree
+            for k in range(1, 4):
+                draws += ["-fill", "#6b4a2b", "-draw", f"rectangle {x0},{(top - k) * px} {x1},{(top - k + 1) * px - 1}"]
+            draws += ["-fill", "#3f8f34", "-draw", f"rectangle {(c - 1) * px},{(top - 6) * px} {(c + 2) * px - 1},{(top - 3) * px - 1}"]
+    run(["-size", f"{w}x{h}", "gradient:#79c6ff-#cfefff", *draws, f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.0)
+
+
+def beach_day(w, h, out, tmp, rnd):
+    """Summer beach paradise at noon: turquoise sea, white foam, warm sand."""
+    horizon, shore = h * 0.48, h * 0.70
+    sun_x, sun_y, sun_r = w * 0.22, h * 0.17, h * 0.06
+    run(["-size", f"{w}x{int(horizon)}", "gradient:#3d9be9-#bfe7ff", "-fill", "#fffbe8",
+         "-draw", f"circle {sun_x:.0f},{sun_y:.0f} {sun_x + sun_r:.0f},{sun_y:.0f}", f"{tmp}/sky.png"])
+    run(["-size", f"{w}x{int(horizon)}", "xc:none", "-fill", "rgba(255,255,230,0.7)",
+         "-draw", f"circle {sun_x:.0f},{sun_y:.0f} {sun_x + sun_r * 2.5:.0f},{sun_y:.0f}", "-blur", f"0x{sun_r:.0f}", f"{tmp}/glow.png"])
+    run([f"{tmp}/sky.png", f"{tmp}/glow.png", "-compose", "screen", "-composite", f"{tmp}/sky2.png"])
+    sea_h = h - int(horizon)
+    run(["-size", f"{w}x{sea_h}", "gradient:#0b6fa8-#2fd1c5", f"{tmp}/sea.png"])
+    foam = []
+    for k in range(3):
+        y = shore - horizon + k * h * 0.012
+        foam += ["-fill", f"rgba(255,255,255,{0.75 - k * 0.2:.2f})", "-draw",
+                 ridge(w, sea_h, y, h * 0.008, rnd, waves=6).replace("polygon", "polygon", 1)]
+    sand = ["-fill", "#f2d9a8", "-draw", ridge(w, sea_h, shore - horizon + h * 0.03, h * 0.01, rnd, waves=3)]
+    run([f"{tmp}/sea.png", *foam, *sand, f"{tmp}/sea2.png"])
+    run([f"{tmp}/sky2.png", f"{tmp}/sea2.png", "-append", f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.02)
+
+
+def nebula(w, h, out, tmp, rnd):
+    """A soft space nebula in magenta and teal with stars in front."""
+    sw, sh = w // 4, h // 4
+    run(["-size", f"{sw}x{sh}", "xc:#05030d",
+         *blobs(sw, sh, ["rgba(190,60,170,0.55)", "rgba(40,170,190,0.45)", "rgba(110,70,220,0.5)", "rgba(250,120,90,0.30)"],
+                rnd, count=9, size=(0.12, 0.35)),
+         "-blur", f"0x{sw // 14}", f"{tmp}/n.png"])
+    run([f"{tmp}/n.png", "-resize", f"{w}x{h}!", *stars(w, h, rnd, 500, scale=h / 1080), f"{tmp}/all.png"])
+    finish(f"{tmp}/all.png", out, w, h, grain=0.03)
+
+
+# ---------------------------------------------------------------- commands
+
+def make(force=False, size=None):
+    if MAGICK is None:
+        print("lennox-wallpapers: ImageMagick is missing (sudo pacman -S imagemagick)", file=sys.stderr)
+        return 1
+    w, h = size or screen_size()
+    os.makedirs(PACK, exist_ok=True)
+    made = 0
+    for i, (key, (name, design)) in enumerate(DESIGNS.items()):
+        out = os.path.join(PACK, f"lennox-{key}.jpg")
+        if os.path.exists(out) and not force:
+            continue
+        print(f"[{i + 1}/{len(DESIGNS)}] {name}", flush=True)
+        with tempfile.TemporaryDirectory(prefix="lennox-wall-") as tmp:
+            try:
+                design(w, h, out + ".tmp.jpg", tmp, random.Random(key))
+                os.replace(out + ".tmp.jpg", out)
+                made += 1
+            except subprocess.CalledProcessError as e:
+                print(f"  could not paint {name}: {e.stderr.decode(errors='replace').strip()[:200]}", file=sys.stderr)
+                if os.path.exists(out + ".tmp.jpg"):
+                    os.unlink(out + ".tmp.jpg")
+    print(f"{made} new wallpapers in {PACK} ({w}x{h})")
+    return 0
+
+
+def ml4w():
+    if not shutil.which("git"):
+        print("lennox-wallpapers: git is missing", file=sys.stderr)
+        return 1
+    if os.path.isdir(os.path.join(ML4W, ".git")):
+        cmd = ["git", "-C", ML4W, "pull", "--ff-only", "--depth", "1"]
+    else:
+        os.makedirs(WALLS, exist_ok=True)
+        cmd = ["git", "clone", "--depth", "1", ML4W_URL, ML4W]
+    print("Downloading the ML4W wallpaper collection (a big download, a few minutes)...", flush=True)
+    if subprocess.run(cmd).returncode != 0:
+        print("lennox-wallpapers: download failed (internet connection?)", file=sys.stderr)
+        return 1
+    count = sum(1 for f in os.listdir(ML4W) if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp")))
+    print(f"{count} wallpapers in {ML4W}")
+    return 0
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help", "help"):
+        print(__doc__.strip())
+        return 0
+    cmd, rest = argv[0], argv[1:]
+    if cmd == "make":
+        size = None
+        if "--size" in rest:
+            try:
+                w, h = rest[rest.index("--size") + 1].lower().split("x")
+                size = (max(640, min(int(w), 7680)), max(360, min(int(h), 4320)))
+            except (IndexError, ValueError):
+                print("lennox-wallpapers: --size needs WIDTHxHEIGHT, e.g. 1920x1080", file=sys.stderr)
+                return 2
+        return make(force="--force" in rest, size=size)
+    if cmd == "ml4w":
+        return ml4w()
+    if cmd == "list":
+        for key, (name, _design) in DESIGNS.items():
+            print(f"lennox-{key}.jpg  {name}")
+        return 0
+    print(f"lennox-wallpapers: unknown command '{cmd}' (try: lennox-wallpapers help)", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

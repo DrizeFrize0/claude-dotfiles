@@ -1,0 +1,17 @@
+# -----------------------------------------------------
+# Completion and plugins (Arch packages, updated with the system)
+# -----------------------------------------------------
+fpath=(/usr/share/zsh/site-functions $fpath)
+autoload -Uz compinit && compinit -d "${XDG_CACHE_HOME:-$HOME/.cache}/zcompdump"
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+
+[[ -r /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]] \
+    && source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+# fzf: Ctrl+R history search, Ctrl+T file search
+command -v fzf >/dev/null && source <(fzf --zsh)
+command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
+# Syntax highlighting must be loaded last
+[[ -r /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] \
+    && source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

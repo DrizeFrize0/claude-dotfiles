@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Sort new downloads into folders; undo any time.
+#   lennox-tidy run [--dry] [--now] | undo | status
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.tidy "$@"

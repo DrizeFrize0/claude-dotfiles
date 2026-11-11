@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Synced lyrics for the song that is playing.
+#   lennox-lyrics now
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.lyrics "$@"

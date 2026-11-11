@@ -1,0 +1,8 @@
+# AstralNetwork: plugins (Java/Maven/Gradle), configs, SFTP
+code
+jdk21-openjdk
+maven
+gradle
+github-cli
+openssh
+filezilla

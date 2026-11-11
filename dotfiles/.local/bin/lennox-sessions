@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Which sessions the login screen offers. "Lennox (Hyprland)" is the one to use: it picks the right graphics
+# chip and starts everything. The plain "Hyprland" entry comes from the Hyprland package and skips that.
+#   lennox-sessions status
+#   lennox-sessions hide-others    the login screen lists only Lennox
+#   lennox-sessions show-all       back to every session
+# Tests point LENNOX_ROOT and LENNOX_SUDO at a fake system.
+ROOT="${LENNOX_ROOT:-}"
+SUDO="${LENNOX_SUDO-sudo}"
+CONF="$ROOT/etc/sddm.conf.d/20-lennox-sessions.conf"
+DIR="$ROOT/usr/share/lennox/sessions"
+SRC="$ROOT/usr/share/wayland-sessions/lennox.desktop"
+
+case "${1:-status}" in
+    status)
+        if [[ -f "$CONF" ]]; then echo "The login screen lists only: Lennox (Hyprland)"; else echo "The login screen lists every session"; fi
+        echo "Sessions installed:"
+        for f in "$ROOT"/usr/share/wayland-sessions/*.desktop; do [[ -f "$f" ]] && echo "  $(sed -n 's/^Name=//p' "$f" | head -1)"; done
+        ;;
+    hide-others)
+        [[ -f "$SRC" ]] || { echo "The Lennox session file is missing ($SRC): run lennox upgrade. Nothing changed." >&2; exit 1; }
+        $SUDO mkdir -p "$DIR" "${CONF%/*}" && $SUDO cp "$SRC" "$DIR/lennox.desktop" || exit 1
+        printf '# Lennox: the login screen lists only the Lennox session (lennox-sessions show-all undoes this)\n[Wayland]\nSessionDir=/usr/share/lennox/sessions\n' | $SUDO tee "$CONF" >/dev/null
+        echo "Done. At the next login screen you will only see Lennox (Hyprland)."
+        ;;
+    show-all)
+        $SUDO rm -f "$CONF"
+        echo "Done. The login screen lists every session again."
+        ;;
+    *) echo "usage: lennox-sessions status | hide-others | show-all" >&2; exit 2 ;;
+esac

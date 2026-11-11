@@ -1,0 +1,4 @@
+/* Subtle texture (Settings > Bar & Dock): a faint grain over the aurora tint */
+window#waybar > box {
+    background-image: url("../../assets/noise.png"), linear-gradient(100deg, alpha(@primary, 0.12), alpha(@surface_container, 0) 35%, alpha(@surface_container, 0) 65%, alpha(@tertiary, 0.12));
+}

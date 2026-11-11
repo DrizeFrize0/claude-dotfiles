@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# The wallpaper area pulses with the music (needs cava).
+#   lennox-visualizer start | stop | sync
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.visualizer "$@"

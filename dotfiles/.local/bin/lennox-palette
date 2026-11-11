@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Command palette (SUPER + /): one search box for every setting, mode, style and tool.
+#   lennox-palette | lennox-palette list
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.palette "$@"

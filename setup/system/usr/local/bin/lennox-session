@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Start the Lennox session (Hyprland), choosing which GPU drives the desktop.
+# Set in Lennox Settings > Graphics:
+#   integrated  Intel only: best battery, the NVIDIA GPU sleeps until a game needs it
+#   hybrid      Intel + NVIDIA: needed for screens plugged into ports wired to NVIDIA
+#   auto        hybrid only while a screen is plugged into an NVIDIA port (default)
+# /dev/dri/lennox-igpu and lennox-dgpu are stable names made by
+# /etc/udev/rules.d/61-lennox-gpu-paths.rules (card0/card1 can swap between boots).
+
+IGPU=/dev/dri/lennox-igpu
+DGPU=/dev/dri/lennox-dgpu
+
+mode="auto"
+settings="$HOME/.config/lennox/settings.json"
+if [[ -r "$settings" ]] && command -v jq >/dev/null; then
+    mode="$(jq -r '.gpu.mode // "auto"' "$settings" 2>/dev/null || echo auto)"
+fi
+
+nvidia_screen_connected() {
+    local connector card
+    for connector in /sys/class/drm/card*-*; do
+        [[ -e "$connector/status" ]] || continue
+        card="${connector##*/}"
+        card="${card%%-*}"
+        [[ "$(readlink -f "/sys/class/drm/$card/device/driver")" == */nvidia ]] || continue
+        [[ "$(cat "$connector/status" 2>/dev/null)" == "connected" ]] && return 0
+    done
+    return 1
+}
+
+if [[ -e "$IGPU" && -e "$DGPU" && -z "${AQ_DRM_DEVICES:-}" ]]; then
+    case "$mode" in
+        integrated) export AQ_DRM_DEVICES="$IGPU" ;;
+        hybrid) export AQ_DRM_DEVICES="$IGPU:$DGPU" ;;
+        *)
+            if nvidia_screen_connected; then
+                export AQ_DRM_DEVICES="$IGPU:$DGPU"
+            else
+                export AQ_DRM_DEVICES="$IGPU"
+            fi
+            ;;
+    esac
+fi
+
+if command -v start-hyprland >/dev/null; then
+    exec start-hyprland
+fi
+exec Hyprland

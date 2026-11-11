@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Mood diary and the weekly why-am-I-tired report.
+#   lennox-mood ask | set 1-5 | week | report
+PYTHONPATH="$HOME/.local/share/lennox/python" exec python3 -m lennox.mood "$@"
